@@ -1,0 +1,8 @@
+{% extends "layout.html" %}
+{% block content %}
+    <h1>Home</h1>
+    {% for PLATFORM in posts %}
+        <h2>{{ PLATFORM.display_name }}</h2>
+        <h4>{{ PLATFORM.value }}</h4>
+    {% endfor %}
+{% endblock content %}

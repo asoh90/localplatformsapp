@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        {% if title %}
+            <title>API Dashboard {{ title }}</title>
+        {% else %}
+            <title>API Dashboard Home</title>
+        {% endif %}
+    </head>
+    <body>
+        {% block content %}{% endblock %}
+    </body>
+</html>
