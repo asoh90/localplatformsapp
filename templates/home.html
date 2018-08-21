@@ -1,17 +1,16 @@
 {% extends "layout.html" %}
 {% block content %}
-    <h1>API Call</h1>
-            <form method="POST" action="">
-                <div>
-                Select Platform: 
-                <select name="platform">
-                {% for PLATFORM in posts %}
-                    <option value="{{ PLATFORM.value }}">{{ PLATFORM.display_name }}</option>
-                {% endfor %}
-                </select>
-                <br /><br />
-                <input type="submit" value="Submit" />
-            </form>
-        </div>
-    </select>
+    <div>
+        <form method="POST" action="function.html">
+            {{ form.hidden_tag() }}
+            Select Platform: 
+            <select name="platform">
+            {% for PLATFORM in posts %}
+                <option value="{{ PLATFORM.display_name }}">{{ PLATFORM.display_name }}</option>
+            {% endfor %}
+            </select>
+            <br /><br />
+            {{ form.submit()}}
+        </form>
+    </div>
 {% endblock content %}
