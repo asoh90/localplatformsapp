@@ -1,8 +1,17 @@
 {% extends "layout.html" %}
 {% block content %}
-    <h1>Home</h1>
-    {% for PLATFORM in posts %}
-        <h2>{{ PLATFORM.display_name }}</h2>
-        <h4>{{ PLATFORM.value }}</h4>
-    {% endfor %}
+    <h1>API Call</h1>
+            <form method="POST" action="">
+                <div>
+                Select Platform: 
+                <select name="platform">
+                {% for PLATFORM in posts %}
+                    <option value="{{ PLATFORM.value }}">{{ PLATFORM.display_name }}</option>
+                {% endfor %}
+                </select>
+                <br /><br />
+                <input type="submit" value="Submit" />
+            </form>
+        </div>
+    </select>
 {% endblock content %}
