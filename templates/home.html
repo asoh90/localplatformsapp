@@ -1,7 +1,16 @@
 {% extends "layout.html" %}
 {% block content %}
     <div>
-        <form method="POST" action="function.html">
+        {% if form.platform.errors %}
+            <!-- {{ form.platform() }} -->
+            <div>
+                {% for error in form.platform.errors %}
+                    <div>{{ error }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <form method="POST" action="">
             {{ form.hidden_tag() }}
             Select Platform: 
             <select name="platform">

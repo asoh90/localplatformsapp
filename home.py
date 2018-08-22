@@ -1,4 +1,4 @@
-from flask import Flask, render_template, flash, redirect
+from flask import Flask, render_template, url_for, flash, redirect, request
 from forms import SelectPlatformForm, SelectFunctionForm
 app = Flask(__name__)
 
@@ -18,14 +18,16 @@ PLATFORMS = [
 def home():
     form = SelectPlatformForm()
     if form.validate_on_submit():
-        flash(f'Platform selected: {form.platform.data}','success')
-        return redirect(url_for('function'))
+        return redirect(url_for("function", platform=form.platform.data))
     return render_template('home.html', form=form, posts=PLATFORMS)
 
 @app.route("/function", methods=['GET','POST'])
 def function():
+    platform_selected = {'name':request.args['platform']}
+    print("Platform Selected: " + platform_selected['name'])
+
     form = SelectFunctionForm()
-    return render_template('function.html', title="Select Function")
+    return render_template('function.html', title="Select Function", platform=platform_selected)
 
 if __name__ == "__main__":
     app.run()
