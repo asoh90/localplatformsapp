@@ -1,6 +1,6 @@
 {% extends "layout.html" %}
 {% block content %}
-    <div>
+    <div class="col-md-4">
         {% if form.platform.errors %}
             <!-- {{ form.platform() }} -->
             <div>
@@ -12,14 +12,45 @@
 
         <form method="POST" action="">
             {{ form.hidden_tag() }}
-            Select Platform: 
-            <select name="platform">
-            {% for PLATFORM in posts %}
-                <option value="{{ PLATFORM.display_name }}">{{ PLATFORM.display_name }}</option>
-            {% endfor %}
+            <h4>Platform</h4>
+            <select class="form-control", id="platformList" name="platformList" onChange="getFunctions()">
             </select>
+
+            <h4>Function</h4>
+            <select class="form-control", id="functionList" name="functionList">
+            </select>
+
             <br /><br />
             {{ form.submit()}}
         </form>
+
+        <script>
+            var platformFunctions = {{ platform_functions|safe }}
+
+            $(document).ready(function () {
+                var platformList = document.getElementById('platformList');
+                
+                for (var i = 0; i < Object.keys(platformFunctions).length; i++) {
+                    platformList.options[i] = new Option(Object.keys(platformFunctions)[i]);
+                }
+            })
+
+            function getFunctions() {
+                var platformList = document.getElementById('platformList');
+                var functionList = document.getElementById('functionList');
+                var platformSelected = platformList.options[platformList.selectedIndex].value;
+                
+                var platformSelectedFunctions = platformFunctions[platformSelected];
+                if (platformSelected == '') {
+                    functionList.options.length = 0;
+                } else {
+                    functionList.options.length = 0;
+                    for (var i = 0; i < platformSelectedFunctions.length; i++) {
+                        platformFunction = platformSelectedFunctions[i];
+                        functionList.options[i] = new Option(platformFunction);
+                    }
+                }
+            }
+        </script>
     </div>
 {% endblock content %}

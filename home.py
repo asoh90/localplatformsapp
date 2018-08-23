@@ -1,17 +1,11 @@
 from flask import Flask, render_template, url_for, flash, redirect, request
 from forms import SelectPlatformForm, SelectFunctionForm
+import options
 app = Flask(__name__)
 
 app.config['SECRET_KEY'] = 'a1ac33ec538de1e200d5f537e717ae6b'
 
-PLATFORMS = [
-    {
-        'display_name':'AppNexus',
-    },
-    {
-        'display_name':'The Trade Desk',
-    }
-]
+platform_functions = options.platform_functions
 
 @app.route("/", methods=['GET','POST'])
 @app.route("/home", methods=['GET','POST'])
@@ -19,7 +13,7 @@ def home():
     form = SelectPlatformForm()
     if form.validate_on_submit():
         return redirect(url_for("function", platform=form.platform.data))
-    return render_template('home.html', form=form, posts=PLATFORMS)
+    return render_template('home.html', form=form, platform_functions=platform_functions)
 
 @app.route("/function", methods=['GET','POST'])
 def function():

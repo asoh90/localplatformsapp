@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+    <head>
+        <!-- Latest compiled and minified CSS -->
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+        <!-- jQuery library -->
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+        <!-- Latest compiled JavaScript -->
+        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+
+        <script>
+            var platformFunctions = {
+                                        "--Select Platform--":[],
+                                        "AppNexus": ["add1","add2","add3"],
+                                        "The Trade Desk": ["query","add","edit"]
+                                    };
+                                    
+            $(document).ready(function () {
+                var platformList = document.getElementById('platformList');
+                
+                for (var i = 0; i < Object.keys(platformFunctions).length; i++) {
+                    platformList.options[i] = new Option(Object.keys(platformFunctions)[i]);
+                }
+            })
+        </script>
+    </head>
+    <body>
+        <div class="col-md-4">
+            <form method="POST" action="">
+                <h4>Platform</h4>
+                <select class="form-control", id="platformList" name="platformList" onChange="getFunctions()">
+                </select>
+
+                <h4>Function</h4>
+                <select class="form-control", id="functionList" name="functionList">
+                </select>
+            </form>
+        </div>
+
+        <script>
+            function getFunctions() {
+                var platformList = document.getElementById('platformList');
+                var functionList = document.getElementById('functionList');
+                var platformSelected = platformList.options[platformList.selectedIndex].value;
+                
+                var platformSelectedFunctions = platformFunctions[platformSelected];
+                if (platformSelected == '') {
+                    functionList.options.length = 0;
+                } else {
+                    functionList.options.length = 0;
+                    for (var i = 0; i < platformSelectedFunctions.length; i++) {
+                        platformFunction = platformSelectedFunctions[i];
+                        functionList.options[i] = new Option(platformFunction);
+                    }
+                }
+            }
+        </script>
+    </body>
+</html>
