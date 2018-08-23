@@ -2,6 +2,7 @@
     <head>
         <!-- Latest compiled and minified CSS -->
         <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+        <link rel="stylesheet" href="css/dropzone.css" />
         <!-- jQuery library -->
         <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
         <!-- Latest compiled JavaScript -->
@@ -20,6 +21,28 @@
                 for (var i = 0; i < Object.keys(platformFunctions).length; i++) {
                     platformList.options[i] = new Option(Object.keys(platformFunctions)[i]);
                 }
+
+                // Start drop zone
+                var dropzone = document.getElementById('dropzone');
+                
+                dropzone.ondrop = function(e) {
+                    // Prevents the file from opening when drop into the dropzone
+                    e.preventDefault();
+
+                    this.className = 'dropzone';
+                    upload(e.dataTransfer.files);
+                }
+
+                dropzone.ondragover = function() {
+                    this.className = 'dropzone dragover';
+                    return false;
+                }
+
+                dropzone.ondragleave = function() {
+                    this.className = 'dropzone';
+                    return false;
+                }
+                // End drop zone
             })
         </script>
     </head>
@@ -33,6 +56,12 @@
                 <h4>Function</h4>
                 <select class="form-control", id="functionList" name="functionList">
                 </select>
+                
+                <!-- Start drop zone -->
+                <h4>File to Upload</h4>
+                <div class="dropzone" id="dropzone">Drop files here to upload</div>
+                <div id="upload_results_element"></div>
+                <!-- End drop zone -->
             </form>
         </div>
 
@@ -47,12 +76,81 @@
                     functionList.options.length = 0;
                 } else {
                     functionList.options.length = 0;
+                    functionList.options[0] = new Option("--Select Function--")
                     for (var i = 0; i < platformSelectedFunctions.length; i++) {
                         platformFunction = platformSelectedFunctions[i];
-                        functionList.options[i] = new Option(platformFunction);
+                        functionList.options[i+1] = new Option(platformFunction);
                     }
                 }
             }
+            
+            // Start drop zone
+            function upload(files) {
+                if (files.length > 1) {
+                    alert("Please drop only one file");
+                    return;
+                }
+                
+                let upload_results = document.getElementById("upload_results_element");
+                let formData = new FormData(),
+                    xhr = new XMLHttpRequest();
+
+                var platformList = document.getElementById('platformList');
+                var functionList = document.getElementById('functionList');
+                
+                if (platformList.options[platformList.selectedIndex].value == "--Select Platform--") {
+                    alert("Please select a platform!");
+                    return;
+                }
+
+                if (functionList.options[functionList.selectedIndex] == null || functionList.options[functionList.selectedIndex].value == "--Select Function--") {
+                    alert("Please select a function!");
+                    return;
+                }
+                
+                var platformSelected = platformList.options[platformList.selectedIndex].value;
+                var functionSelected = functionList.options[functionList.selectedIndex].value;
+                var fileSelected = files[0]["name"];
+
+                console.log("Platform: " + platformSelected);
+                console.log("Function: " + functionSelected);
+                console.log("File: " + fileSelected);
+                confirm("Platform: " + platformSelected +
+                        "\nFunction: " + functionSelected +
+                        "\nFile: " + fileSelected +
+                        "\nConfirm upload?"
+                        );
+
+                formData.append("file",files[0]);
+
+                // xhr.onreadystatechange = function() {
+                //     if (xhr.readyState === XMLHttpRequest.DONE) {
+                //         alert(xhr.responseText);
+                //     }
+                // }
+
+                console.log(xhr.response);
+                upload_results.innerHTML = this.response;
+
+                console.log("Uploading file: " + formData);
+                xhr.open('GET', '/download/', true);
+                xhr.setRequestHeader('Content-Type', 'application/json;charset=utf-8;');
+                xhr.responseType = 'blob';
+                xhr.onload = function() {
+                    var blob = xhr.response;
+                    var fileName = xhr.getResponseHeader("Content-Disposition").match(/\sfilename="([^"]+)"(\s|$)/)[1];
+                    saveBlob(blob, fileName)
+                }
+                xhr.send(formData);
+            }
+
+            function saveBlob(blob, fileName) {
+                var a = document.createElement("a");
+                a.href = window.URL.createObjectURL(blob);
+                a.download = fileName;
+                a.click();
+            }
+            // End drop zone
         </script>
     </body>
 </html>

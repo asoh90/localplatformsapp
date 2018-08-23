@@ -1,0 +1,18 @@
+body {
+    font-family:"Arial", sans-serif;
+}
+
+.dropzone {
+    widows: 200px;
+    height:200px;
+    border:2px dashed #ccc;
+    color:#ccc;
+    line-height:200px;
+    text-align:center;
+}
+
+.dropzone.dragover {
+    border-color:#000;
+    color:#000;
+    background-color:#FFF3CA;
+}
