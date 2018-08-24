@@ -126,6 +126,9 @@
             }
 
             formData.append("file", fileSelected);
+            formData.append("file_name",fileSelectedName);
+            formData.append("function",functionSelected);
+            formData.append("platform", platformSelected);
             
             xhr.open('post','/download');
             xhr.send(formData);
