@@ -2,7 +2,7 @@
     <head>
         <!-- Latest compiled and minified CSS -->
         <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
-        <link rel="stylesheet" href="css/dropzone.css" />
+        <link rel="stylesheet" type="text/css" href="../static/css/dropzone.css" />
         <!-- jQuery library -->
         <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
         <!-- Latest compiled JavaScript -->
@@ -28,6 +28,7 @@
                 dropzone.ondrop = function(e) {
                     // Prevents the file from opening when drop into the dropzone
                     e.preventDefault();
+                    // console.log(e)
 
                     this.className = 'dropzone';
                     upload(e.dataTransfer.files);
@@ -60,7 +61,7 @@
                 <!-- Start drop zone -->
                 <h4>File to Upload</h4>
                 <div class="dropzone" id="dropzone">Drop files here to upload</div>
-                <div id="upload_results_element"></div>
+                <div id="dropzone_result" />
                 <!-- End drop zone -->
             </form>
         </div>
@@ -92,8 +93,6 @@
                 }
                 
                 let upload_results = document.getElementById("upload_results_element");
-                let formData = new FormData(),
-                    xhr = new XMLHttpRequest();
 
                 var platformList = document.getElementById('platformList');
                 var functionList = document.getElementById('functionList');
@@ -110,45 +109,34 @@
                 
                 var platformSelected = platformList.options[platformList.selectedIndex].value;
                 var functionSelected = functionList.options[functionList.selectedIndex].value;
-                var fileSelected = files[0]["name"];
+                var fileSelected = files[0];
+                var fileSelectedName = fileSelected["name"];
+                
+                var fileExtension = fileSelectedName.substr(fileSelectedName.length - 5);
+                if (fileExtension != ".xlsx") {
+                    alert("Please select a file with '.xlsx' extension!")
+                    return;
+                }
 
                 console.log("Platform: " + platformSelected);
                 console.log("Function: " + functionSelected);
-                console.log("File: " + fileSelected);
+                console.log("File: " + fileSelectedName);
                 confirm("Platform: " + platformSelected +
                         "\nFunction: " + functionSelected +
-                        "\nFile: " + fileSelected +
-                        "\nConfirm upload?"
-                        );
-
-                formData.append("file",files[0]);
-
-                // xhr.onreadystatechange = function() {
-                //     if (xhr.readyState === XMLHttpRequest.DONE) {
-                //         alert(xhr.responseText);
-                //     }
-                // }
-
-                console.log(xhr.response);
-                upload_results.innerHTML = this.response;
-
-                console.log("Uploading file: " + formData);
-                xhr.open('GET', '/download/', true);
-                xhr.setRequestHeader('Content-Type', 'application/json;charset=utf-8;');
-                xhr.responseType = 'blob';
+                        "\nFile: " + fileSelectedName +
+                        "\nConfirm upload?");
+                var xhr = new XMLHttpRequest();
+                var formData = new FormData();
+                
                 xhr.onload = function() {
-                    var blob = xhr.response;
-                    var fileName = xhr.getResponseHeader("Content-Disposition").match(/\sfilename="([^"]+)"(\s|$)/)[1];
-                    saveBlob(blob, fileName)
+                    var data = this.responseText;
+                    console.log(data)
                 }
-                xhr.send(formData);
-            }
 
-            function saveBlob(blob, fileName) {
-                var a = document.createElement("a");
-                a.href = window.URL.createObjectURL(blob);
-                a.download = fileName;
-                a.click();
+                formData.append("file", fileSelected);
+                
+                xhr.open('post','/download');
+                xhr.send(formData);
             }
             // End drop zone
         </script>
