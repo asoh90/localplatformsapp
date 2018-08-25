@@ -17,25 +17,33 @@ def home():
     #     return redirect(url_for("function", platform=form.platform.data))
     return render_template('home.html', form=form, platform_functions=platform_functions)
 
-@app.route("/function", methods=['GET','POST'])
-def function():
-    platform_selected = {'name':request.args['platform']}
-    print("Platform Selected: " + platform_selected['name'])
 
-    form = SelectFunctionForm()
-    return render_template('function.html', title="Select Function", platform=platform_selected)
-
+# Test page
 @app.route("/testhome", methods=['GET','POST'])
 def testhome():
     return render_template('testhome.html')
 
 @app.route("/download", methods=['POST'])
 def download():
+    # Get downloaded file
     fileob = request.files["file"]
     filename = secure_filename(fileob.filename)
     save_path = "{}/{}".format(app.config["DOWNLOAD_FOLDER"], filename)
     fileob.save(save_path)
+
+    # get platform
+    platformname = request.files
+
     return "file uploaded successfully"
 
 if __name__ == "__main__":
     app.run()
+
+# Test function
+# @app.route("/function", methods=['GET','POST'])
+# def function():
+#     platform_selected = {'name':request.args['platform']}
+#     print("Platform Selected: " + platform_selected['name'])
+
+#     form = SelectFunctionForm()
+#     return render_template('function.html', title="Select Function", platform=platform_selected)
