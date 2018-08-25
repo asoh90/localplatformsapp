@@ -24,9 +24,10 @@ def getAuthenticationCode():
                         'Password':PASSWORD,
                         'TokenExpirationInMinutes':3600
                     }).json()
-    auth_code = auth_data["Token"]
-
-    if auth_code is None:
-        print("Error getting TTD Auth Code. Please check <b>ttd.py</b> if credentials are correct.")
     
+    # to handle invalid credentials in the future
+    if auth_code is None:
+        return("ERROR: getting TTD Auth Code. Please check <b>ttd.py</b> if credentials are correct.")
+    
+    auth_code = auth_data["Token"]
     return auth_code

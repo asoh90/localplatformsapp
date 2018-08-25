@@ -128,18 +128,17 @@
                 var dropzone_result = document.getElementById('dropzone_result');
                 dropzone_result.innerHTML = data;
                 // Success upload
-                if (data == "file uploaded successfully") {
-                    dropzone_result.className = 'alert alert-success';
+                if (data.substring(0,5) == "ERROR") {
+                    dropzone_result.className = 'alert alert-danger';
                 }
                 // Fail upload
                 else {
-                    dropzone_result.className = 'alert alert-danger';
+                    dropzone_result.className = 'alert alert-success';
                 }
                 
             }
 
             formData.append("file", fileSelected);
-            formData.append("file_name",fileSelectedName);
             formData.append("function",functionSelected);
             formData.append("platform", platformSelected);
             
