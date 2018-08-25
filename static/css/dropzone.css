@@ -7,8 +7,15 @@ body {
     height:200px;
     border:2px dashed #ccc;
     color:#ccc;
-    line-height:200px;
+    /* line-height:200px; */
     text-align:center;
+}
+
+.dropzone input[type='file'] {
+    margin: auto;
+    color: transparent;
+    position: relative;
+    left: 95px;
 }
 
 .dropzone.dragover {
