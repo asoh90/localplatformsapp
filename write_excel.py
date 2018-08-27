@@ -1,8 +1,14 @@
 import pandas as pd
 from datetime import datetime
 
-def write_excel(write_df, platform):
+OUTPUT_PATH = "to_return/"
+
+def write(write_df, platform):
     current_date = datetime.now().strftime("%Y-%m-%d %H;%M;%S")
-    writer = pd.ExcelWriter(platform + "_" + current_date + ".xlsx")
+    file_name = OUTPUT_PATH + platform + "_" + current_date + ".xlsx"
+    writer = pd.ExcelWriter(file_name)
     write_df.to_excel(writer,'Sheet1',index=False)
     writer.save()
+
+    return {"message":"{} is ready for download".format(file_name),
+            "file":file_name}

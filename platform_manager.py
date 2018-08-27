@@ -1,8 +1,9 @@
-import ttd
+from platforms import *
 
-def callAPI(platform, function):
+def callAPI(platform, function, file_path):
+    output = {"message":"Platform not found"}
+
     if platform == "The Trade Desk":
-        if (function == "query"):
-            return ttd.getAuthenticationCode()
+        output = ttd.callAPI(function, file_path)
         
-    return ""
+    return output

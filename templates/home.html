@@ -17,7 +17,7 @@
         </select>
 
         <h4>Function</h4>
-        <select class="form-control", id="functionList" name="functionList">
+        <select class="form-control", id="functionList" name="functionList" onchange="query(this)">
         </select>
 
         <!-- Start drop zone -->
@@ -30,9 +30,10 @@
             or
             <input type = "file" id="browseFile" onchange="upload(this.files)"/>
         </div>
-        <div id="dropzone_result" />
         <!-- End drop zone -->
     </form>
+
+    <div id="dropzone_result" />
 
     <script>
         var platformFunctions = {{ platform_functions|safe }}
@@ -86,6 +87,7 @@
 
         // Start drop zone
         function upload(files) {
+            load();
             if (files.length > 1) {
                 alert("Please drop only one file");
                 return;
@@ -119,6 +121,28 @@
                     "\nFunction: " + functionSelected +
                     "\nFile: " + fileSelectedName +
                     "\nConfirm upload?");
+
+            process(fileSelected, functionSelected, platformSelected);
+        }
+
+        function query(selectedValue) {
+            load();
+
+            var value = selectedValue.value
+            if (value == "Query") {
+                var platformList = document.getElementById('platformList');
+                var functionList = document.getElementById('functionList');
+
+                var platformSelected = platformList.options[platformList.selectedIndex].value;
+                var functionSelected = functionList.options[functionList.selectedIndex].value;
+
+                confirm("Get all taxonomy from platform: " + platformSelected + " ?");
+
+                process(platformSelected, functionSelected, null);
+            }
+        }
+
+        function process(platformSelected, functionSelected, fileSelected) {
             var xhr = new XMLHttpRequest();
             var formData = new FormData();
             
@@ -128,7 +152,7 @@
                 var dropzone_result = document.getElementById('dropzone_result');
                 dropzone_result.innerHTML = data;
                 // Success upload
-                if (data.substring(0,5) == "ERROR") {
+                if (data.substring(0,5) == "ERROR" || data.includes("Error")) {
                     dropzone_result.className = 'alert alert-danger';
                 }
                 // Fail upload
@@ -142,8 +166,13 @@
             formData.append("function",functionSelected);
             formData.append("platform", platformSelected);
             
-            xhr.open('post','/download');
+            xhr.open('post','/process');
             xhr.send(formData);
+        }
+
+        function load() {
+            var dropzone_result = document.getElementById('dropzone_result');
+            dropzone_result.className = 'loader';
         }
         // End drop zone
     </script>
