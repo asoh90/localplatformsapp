@@ -40,10 +40,13 @@ def getAuthenticationCode():
                         'Password':PASSWORD,
                         'TokenExpirationInMinutes':3600
                     }).json()
-    
+
     # auth_code is null if credentials are incorrect
-    auth_code = auth_data["Token"]
-    return auth_code
+    try:
+        auth_code = auth_data["Token"]
+        return auth_code
+    except:
+        return auth_code
 
 # query all the third party data in Trade Desk system
 def getQueryAll():

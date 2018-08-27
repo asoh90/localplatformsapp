@@ -1,16 +1,16 @@
 from flask import Flask, render_template, url_for, flash, redirect, request, send_file
 from forms import SelectPlatformForm, SelectFunctionForm
 from werkzeug.utils import secure_filename
-import options
+import variables
 import platform_manager as pm
-import urllib3
 
 app = Flask(__name__)
 
-app.config['SECRET_KEY'] = 'a1ac33ec538de1e200d5f537e717ae6b'
-app.config["UPLOAD_FOLDER"] = "upload"
+app.config['SECRET_KEY'] = variables.SECRET_KEY
+app.config["UPLOAD_FOLDER"] = variables.UPLOAD_FOLDER
+RETURN_FOLDER = variables.RETURN_FOLDER
 
-platform_functions = options.platform_functions
+platform_functions = variables.platform_functions
 
 @app.route("/", methods=['GET','POST'])
 @app.route("/home", methods=['GET','POST'])
@@ -42,10 +42,19 @@ def process():
         fileob.save(save_path)
 
     output = pm.callAPI(platform, function, save_path)
-    output_message = output["message"]
+
+    # try:
+        # output_file = output["file"]
+        # return send_file(RETURN_FOLDER + output_file, as_attachment=True, attachment_filename=output_file)
+    # except:
+    #     return output["message"]
     output_file = output["file"]
-    return output_message
+    return send_file(RETURN_FOLDER + output_file, as_attachment=True, attachment_filename=output_file)
     
+
+@app.route("/test", methods=['GET','POST'])
+def test():
+    return send_file(RETURN_FOLDER + "The_Trade_Desk_2018-08-27_23;46;06.xlsx", as_attachment=True, attachment_filename="The_Trade_Desk_2018-08-27_23;46;06.xlsx")
 
 if __name__ == "__main__":
     app.run()

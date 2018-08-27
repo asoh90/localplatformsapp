@@ -126,10 +126,10 @@
         }
 
         function query(selectedValue) {
-            load();
-
             var value = selectedValue.value
             if (value == "Query") {
+                load();
+
                 var platformList = document.getElementById('platformList');
                 var functionList = document.getElementById('functionList');
 
@@ -150,13 +150,14 @@
                 var data = this.responseText;
 
                 var dropzone_result = document.getElementById('dropzone_result');
-                dropzone_result.innerHTML = data;
-                // Success upload
+                // Fail upload
                 if (data.substring(0,5) == "ERROR" || data.includes("Error")) {
+                    dropzone_result.innerHTML = data;
                     dropzone_result.className = 'alert alert-danger';
                 }
-                // Fail upload
+                // Success upload
                 else {
+                    dropzone_result.innerHTML = "Success!"
                     dropzone_result.className = 'alert alert-success';
                 }
                 
