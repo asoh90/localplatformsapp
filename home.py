@@ -3,6 +3,7 @@ from forms import SelectPlatformForm, SelectFunctionForm
 from werkzeug.utils import secure_filename
 import variables
 import platform_manager as pm
+import os
 
 app = Flask(__name__)
 
@@ -27,7 +28,7 @@ def testhome():
     return render_template('testhome.html')
 
 # when file gets dropped into the dropzone, or "Query" function is selected, run this
-@app.route("/process", methods=['POST'])
+@app.route("/process", methods=['GET','POST'])
 def process():
     # get fields
     platform = request.form['platform']
@@ -43,18 +44,33 @@ def process():
 
     output = pm.callAPI(platform, function, save_path)
 
-    # try:
-        # output_file = output["file"]
-        # return send_file(RETURN_FOLDER + output_file, as_attachment=True, attachment_filename=output_file)
-    # except:
-    #     return output["message"]
-    output_file = output["file"]
-    return send_file(RETURN_FOLDER + output_file, as_attachment=True, attachment_filename=output_file)
-    
+    # Returns file if no error message
+    try:
+        output_file = output["file"]
+        # return download_and_remove(output_file)
+        return send_file(RETURN_FOLDER + output_file, as_attachment=True, attachment_filename=output_file)
+    # If no file is returned, error message is returned instead
+    except:
+        return output["message"]
+
+# def download_and_remove(filename):
+#     print("Inside download_and_remove, filename is " + filename)
+#     path = os.path.join(RETURN_FOLDER, filename)
+
+#     def generate():
+#         with open(path) as f:
+#             yield from f
+
+#         os.remove(path)
+
+#     r = current_app.response_class(generate(), mimetype='text/csv')
+#     r.headers.set('Content-Disposition', 'attachment', filename='data.csv')
+#     return r
 
 @app.route("/test", methods=['GET','POST'])
 def test():
-    return send_file(RETURN_FOLDER + "The_Trade_Desk_2018-08-27_23;46;06.xlsx", as_attachment=True, attachment_filename="The_Trade_Desk_2018-08-27_23;46;06.xlsx")
+    print("I AM IN TEST")
+    # return send_file(RETURN_FOLDER + "The_Trade_Desk_2018-08-28_21;51;47.xlsx", as_attachment=True, attachment_filename="The_Trade_Desk_2018-08-28_21;51;47.xlsx")
 
 if __name__ == "__main__":
     app.run()

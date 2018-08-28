@@ -145,9 +145,10 @@
         function process(platformSelected, functionSelected, fileSelected) {
             var xhr = new XMLHttpRequest();
             var formData = new FormData();
-            
+
             xhr.onload = function() {
-                var data = this.responseText;
+                var blob = xhr.response;
+                var data = blobToString(blob);
 
                 var dropzone_result = document.getElementById('dropzone_result');
                 // Fail upload
@@ -157,18 +158,39 @@
                 }
                 // Success upload
                 else {
-                    dropzone_result.innerHTML = "Success!"
+                    var fileName = xhr.getResponseHeader("Content-Disposition").match(/\sfilename="([^"]+)"(\s|$)/)[1];
+
+                    dropzone_result.innerHTML = "Success!";
                     dropzone_result.className = 'alert alert-success';
+
+                    saveBlob(blob, fileName);
                 }
-                
             }
 
             formData.append("file", fileSelected);
             formData.append("function",functionSelected);
             formData.append("platform", platformSelected);
             
+            xhr.responseType = 'blob';
             xhr.open('post','/process');
             xhr.send(formData);
+        }
+
+        function saveBlob(blob, fileName) {
+            var a = document.createElement("a");
+            a.href = window.URL.createObjectURL(blob);
+            a.download = fileName;
+            a.click();
+        }
+
+        function blobToString(b) {
+            var u, x;
+            u = URL.createObjectURL(b);
+            x = new XMLHttpRequest();
+            x.open('GET', u, false); // although sync, you're not fetching over internet
+            x.send();
+            URL.revokeObjectURL(u);
+            return x.responseText;
         }
 
         function load() {
