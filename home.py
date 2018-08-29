@@ -10,12 +10,16 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = variables.SECRET_KEY
 app.config["UPLOAD_FOLDER"] = variables.UPLOAD_FOLDER
 RETURN_FOLDER = variables.RETURN_FOLDER
+UPLOAD_FOLDER = variables.UPLOAD_FOLDER
 
 platform_functions = variables.platform_functions
 
 @app.route("/", methods=['GET','POST'])
 @app.route("/home", methods=['GET','POST'])
 def home():
+    # delete all files in upload and to_return folders
+    delete_upload_and_to_return_files()
+
     form = SelectPlatformForm()
     # if form.validate_on_submit():
     #     return redirect(url_for("function", platform=form.platform.data))
@@ -47,30 +51,27 @@ def process():
     # Returns file if no error message
     try:
         output_file = output["file"]
-        # return download_and_remove(output_file)
-        return send_file(RETURN_FOLDER + output_file, as_attachment=True, attachment_filename=output_file)
+        return send_file(RETURN_FOLDER + "/" + output_file, as_attachment=True, attachment_filename=output_file)
     # If no file is returned, error message is returned instead
     except:
         return output["message"]
-
-# def download_and_remove(filename):
-#     print("Inside download_and_remove, filename is " + filename)
-#     path = os.path.join(RETURN_FOLDER, filename)
-
-#     def generate():
-#         with open(path) as f:
-#             yield from f
-
-#         os.remove(path)
-
-#     r = current_app.response_class(generate(), mimetype='text/csv')
-#     r.headers.set('Content-Disposition', 'attachment', filename='data.csv')
-#     return r
 
 @app.route("/test", methods=['GET','POST'])
 def test():
     print("I AM IN TEST")
     # return send_file(RETURN_FOLDER + "The_Trade_Desk_2018-08-28_21;51;47.xlsx", as_attachment=True, attachment_filename="The_Trade_Desk_2018-08-28_21;51;47.xlsx")
+
+# ------------------------------- Non route functions -----------------------------------------
+def delete_upload_and_to_return_files():
+    return_filelist = [return_file for return_file in os.listdir(RETURN_FOLDER) if return_file.endswith(".xlsx")]
+    for return_file in return_filelist:
+        print("RETURN File: " + return_file)
+        os.remove(os.path.join(RETURN_FOLDER, return_file))
+    
+    upload_filelist = [upload_file for upload_file in os.listdir(UPLOAD_FOLDER) if upload_file.endswith(".xlsx")]
+    for upload_file in upload_filelist:
+        print("UPLOAD File: " + upload_file)
+        os.remove(os.path.join(UPLOAD_FOLDER, upload_file))
 
 if __name__ == "__main__":
     app.run()
