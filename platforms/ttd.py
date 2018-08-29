@@ -1,5 +1,6 @@
 import requests
 import write_excel
+import variables
 import pandas as pd
 
 # API URL address
@@ -8,8 +9,8 @@ URL_CREATE = "https://api.thetradedesk.com/v3/thirdpartydata"
 URL_EDIT = "https://api.thetradedesk.com/v3/thirdpartydata"
 URL_QUERY = "https://api.thetradedesk.com/v3/thirdpartydata/query"
 
-# File to return folder
-TO_RETURN = "/to_return/"
+# Folder to retrieve uploaded file
+UPLOAD_FOLDER = variables.UPLOAD_FOLDER
 
 # Login credentials
 LOGIN = "dataops@eyeota.com"
@@ -22,10 +23,12 @@ PROVIDER_ID = "eyeota"
 # callAPI function will decide what function in ttd to call. platform_manager.py will call this function 
 # if platform selected is "The Trade Desk"
 def callAPI(function, file_path):
+    print("In Call API")
     output = "ERROR: option is not available"
     if (function == "Query"):
         output = getQueryAll()
-
+    else:
+        output = read_file(file_path, function)
     return output
 
 # get authentication code. return None if credentials fail
@@ -65,11 +68,42 @@ def getQueryAll():
                         'PageSize':None
                     }).json()
     # write to file
-    return processJsonOutput(query_data)
+    return processJsonOutput(query_data, "query")
 
+def read_file(file_path, function):
+    print("In read file")
+    read_df = pd.read_excel(file_path, None)
 
+    segment_id_list = read_df['Segment ID']
+    parent_segment_id_list = read_df['Parent Segment ID']
+    segment_name_list = read_df['Segment Name']
+    segment_description_list = read_df['Segment Description']
+    buyable_list = read_df['Buyable']
+
+    for row_num in segment_id_list.index:
+        if row_num < 1:
+            continue
+        
+        provider_id = PROVIDER_ID
+        provider_element_id = segment_id_list[i]
+        parent_element_id = parent_segment_id_list[i]
+        display_name = segment_name_list[i]
+        buyable = buyable_list[i]
+        if (buyable.lower == "buyable"):
+            buyable = True
+        else:
+            buyable = False
+        description = segment_description_list[i]
+
+        print("Segment ID: " + provider_element_id)
+        print("Parent Segment ID: " + parent_element_id)
+        print("Segment Name " + display_name)
+        print("Buyable: " + buyable)
+        print("Segment Description: " + description)
+        print("\n")
+        
 # based on the output from TTD API, format them into json format to write to file
-def processJsonOutput(json_output):
+def processJsonOutput(json_output, function):
     write_provider_id = []
     write_provider_element_id = []
     write_parent_element_id = []
@@ -125,4 +159,4 @@ def processJsonOutput(json_output):
                                 "Description":write_description,
                                 "Audience Size":write_audience_size
                             })
-    return write_excel.write(write_df, "The_Trade_Desk")
+    return write_excel.write(write_df, "The_Trade_Desk_" + function)

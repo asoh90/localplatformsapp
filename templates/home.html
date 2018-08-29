@@ -87,7 +87,6 @@
 
         // Start drop zone
         function upload(files) {
-            load();
             if (files.length > 1) {
                 alert("Please drop only one file");
                 return;
@@ -105,6 +104,8 @@
                 alert("Please select a function!");
                 return;
             }
+
+            load();
             
             var platformSelected = platformList.options[platformList.selectedIndex].value;
             var functionSelected = functionList.options[functionList.selectedIndex].value;
@@ -122,7 +123,7 @@
                     "\nFile: " + fileSelectedName +
                     "\nConfirm upload?");
 
-            process(fileSelected, functionSelected, platformSelected);
+            process(platformSelected, functionSelected, fileSelected);
         }
 
         function query(selectedValue) {
@@ -158,19 +159,27 @@
                 }
                 // Success upload
                 else {
-                    var response = xhr.getResponseHeader("Content-Disposition").split("filename=");
-                    var fileName = response[response.length-1];
+                    var response = xhr.getResponseHeader("Content-Disposition");
+                    if (response != null) {
+                        response = response.split("filename=")
 
-                    dropzone_result.innerHTML = "Success!";
-                    dropzone_result.className = 'alert alert-success';
+                        var fileName = response[response.length-1];
 
-                    saveBlob(blob, fileName);
+                        dropzone_result.innerHTML = "Success!";
+                        dropzone_result.className = 'alert alert-success';
+
+                        saveBlob(blob, fileName);
+                    }
                 }
             }
 
             formData.append("file", fileSelected);
             formData.append("function",functionSelected);
             formData.append("platform", platformSelected);
+
+            console.log("File: " + fileSelected);
+            console.log("Function: " + functionSelected);
+            console.log("Platform: " + platformSelected);
             
             xhr.responseType = 'blob';
             xhr.open('post','/process');

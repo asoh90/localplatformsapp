@@ -35,6 +35,7 @@ def testhome():
 @app.route("/process", methods=['GET','POST'])
 def process():
     # get fields
+    print("In process")
     platform = request.form['platform']
     function = request.form['function']
     save_path = None
@@ -67,11 +68,6 @@ def delete_upload_and_to_return_files():
     for return_file in return_filelist:
         print("RETURN File: " + return_file)
         os.remove(os.path.join(RETURN_FOLDER, return_file))
-    
-    upload_filelist = [upload_file for upload_file in os.listdir(UPLOAD_FOLDER) if upload_file.endswith(".xlsx")]
-    for upload_file in upload_filelist:
-        print("UPLOAD File: " + upload_file)
-        os.remove(os.path.join(UPLOAD_FOLDER, upload_file))
 
 if __name__ == "__main__":
     app.run()
