@@ -158,7 +158,8 @@
                 }
                 // Success upload
                 else {
-                    var fileName = xhr.getResponseHeader("Content-Disposition").match(/\sfilename="([^"]+)"(\s|$)/)[1];
+                    var response = xhr.getResponseHeader("Content-Disposition").split("filename=");
+                    var fileName = response[response.length-1];
 
                     dropzone_result.innerHTML = "Success!";
                     dropzone_result.className = 'alert alert-success';
