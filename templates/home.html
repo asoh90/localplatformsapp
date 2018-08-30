@@ -152,23 +152,26 @@
                 var data = blobToString(blob);
 
                 var dropzone_result = document.getElementById('dropzone_result');
-                // Fail upload
-                if (data.substring(0,5) == "ERROR" || data.includes("Error")) {
-                    dropzone_result.innerHTML = data;
-                    dropzone_result.className = 'alert alert-danger';
-                }
                 // Success upload
-                else {
-                    var response = xhr.getResponseHeader("Content-Disposition");
-                    if (response != null) {
-                        response = response.split("filename=")
+                var response = xhr.getResponseHeader("Content-Disposition");
+                if (response != null) {
+                    response = response.split("filename=");
+                    var output_message = xhr.getResponseHeader("message");
 
-                        var fileName = response[response.length-1];
+                    var fileName = response[response.length-1];
 
-                        dropzone_result.innerHTML = "Success!";
-                        dropzone_result.className = 'alert alert-success';
+                    dropzone_result.innerHTML = output_message;
+                    dropzone_result.className = 'alert alert-success';
 
-                        saveBlob(blob, fileName);
+                    saveBlob(blob, fileName);
+                } else {
+                    // Fail upload
+                    if (data.substring(0,5) == "ERROR" || data.includes("Error")) {
+                        dropzone_result.innerHTML = data;
+                        dropzone_result.className = 'alert alert-danger';
+                    } else {
+                        dropzone_result.innerHTML = data;
+                        dropzone_result.className = 'alert alert-info';
                     }
                 }
             }

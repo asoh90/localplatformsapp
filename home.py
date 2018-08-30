@@ -35,7 +35,6 @@ def testhome():
 @app.route("/process", methods=['GET','POST'])
 def process():
     # get fields
-    print("In process")
     platform = request.form['platform']
     function = request.form['function']
     save_path = None
@@ -48,11 +47,14 @@ def process():
         fileob.save(save_path)
 
     output = pm.callAPI(platform, function, save_path)
+    print(output)
 
     # Returns file if no error message
     try:
         output_file = output["file"]
-        return send_file(RETURN_FOLDER + "/" + output_file, as_attachment=True, attachment_filename=output_file)
+        response = send_file(RETURN_FOLDER + "/" + output_file, as_attachment=True, attachment_filename=output_file)
+        response.headers['message'] = output["message"]
+        return response
     # If no file is returned, error message is returned instead
     except:
         return output["message"]
@@ -66,7 +68,6 @@ def test():
 def delete_upload_and_to_return_files():
     return_filelist = [return_file for return_file in os.listdir(RETURN_FOLDER) if return_file.endswith(".xlsx")]
     for return_file in return_filelist:
-        print("RETURN File: " + return_file)
         os.remove(os.path.join(RETURN_FOLDER, return_file))
 
 if __name__ == "__main__":

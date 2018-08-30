@@ -23,7 +23,6 @@ PROVIDER_ID = "eyeota"
 # callAPI function will decide what function in ttd to call. platform_manager.py will call this function 
 # if platform selected is "The Trade Desk"
 def callAPI(function, file_path):
-    print("In Call API")
     output = "ERROR: option is not available"
     if (function == "Query"):
         output = getQueryAll()
@@ -71,8 +70,7 @@ def getQueryAll():
     return processJsonOutput(query_data, "query")
 
 def read_file(file_path, function):
-    print("In read file")
-    read_df = pd.read_excel(file_path, None)
+    read_df = pd.read_excel(file_path, sheet_name=0)
 
     segment_id_list = read_df['Segment ID']
     parent_segment_id_list = read_df['Parent Segment ID']
@@ -80,27 +78,57 @@ def read_file(file_path, function):
     segment_description_list = read_df['Segment Description']
     buyable_list = read_df['Buyable']
 
-    for row_num in segment_id_list.index:
-        if row_num < 1:
-            continue
-        
-        provider_id = PROVIDER_ID
-        provider_element_id = segment_id_list[i]
-        parent_element_id = parent_segment_id_list[i]
-        display_name = segment_name_list[i]
-        buyable = buyable_list[i]
-        if (buyable.lower == "buyable"):
-            buyable = True
-        else:
-            buyable = False
-        description = segment_description_list[i]
+    output = None
+    result_list = []
+    try:
+        for row_num in segment_id_list.index:
+            if row_num < 1:
+                continue
+            
+            provider_element_id = segment_id_list[row_num]
+            parent_element_id = parent_segment_id_list[row_num]
+            display_name = segment_name_list[row_num]
+            buyable = buyable_list[row_num]
+            if (buyable.lower == "buyable"):
+                buyable = True
+            else:
+                buyable = False
+            description = segment_description_list[row_num]
+            
+            # to do - call for add or edit function based on the function
+            output = add_or_edit(provider_element_id, parent_element_id, display_name, buyable, description, function)
+            result_list.append(output)
+    except Exception as e:
+        print("ERROR: " + e)
+    finally: 
+        json_output = {'Result':result_list}
+        return processJsonOutput(json_output, function)
 
-        print("Segment ID: " + provider_element_id)
-        print("Parent Segment ID: " + parent_element_id)
-        print("Segment Name " + display_name)
-        print("Buyable: " + buyable)
-        print("Segment Description: " + description)
-        print("\n")
+# Add function returns a json format for each call, to be appended to the results before processJsonOutput
+def add_or_edit(provider_element_id, parent_element_id, display_name, buyable, description, function):
+    auth_code = getAuthenticationCode()
+    if (auth_code == None):
+        return{'message':"ERROR: getting TTD Auth Code. Please check <b>ttd.py</b> if credentials are correct."}
+
+    if (function == "Add"):
+        output_data = requests.post(URL_CREATE,
+                        headers={
+                            'Content-Type':'application/json',
+                            'TTD-Auth': auth_code
+                        },
+                        json={
+                            'ProviderId':PROVIDER_ID,
+                            'ProviderElementId':provider_element_id,
+                            'ParentElementId':parent_element_id,
+                            'DisplayName':display_name,
+                            'Buyable':buyable,
+                            'Description':description
+                        }).json()
+        return output_data
+    elif (function == "Edit"):
+        url_to_call = URL_EDIT
+    else:
+        return{'message':'ERROR: no such function ' + function}
         
 # based on the output from TTD API, format them into json format to write to file
 def processJsonOutput(json_output, function):
@@ -152,9 +180,9 @@ def processJsonOutput(json_output, function):
 
     write_df = pd.DataFrame({
                                 "Provider ID":write_provider_id,
-                                "Provider Element ID":write_provider_element_id,
-                                "Parent Element ID":write_parent_element_id,
-                                "Display Name":write_display_name,
+                                "Segment ID":write_provider_element_id,
+                                "Parent Segment ID":write_parent_element_id,
+                                "Segment Name":write_display_name,
                                 "Buyable":write_buyable,
                                 "Description":write_description,
                                 "Audience Size":write_audience_size

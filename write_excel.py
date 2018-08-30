@@ -11,7 +11,8 @@ def write(write_df, platform):
     write_df.to_excel(writer,'Sheet1',index=False)
     writer.save()
 
-    return {"file":file_name}
+    return {"message":"{} has been downloaded".format(file_name),
+            "file":file_name}
 
 def delete(file_path, file_name):
     file_list = [file for file in os.listdir(file_path) if return_file.endswith(".xlsx")]
