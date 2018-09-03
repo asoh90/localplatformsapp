@@ -70,7 +70,7 @@ def getQueryAll():
     return processJsonOutput(query_data, "query")
 
 def read_file(file_path, function):
-    read_df = pd.read_excel(file_path, sheet_name=0)
+    read_df = pd.read_excel(file_path, sheet_name="TTD")
 
     segment_id_list = read_df['Segment ID']
     parent_segment_id_list = read_df['Parent Segment ID']
