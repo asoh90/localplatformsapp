@@ -19,6 +19,9 @@ PASSWORD = "Dat@ops1"
 # Provider ID
 PROVIDER_ID = "eyeota"
 
+# Parent Provider ID to ignore (i.e. not append to child name)
+TEMP_PROVIDER_ID_TO_IGNORE = ['', '1', 'ROOT', 'None']
+
 
 # callAPI function will decide what function in ttd to call. platform_manager.py will call this function 
 # if platform selected is "The Trade Desk"
@@ -70,7 +73,7 @@ def getQueryAll():
     return processJsonOutput(query_data, "query")
 
 def read_file(file_path, function):
-    read_df = pd.read_excel(file_path, sheet_name="TTD")
+    read_df = pd.read_excel(file_path, sheet_name="TTD", skiprows=[1])
 
     segment_id_list = read_df['Segment ID']
     parent_segment_id_list = read_df['Parent Segment ID']
@@ -140,35 +143,32 @@ def processJsonOutput(json_output, function):
     write_description = []
     write_audience_size = []
 
+    segment_dictionary = {}
+
+    # Load all the segments into a dictionary to formulate full segment name later
     for row in json_output['Result']:
-        provider_id = row['ProviderId']
-        provider_element_id = row['ProviderElementId']
-        parent_element_id = row['ParentElementId']
-        display_name = row['DisplayName']
+        provider_element_id = str(row['ProviderElementId'])
+        parent_element_id = str(row['ParentElementId'])
+        display_name = str(row['DisplayName'])
+
+        segment_dictionary[provider_element_id] = {"display_name":display_name,"parent_element_id":parent_element_id}
+
+    # Print results
+    for row in json_output['Result']:
+        provider_id = str(row['ProviderId'])
+        provider_element_id = str(row['ProviderElementId'])
+        parent_element_id = str(row['ParentElementId'])
+        display_name = str(row['DisplayName'])
         buyable = row['Buyable']
-        description = row['Description']
-        audience_size = row['AudienceSize']
+        description = str(row['Description'])
+        audience_size = str(row['AudienceSize'])
 
-        if not provider_id is None:
-            provider_id.encode('utf-8').strip()
+        # loop to get full segment name
+        temp_provider_id = parent_element_id
 
-        if not provider_element_id is None:
-            provider_element_id = provider_element_id.encode('utf-8').strip()
-        
-        if not parent_element_id is None:
-            parent_element_id = parent_element_id.encode('utf-8').strip()
-
-        if not display_name is None:
-            display_name = display_name.encode('utf-8').strip()
-
-        if not buyable is None and not isinstance(buyable, bool):
-            buyable = buyable.encode('utf-8').strip()
-        
-        if not description is None:
-            description = description.encode('utf-8').strip()
-
-        if not audience_size is None and not isinstance(audience_size, int):
-            audience_size = audience_size.encode('utf-8').strip()
+        while temp_provider_id in segment_dictionary and not temp_provider_id in TEMP_PROVIDER_ID_TO_IGNORE:
+            display_name = segment_dictionary[temp_provider_id]["display_name"] + " - " + display_name
+            temp_provider_id = segment_dictionary[temp_provider_id]["parent_element_id"]
 
         write_provider_id.append(provider_id)
         write_provider_element_id.append(provider_element_id)
