@@ -20,7 +20,7 @@ def home():
     # delete all files in upload and to_return folders
     delete_upload_and_to_return_files()
     credentials = app.config.get['credentials']
-    if credentials = None:
+    if credentials == None:
         render_template('error.html')
     
     variables.read_credentials(credentials)
@@ -77,6 +77,9 @@ def delete_upload_and_to_return_files():
 
 if __name__ == "__main__":
     app.config['credentials'] = sys.argv[1]
+    port = 5000
+    url = "http://127.0.0.1:{0}".format(port)
+    threading.Timer(1.25, lambda: webbrowser.open(url)).start()
     app.run()
 
 # Test function
