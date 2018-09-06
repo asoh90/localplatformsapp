@@ -5,6 +5,7 @@ import variables
 import platform_manager as pm
 import os
 import random, threading, webbrowser
+import sys
 
 app = Flask(__name__)
 
@@ -19,7 +20,7 @@ platform_functions = variables.platform_functions
 def home():
     # delete all files in upload and to_return folders
     delete_upload_and_to_return_files()
-    credentials = app.config.get['credentials']
+    credentials = app.config.get('credentials')
     if credentials == None:
         render_template('error.html')
     

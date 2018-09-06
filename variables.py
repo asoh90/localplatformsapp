@@ -8,13 +8,22 @@ platform_functions = {
                         "--Select Platform--":[],
                         "AppNexus": ["add1","add2","add3"],
                         "The Trade Desk": ["Query","Add","Edit"]
-                    };
+                    }
 
 def read_credentials(input):
-    for input_row in input.split("|")
-        for input_detail in input_row.split(":")
-            platform = input_detail[0]
-            key = input_detail[1]
-            value = input_detail[2]
+    input_list = input.split("|")
 
+    for input_row in input_list:
+        # print("input row: " + input_row)
+        input_row_list = input_row.split(":")
+
+        platform = input_row_list[0]
+        key = input_row_list[1]
+        value = input_row_list[2]
+
+        if platform in login_credentials:
+            login_credentials[platform][key] = value
+        else:
             login_credentials[platform] = {key:value}
+
+    # print(login_credentials)

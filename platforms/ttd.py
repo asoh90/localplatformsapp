@@ -13,8 +13,8 @@ URL_QUERY = "https://api.thetradedesk.com/v3/thirdpartydata/query"
 UPLOAD_FOLDER = variables.UPLOAD_FOLDER
 
 # Login credentials
-LOGIN = variables.login_credentials['TTD']['Login']
-PASSWORD = variables.login_credentials['TTD']['PW']
+login = None
+password = None
 
 # Provider ID
 PROVIDER_ID = "eyeota"
@@ -26,6 +26,10 @@ TEMP_PROVIDER_ID_TO_IGNORE = ['', '1', 'ROOT', 'None']
 # callAPI function will decide what function in ttd to call. platform_manager.py will call this function 
 # if platform selected is "The Trade Desk"
 def callAPI(function, file_path):
+    # Login credentials
+    global login; login = variables.login_credentials['TTD']['Login']
+    global password; password = variables.login_credentials['TTD']['PW']
+
     output = "ERROR: option is not available"
     if (function == "Query"):
         output = getQueryAll()
@@ -41,8 +45,8 @@ def getAuthenticationCode():
                         'Content-Type':'application/json'
                     },
                     json={
-                        'Login':LOGIN,
-                        'Password':PASSWORD,
+                        'Login':login,
+                        'Password':password,
                         'TokenExpirationInMinutes':3600
                     }).json()
 
