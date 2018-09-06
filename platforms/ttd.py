@@ -13,8 +13,8 @@ URL_QUERY = "https://api.thetradedesk.com/v3/thirdpartydata/query"
 UPLOAD_FOLDER = variables.UPLOAD_FOLDER
 
 # Login credentials
-LOGIN = "dataops@eyeota.com"
-PASSWORD = "Dat@ops1"
+LOGIN = variables.login_credentials['TTD']['Login']
+PASSWORD = variables.login_credentials['TTD']['PW']
 
 # Provider ID
 PROVIDER_ID = "eyeota"

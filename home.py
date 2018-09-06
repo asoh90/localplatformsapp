@@ -4,6 +4,7 @@ from werkzeug.utils import secure_filename
 import variables
 import platform_manager as pm
 import os
+import random, threading, webbrowser
 
 app = Flask(__name__)
 
@@ -15,10 +16,14 @@ UPLOAD_FOLDER = variables.UPLOAD_FOLDER
 platform_functions = variables.platform_functions
 
 @app.route("/", methods=['GET','POST'])
-@app.route("/home", methods=['GET','POST'])
 def home():
     # delete all files in upload and to_return folders
     delete_upload_and_to_return_files()
+    credentials = app.config.get['credentials']
+    if credentials = None:
+        render_template('error.html')
+    
+    variables.read_credentials(credentials)
 
     form = SelectPlatformForm()
     # if form.validate_on_submit():
@@ -71,6 +76,7 @@ def delete_upload_and_to_return_files():
         os.remove(os.path.join(RETURN_FOLDER, return_file))
 
 if __name__ == "__main__":
+    app.config['credentials'] = sys.argv[1]
     app.run()
 
 # Test function
