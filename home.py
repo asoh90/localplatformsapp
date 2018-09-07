@@ -65,6 +65,10 @@ def process():
     except:
         return output["message"]
 
+@app.route("/downloaduploadtemplate", methods=['GET','POST'])
+def download_upload_template():
+    return send_file("UploadTemplate.xlsx", as_attachment=True, attachment_filename="UploadTemplate.xlsx")
+
 @app.route("/test", methods=['GET','POST'])
 def test():
     print("I AM IN TEST")

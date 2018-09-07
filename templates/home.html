@@ -22,13 +22,15 @@
 
         <!-- Start drop zone -->
         <h4>File to Upload</h4>
-                
+        
+        <input type="button" value="Download Template to Upload" onclick="window.location.href='/downloaduploadtemplate'" />
+
         <div class="dropzone" id="dropzone">
             <br /><br /><br />
             Drop files here to upload
             <br />
             or
-            <input type = "file" id="browseFile" onchange="upload(this.files)"/>
+            <input type = "file" id="browseFile" onchange="upload(this.files)"/><br />
         </div>
         <!-- End drop zone -->
     </form>
