@@ -6,8 +6,15 @@ login_credentials = {}
 
 platform_functions = {
                         "--Select Platform--":[],
-                        "AppNexus": ["add1","add2","add3"],
-                        "The Trade Desk": ["Query","Add","Edit"]
+                        "AppNexus": {"level":2,
+                                    "functions": {
+                                        "Segments":["Add Public Segments","Add Private Segments","Edit Segments","Query Segments"],
+                                        "Segment Billings":["Add Segment Billings","Edit Segment Billings"]
+                                        }
+                                    },
+                        "The Trade Desk": {"level":1,
+                                            "functions":["Add","Edit","Query"]
+                                        }
                     }
 
 def read_credentials(input):

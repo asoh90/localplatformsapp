@@ -80,9 +80,31 @@
             } else {
                 functionList.options.length = 0;
                 functionList.options[0] = new Option("--Select Function--");
-                for (var i = 0; i < platformSelectedFunctions.length; i++) {
-                    platformFunction = platformSelectedFunctions[i];
-                    functionList.options[i+1] = new Option(platformFunction);
+
+                var functionLevel = parseInt(platformSelectedFunctions["level"]);
+                if (functionLevel == 1) {
+                    var platformFunctionList = platformSelectedFunctions["functions"];
+                    for (var i = 0; i < platformFunctionList.length; i++) {
+                        platformFunction = platformFunctionList[i];
+
+                        functionList.options[i+1] = new Option(platformFunction);
+                    }
+                } else if (functionLevel == 2) {
+                    var platformFunctionList = platformSelectedFunctions["functions"];
+                    for (var i = 0; i < Object.keys(platformFunctionList).length; i++) {
+                        var platformFunctionHeader = Object.keys(platformFunctionList)[i];
+
+                        var optGroup = document.createElement('optgroup');
+                        optGroup.label = platformFunctionHeader;
+
+                        var platformFunctionRow = platformFunctionList[platformFunctionHeader];
+                        for (var j = 0; j < platformFunctionRow.length; j++) {
+                            optGroup.appendChild(new Option(platformFunctionRow[j]));
+                            console.log(platformFunctionRow[j]);
+                        }
+                        console.log("After new option");
+                        functionList.appendChild(optGroup);
+                    }
                 }
             }
         }
