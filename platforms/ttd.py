@@ -3,11 +3,12 @@ import write_excel
 import variables
 import pandas as pd
 
-# API URL address
-URL_AUTHENTICATION = "https://api.thetradedesk.com/v3/authentication"
-URL_CREATE = "https://api.thetradedesk.com/v3/thirdpartydata"
-URL_EDIT = "https://api.thetradedesk.com/v3/thirdpartydata"
-URL_QUERY = "https://api.thetradedesk.com/v3/thirdpartydata/query"
+# API URL
+URL_HOME = "https://api.thetradedesk.com/v3/"
+URL_AUTHENTICATION = URL_HOME + "authentication"
+URL_CREATE = URL_HOME + "thirdpartydata"
+URL_EDIT = URL_HOME + "thirdpartydata"
+URL_QUERY = URL_HOME + "thirdpartydata/query"
 
 # Folder to retrieve uploaded file
 UPLOAD_FOLDER = variables.UPLOAD_FOLDER

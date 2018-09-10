@@ -45,7 +45,7 @@ def process():
     function = request.form['function']
     save_path = None
 
-    if function != "Query":
+    if not "Query" in function:
         # Get downloaded file
         fileob = request.files["file"]
         filename = secure_filename(fileob.filename)
@@ -53,7 +53,7 @@ def process():
         fileob.save(save_path)
 
     output = pm.callAPI(platform, function, save_path)
-    print(output)
+    # print(output)
 
     # Returns file if no error message
     try:

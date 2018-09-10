@@ -100,9 +100,8 @@
                         var platformFunctionRow = platformFunctionList[platformFunctionHeader];
                         for (var j = 0; j < platformFunctionRow.length; j++) {
                             optGroup.appendChild(new Option(platformFunctionRow[j]));
-                            console.log(platformFunctionRow[j]);
+                            // console.log(platformFunctionRow[j]);
                         }
-                        console.log("After new option");
                         functionList.appendChild(optGroup);
                     }
                 }
@@ -152,18 +151,18 @@
 
         function query(selectedValue) {
             var value = selectedValue.value
-            if (value == "Query") {
-                load();
-
+            if (value.includes("Query")) {
                 var platformList = document.getElementById('platformList');
                 var functionList = document.getElementById('functionList');
 
                 var platformSelected = platformList.options[platformList.selectedIndex].value;
                 var functionSelected = functionList.options[functionList.selectedIndex].value;
 
-                confirm("Get all taxonomy from platform: " + platformSelected + " ?");
-
-                process(platformSelected, functionSelected, null);
+                var userConfirm = confirm(value + " from platform: " + platformSelected + " ?");
+                if (userConfirm) {
+                    load();
+                    process(platformSelected, functionSelected, null);
+                }
             }
         }
 

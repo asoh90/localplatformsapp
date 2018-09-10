@@ -8,7 +8,8 @@ platform_functions = {
                         "--Select Platform--":[],
                         "AppNexus": {"level":2,
                                     "functions": {
-                                        "Segments":["Add Public Segments","Add Private Segments","Edit Segments","Query Segments"],
+                                        "Segments":["Add Segments","Edit Segments","Query All Segments"],
+                                        "Segments Troubleshoot":["Add Existing Segments to Specific Buyer Member","Retrieve Segment IDs","Retrieve Buyer Member Segments"],
                                         "Segment Billings":["Add Segment Billings","Edit Segment Billings"]
                                         }
                                     },
