@@ -28,8 +28,11 @@ TEMP_PROVIDER_ID_TO_IGNORE = ['', '1', 'ROOT', 'None']
 # if platform selected is "The Trade Desk"
 def callAPI(function, file_path):
     # Login credentials
-    global login; login = variables.login_credentials['TTD']['Login']
-    global password; password = variables.login_credentials['TTD']['PW']
+    try:
+        global login; login = variables.login_credentials['TTD']['Login']
+        global password; password = variables.login_credentials['TTD']['PW']
+    except:
+        return {"message":"ERROR: Incorrect login credentials! Please download 'asoh-flask-deploy.sh' file from <a href='https://eyeota.atlassian.net/wiki/pages/viewpageattachments.action?pageId=127336529&metadataLink=true'>Confluence</a> again!>"}
 
     output = "ERROR: option is not available"
     if (function == "Query"):

@@ -25,9 +25,13 @@ auth_token = None
 RETRIEVE_SEGMENTS_NUM_ELEMENTS = 100
 
 def callAPI(function, file_path):
-    # Login credentials
-    global login; login = variables.login_credentials['AppNexus']['Login']
-    global password; password = variables.login_credentials['AppNexus']['PW']
+    try:
+        # Login credentials
+        global login; login = variables.login_credentials['AppNexus']['Login']
+        global password; password = variables.login_credentials['AppNexus']['PW']
+    except:
+        return {"message":"ERROR: Incorrect login credentials! Please download 'asoh-flask-deploy.sh' file from <a href='https://eyeota.atlassian.net/wiki/pages/viewpageattachments.action?pageId=127336529&metadataLink=true'>Confluence</a> again!>"}
+
 
     output = {"message":"ERROR: option is not available"}
     authenticate()
