@@ -7,8 +7,8 @@ import os
 MEMBER_ID = 1706
 
 # API URL
-URL_HOME = 'https://api.appnexus.com/'
-# URL_HOME = 'https://api-test.appnexus.com/'
+# URL_HOME = 'https://api.appnexus.com/'
+URL_HOME = 'https://api-test.appnexus.com/'
 URL_AUTH = URL_HOME + "auth"
 URL_SEGMENT = URL_HOME + "segment"
 URL_BUYER_MEMBER_DATA_SHARING = URL_HOME + "member-data-sharing"
