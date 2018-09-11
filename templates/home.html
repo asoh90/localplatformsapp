@@ -131,8 +131,6 @@
                 alert("Please select a function!");
                 return;
             }
-
-            load();
             
             var platformSelected = platformList.options[platformList.selectedIndex].value;
             var functionSelected = functionList.options[functionList.selectedIndex].value;
@@ -145,12 +143,15 @@
                 return;
             }
 
-            confirm("Platform: " + platformSelected +
+            var userConfirm = confirm("Platform: " + platformSelected +
                     "\nFunction: " + functionSelected +
                     "\nFile: " + fileSelectedName +
                     "\nConfirm upload?");
-
-            process(platformSelected, functionSelected, fileSelected);
+            
+            if (userConfirm) {
+                load();
+                process(platformSelected, functionSelected, fileSelected);
+            }
         }
 
         function query(selectedValue) {
