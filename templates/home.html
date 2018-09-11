@@ -73,6 +73,11 @@
             var platformList = document.getElementById('platformList');
             var functionList = document.getElementById('functionList');
             var platformSelected = platformList.options[platformList.selectedIndex].value;
+            var oldOptGroups = functionList.getElementsByTagName("optgroup");
+            for (var i=oldOptGroups.length-1;i>=0;i--) {
+                console.log("Removing" + oldOptGroups);
+                functionList.removeChild(oldOptGroups[i]);
+            }
             
             var platformSelectedFunctions = platformFunctions[platformSelected];
             if (platformSelected == '') {
