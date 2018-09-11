@@ -4,9 +4,8 @@ from datetime import datetime
 
 OUTPUT_PATH = variables.RETURN_FOLDER + "/"
 
-def write(write_df, file_first_name):
-    current_date = datetime.now().strftime("%Y%m%d_%H%M%S")
-    file_name = file_first_name + "_" + current_date + ".xlsx"
+def write(write_df, file_name):
+    file_name = file_name + ".xlsx"
     writer = pd.ExcelWriter(OUTPUT_PATH + file_name)
     write_df.to_excel(writer,'Sheet1',index=False)
     writer.save()
