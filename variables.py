@@ -8,9 +8,9 @@ platform_functions = {
                         "--Select Platform--":[],
                         "AppNexus": {"level":2,
                                     "functions": {
-                                        "Segments":["Add Segments","Edit Segments","Query All Segments"],
-                                        "Segment Billings":["Add Segment Billings","Edit Segment Billings"],
-                                        "Segments Troubleshoot":["Add Existing Segments to Specific Buyer Member","Retrieve Segment IDs","Retrieve Buyer Member Segments"]
+                                        "Segment":["Add Segments","Edit Segments","Query All Segments"],
+                                        "Segment Billing":["Add Segment Billings","Edit Segment Billings"],
+                                        "Troubleshoot":["Add Existing Segments to Specific Buyer Member","Retrieve Segment IDs","Retrieve Buyer Member Segments"]
                                         }
                                     },
                         "The Trade Desk": {"level":1,
