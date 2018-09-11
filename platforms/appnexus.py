@@ -7,8 +7,8 @@ import os
 MEMBER_ID = 1706
 
 # API URL
-# URL_HOME = 'https://api.appnexus.com/'
-URL_HOME = 'https://api-test.appnexus.com/'
+URL_HOME = 'https://api.appnexus.com/'
+# URL_HOME = 'https://api-test.appnexus.com/'
 URL_AUTH = URL_HOME + "auth"
 URL_SEGMENT = URL_HOME + "segment"
 URL_BUYER_MEMBER_DATA_SHARING = URL_HOME + "member-data-sharing"
@@ -238,6 +238,9 @@ def read_file_to_add_segments(file_path):
                 write_data_category_list.append(private_segment_details["data_category_id"])
                 write_buyer_member_id_list.append(buyer_member_id)
                 write_response.append(private_segment_details["response"])
+
+                add_billing_response = add_segment_billing(private_segment_details["segment_id"], private_segment_details["state"], private_segment_details["data_category_id"], private_segment_details["is_public"])
+                write_billing_response.append(add_billing_response)
 
     # Print result of creating segments
     write_df = pd.DataFrame({
