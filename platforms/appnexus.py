@@ -7,12 +7,11 @@ import os
 MEMBER_ID = 1706
 
 # API URL
-URL_HOME = 'https://api.appnexus.com/'
-# URL_HOME = 'https://api-test.appnexus.com/'
-URL_AUTH = URL_HOME + "auth"
-URL_SEGMENT = URL_HOME + "segment"
-URL_BUYER_MEMBER_DATA_SHARING = URL_HOME + "member-data-sharing"
-URL_SEGMENT_BILLING_CATEGORY = URL_HOME + "segment-billing-category"
+url_home  = None
+url_auth = None
+url_segment = None
+url_buyer_member_data_sharing = None
+url_segment_billing_category = None
 
 # Folder to retrieve uploaded file
 UPLOAD_FOLDER = variables.UPLOAD_FOLDER
@@ -24,14 +23,25 @@ password = None
 auth_token = None
 RETRIEVE_SEGMENTS_NUM_ELEMENTS = 100
 
-def callAPI(function, file_path):
+def callAPI(platform, function, file_path):
+    global url_home
+    if platform == "AppNexus":
+        url_home = 'https://api.appnexus.com/'
+    elif platform == "AppNexus Staging":
+        url_home = 'https://api-test.appnexus.com/'
+    else:
+        return {"message":"ERROR: platform {} is not available in appnexus.py".format(platform)}
+    global url_auth; url_auth = url_home + "auth"
+    global url_segment; url_segment = url_home + "segment"
+    global url_buyer_member_data_sharing; url_buyer_member_data_sharing = url_home + "member-data-sharing"
+    global url_segment_billing_category; url_segment_billing_category = url_home + "segment-billing-category"
+
     try:
         # Login credentials
         global login; login = variables.login_credentials['AppNexus']['Login']
         global password; password = variables.login_credentials['AppNexus']['PW']
     except:
         return {"message":"ERROR: Incorrect login credentials! Please download 'asoh-flask-deploy.sh' file from <a href='https://eyeota.atlassian.net/wiki/pages/viewpageattachments.action?pageId=127336529&metadataLink=true'>Confluence</a> again!>"}
-
 
     output = {"message":"ERROR: option is not available"}
     authenticate()
@@ -45,6 +55,8 @@ def callAPI(function, file_path):
         output = read_file_to_add_segment_billings(file_path)
     elif (function == "Edit Segment Billings"):
         output = read_file_to_edit_segment_billings(file_path)
+    elif (function == "Retrieve Segment Billings"):
+        output = read_file_to_retrieve_segment_billings(file_path)
     elif (function == "Add Existing Segments to Specific Buyer Member"):
         output = read_file_to_add_existing_segments_to_buyer_member(file_path)
     elif (function == "Retrieve Segment IDs"):
@@ -55,7 +67,7 @@ def callAPI(function, file_path):
 
 def authenticate():
     auth_credentials = {'username':login,'password':password}
-    auth_json = requests.post(URL_AUTH,
+    auth_json = requests.post(url_auth,
                               headers={
                                   'Content-Type':'application/json'
                               },
@@ -115,7 +127,7 @@ def query_all_segments():
 
 def retrieve_segments(start_element, num_elements):
     try:
-        request_to_send = requests.get(URL_SEGMENT,
+        request_to_send = requests.get(url_segment,
                                     headers={
                                         'Content-Type':'application/json',
                                         'Authorization':auth_token
@@ -374,7 +386,7 @@ def add_segment(code, segment_name, price, duration, state):
                         "state":state
                     }
     try:
-        request_to_send = requests.post(URL_SEGMENT,
+        request_to_send = requests.post(url_segment,
                                     headers={
                                         'Content-Type':'application/json',
                                         'Authorization':auth_token
@@ -403,7 +415,7 @@ def edit_segment(code, segment_name, price, duration, state):
                         "state":state
                     }
     try:
-        request_to_send = requests.put(URL_SEGMENT,
+        request_to_send = requests.put(url_segment,
                                     headers={
                                         'Content-Type':'application/json',
                                         'Authorization':auth_token
@@ -450,7 +462,7 @@ def refresh_segments(buyer_member_id, buyer_member_private_segment_list):
 
 def retrieve_segments_for_member(buyer_member_id):
     try:
-        request_to_send = requests.get(URL_BUYER_MEMBER_DATA_SHARING,
+        request_to_send = requests.get(url_buyer_member_data_sharing,
                                             headers={
                                                 'Content-Type':'application/json',
                                                 'Authorization':auth_token
@@ -475,7 +487,7 @@ def refresh_segment_ids(record_id, new_segment_id_list):
     segment_list_to_send = {"segments":new_segment_id_list}
 
     # try:
-    request_to_send = requests.put(URL_BUYER_MEMBER_DATA_SHARING,
+    request_to_send = requests.put(url_buyer_member_data_sharing,
                                             headers={
                                                 'Content-Type':'application/json',
                                                 'Authorization':auth_token
@@ -523,7 +535,7 @@ def read_file_to_retrieve_segment_id(file_path):
     for row_num in range(len(code_list)):
         current_code = code_list[row_num]
 
-        retrieved_segment_details = retrieve_segment_id(current_code)
+        retrieved_segment_details = retrieve_segment(current_code)
         write_segment_id_list.append(retrieved_segment_details["id"])
         write_segment_name_list.append(retrieved_segment_details["short_name"])
         write_price_list.append(retrieved_segment_details["price"])
@@ -545,9 +557,9 @@ def read_file_to_retrieve_segment_id(file_path):
                 })
     return write_excel.write(write_df, file_name + "_output_retrieve_segment_ids")
 
-def retrieve_segment_id(code):
+def retrieve_segment(code):
     try:
-        request_to_send = requests.get(URL_SEGMENT,
+        request_to_send = requests.get(url_segment,
                                             headers={
                                                 'Content-Type':'application/json',
                                                 'Authorization':auth_token
@@ -751,7 +763,7 @@ def read_file_to_add_segment_billings(file_path):
                     'Buyer Member ID':buyer_member_id_list,
                     'Response':write_response
                 })
-    return write_excel.write(write_df, file_name + "_output_add_billing.xlsx")
+    return write_excel.write(write_df, file_name + "_output_add_billing")
 
 def read_file_to_edit_segment_billings(file_path):
     read_df = None
@@ -766,6 +778,7 @@ def read_file_to_edit_segment_billings(file_path):
     segment_name_list = read_df["Segment Name"]
     price_list = read_df["Price"]
     duration_list = read_df["Duration"]
+    member_id_list = []
     state_list = read_df["State"]
     is_public_list = read_df["Is Public"]
     data_category_list = read_df["Data Category ID"]
@@ -782,22 +795,123 @@ def read_file_to_edit_segment_billings(file_path):
         current_data_category_id = data_category_list[i]
         current_is_public = is_public_list[i]
 
-        edit_segment_billing = edit_segment_billing(current_segment_id, current_state, current_data_category_id, current_is_public)
+        edit_segment_response = edit_segment_billing(current_segment_id)
+
+    write_df = pd.DataFrame({
+                    "Segment ID":segment_id_list,
+                    'code':code_list,
+                    'Segment Name':segment_name_list,
+                    'Price':price_list,
+                    'Duration':duration_list,
+                    'Member ID':member_id_list,
+                    'State':state_list,
+                    'Is Public':is_public_list,
+                    'Data Category ID':data_category_list,
+                    'Buyer Member ID':buyer_member_id_list,
+                    'Response':write_response
+                })
+    return write_excel.write(write_df, file_name + "_output_edit_billing")
+
+def read_file_to_retrieve_segment_billings(file_path):
+    read_df = None
+    try:
+        # Skip row 2 ([1]) tha indicates if field is mandatory or not
+        read_df = pd.read_excel(file_path, sheet_name="AppNexus", skiprows=[1])
+    except:
+        return {"message":"File Path '{}' is not found".format(file_path)}
+    
+    code_list = read_df["code"]
+
+    write_segment_id_list = []
+    write_segment_name_list = []
+    write_price_list = []
+    write_duration_list = []
+    write_member_id_list = []
+    write_state_list = []
+    write_is_public_list = []
+    write_data_category_list = []
+    write_response = []
+
+    os.remove(file_path)
+    file_name_with_extension = file_path.split("/")[-1]
+    file_name = file_name_with_extension.split(".xlsx")[0]
+
+    for i in range(len(code_list)):
+        current_segment_id = None
+        current_code = code_list[i]
+
+        try:
+            current_segment = retrieve_segment(current_code)
+            current_segment_id = current_segment["id"]
+            write_segment_id_list.append(current_segment_id)
+            write_segment_name_list.append(current_segment["short_name"])
+            write_price_list.append(current_segment["price"])
+            write_duration_list.append(current_segment["expire_minutes"])
+            write_member_id_list.append(current_segment["member_id"])
+        except:
+            current_segment_id = None
+            write_segment_id_list.append("")
+            write_segment_name_list.append("")
+            write_price_list.append("")
+            write_duration_list.append("")
+            write_member_id_list.append("")
+
+        if current_segment_id == None:
+            write_state_list.append("")
+            write_is_public_list.append("")
+            write_data_category_list.append("")
+            write_response.append("Segment ID not found for code {}".format(current_code))
+        else:
+            retrieve_billing_response = get_segment_billing(current_segment_id)
+            try:
+                segment_billing_category = retrieve_billing_response["segment-billing-categories"][0]
+                current_state = segment_billing_category["active"]
+                print("".format(current_state))
+                if current_state:
+                    current_state = "active"
+                else:
+                    current_state = "inactive"
+                write_state_list.append(current_state)
+                write_is_public_list.append(segment_billing_category["is_public"])
+                write_data_category_list.append(segment_billing_category["data_category_id"])
+                write_response.append(retrieve_billing_response["status"])
+            except:
+                write_state_list.append("")
+                write_is_public_list.append("")
+                write_data_category_list.append("")
+                write_response.append(retrieve_billing_response)
+
+    write_df = pd.DataFrame({
+                    "Segment ID":write_segment_id_list,
+                    'code':code_list,
+                    'Segment Name':write_segment_name_list,
+                    'Price':write_price_list,
+                    'Duration':write_duration_list,
+                    'Member ID':write_member_id_list,
+                    'State':write_state_list,
+                    'Is Public':write_is_public_list,
+                    'Data Category ID':write_data_category_list,
+                    'Response':write_response
+                })
+    return write_excel.write(write_df, file_name + "_output_retrieve_billing")
 
 
 def add_segment_billing(segment_id, state, data_category_id, is_public):
+    state = str(state).lower() == "active"
+    is_public = str(is_public).lower() == "true"
+
     segment_billing_to_add = {
                                 "segment_id":str(segment_id),
                                 "data_provider_id":MEMBER_ID,
                                 "data_category_id":str(data_category_id),
-                                "active":str(state),
-                                "is_public":str(is_public),
+                                "active":state,
+                                "is_public":is_public,
                                 "member_id":MEMBER_ID,
                                 "data_segment_type_id":"Audience"
                             }
     print(segment_billing_to_add)
     try:
-        request_to_send = requests.post(URL_SEGMENT_BILLING_CATEGORY,
+        request_to_send = requests.post(url_segment_billing_category,
                                     headers={
                                         'Content-Type':'application/json',
                                         'Authorization':auth_token
@@ -810,24 +924,26 @@ def add_segment_billing(segment_id, state, data_category_id, is_public):
                                     })
         print("Add Segment Billing Request: " + request_to_send.url)
         add_segment_billing_response = request_to_send.json()
+        print(add_segment_billing_response["response"])
         return add_segment_billing_response["response"]["status"]
     except Exception:
         return add_segment_billing_response["response"]["error"]
 
 def edit_segment_billing(segment_id, state, data_category_id, is_public):
-    id = get_segment_billing_id(segment_id)
+    state = str(state).lower() == "active"
+    is_public = str(is_public).lower() == "true"
+
     segment_billing_to_edit = {
-                                "id":str(id),
                                 "segment_id":str(segment_id),
                                 "data_provider_id":MEMBER_ID,
                                 "data_category_id":str(data_category_id),
-                                "active":str(state),
-                                "is_public":str(is_public),
+                                "active":state,
+                                "is_public":is_public,
                                 "member_id":MEMBER_ID,
                                 "data_segment_type_id":"Audience"
                             }
     try:
-        request_to_send = requests.put(URL_SEGMENT_BILLING_CATEGORY,
+        request_to_send = requests.put(url_segment_billing_category,
                                     headers={
                                         'Content-Type':'application/json',
                                         'Authorization':auth_token
@@ -844,9 +960,9 @@ def edit_segment_billing(segment_id, state, data_category_id, is_public):
     except Exception:
         return edit_segment_billing_response["response"]["error"]
 
-def get_segment_billing_id(segment_id):
+def get_segment_billing(segment_id):
     try:
-        request_to_send = requests.get(URL_SEGMENT_BILLING_CATEGORY,
+        request_to_send = requests.get(url_segment_billing_category,
                                     headers={
                                         'Content-Type':'application/json',
                                         'Authorization':auth_token
@@ -857,8 +973,9 @@ def get_segment_billing_id(segment_id):
                                     })
         print("Get Segment Billing Request: " + request_to_send.url)
         get_segment_billing_response = request_to_send.json()
-        return get_segment_billing_response["response"]["segment-billing-categories"][0]["id"]
+        return get_segment_billing_response["response"]
     except Exception:
         print("Segment ID: {} cannot be found!".format(segment_id))
+        return "Segment ID: {} cannot be found!".format(segment_id)
 
 # End of Segment Billing Functions
