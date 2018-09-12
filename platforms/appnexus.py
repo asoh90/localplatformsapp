@@ -35,7 +35,7 @@ def callAPI(function, file_path):
 
     output = {"message":"ERROR: option is not available"}
     authenticate()
-    if (function == "Query Segments"):
+    if (function == "Query All Segments"):
         output = query_all_segments()
     elif (function == "Add Segments"):
         output = read_file_to_add_segments(file_path)
@@ -111,7 +111,7 @@ def query_all_segments():
                     'State':write_state_list,
                     'Last Modified':write_last_modified_list,
                 })
-    return write_excel.write(write_df, "AppNexus_Retrieve")
+    return write_excel.write(write_df, "AppNexus_query_all")
 
 def retrieve_segments(start_element, num_elements):
     try:

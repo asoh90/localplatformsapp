@@ -36,7 +36,7 @@ def callAPI(function, file_path):
 
     output = "ERROR: option is not available"
     if (function == "Query"):
-        output = getQueryAll()
+        output = get_query_all()
     else:
         output = read_file(file_path, function)
     return output
@@ -62,7 +62,7 @@ def getAuthenticationCode():
         return auth_code
 
 # query all the third party data in Trade Desk system
-def getQueryAll():
+def get_query_all():
     auth_code = getAuthenticationCode()
     if (auth_code == None):
         return{'message':"ERROR: getting TTD Auth Code. Please check <b>ttd.py</b> if credentials are correct."}
@@ -143,56 +143,59 @@ def add_or_edit(provider_element_id, parent_element_id, display_name, buyable, d
         
 # based on the output from TTD API, format them into json format to write to file
 def processJsonOutput(json_output, function):
-    write_provider_id = []
-    write_provider_element_id = []
-    write_parent_element_id = []
-    write_display_name = []
-    write_buyable = []
-    write_description = []
-    write_audience_size = []
+    try:
+        write_provider_id = []
+        write_provider_element_id = []
+        write_parent_element_id = []
+        write_display_name = []
+        write_buyable = []
+        write_description = []
+        write_audience_size = []
 
-    segment_dictionary = {}
+        segment_dictionary = {}
 
-    # Load all the segments into a dictionary to formulate full segment name later
-    for row in json_output['Result']:
-        provider_element_id = str(row['ProviderElementId'])
-        parent_element_id = str(row['ParentElementId'])
-        display_name = str(row['DisplayName'])
+        # Load all the segments into a dictionary to formulate full segment name later
+        for row in json_output['Result']:
+            provider_element_id = str(row['ProviderElementId'])
+            parent_element_id = str(row['ParentElementId'])
+            display_name = str(row['DisplayName'])
 
-        segment_dictionary[provider_element_id] = {"display_name":display_name,"parent_element_id":parent_element_id}
+            segment_dictionary[provider_element_id] = {"display_name":display_name,"parent_element_id":parent_element_id}
 
-    # Print results
-    for row in json_output['Result']:
-        provider_id = str(row['ProviderId'])
-        provider_element_id = str(row['ProviderElementId'])
-        parent_element_id = str(row['ParentElementId'])
-        display_name = str(row['DisplayName'])
-        buyable = row['Buyable']
-        description = str(row['Description'])
-        audience_size = str(row['AudienceSize'])
+        # Print results
+        for row in json_output['Result']:
+            provider_id = str(row['ProviderId'])
+            provider_element_id = str(row['ProviderElementId'])
+            parent_element_id = str(row['ParentElementId'])
+            display_name = str(row['DisplayName'])
+            buyable = row['Buyable']
+            description = str(row['Description'])
+            audience_size = str(row['AudienceSize'])
 
-        # loop to get full segment name
-        temp_provider_id = parent_element_id
+            # loop to get full segment name
+            temp_provider_id = parent_element_id
 
-        while temp_provider_id in segment_dictionary and not temp_provider_id in TEMP_PROVIDER_ID_TO_IGNORE:
-            display_name = segment_dictionary[temp_provider_id]["display_name"] + " - " + display_name
-            temp_provider_id = segment_dictionary[temp_provider_id]["parent_element_id"]
+            while temp_provider_id in segment_dictionary and not temp_provider_id in TEMP_PROVIDER_ID_TO_IGNORE:
+                display_name = segment_dictionary[temp_provider_id]["display_name"] + " - " + display_name
+                temp_provider_id = segment_dictionary[temp_provider_id]["parent_element_id"]
 
-        write_provider_id.append(provider_id)
-        write_provider_element_id.append(provider_element_id)
-        write_parent_element_id.append(parent_element_id)
-        write_display_name.append(display_name)
-        write_buyable.append(buyable)
-        write_description.append(description)
-        write_audience_size.append(audience_size)
+            write_provider_id.append(provider_id)
+            write_provider_element_id.append(provider_element_id)
+            write_parent_element_id.append(parent_element_id)
+            write_display_name.append(display_name)
+            write_buyable.append(buyable)
+            write_description.append(description)
+            write_audience_size.append(audience_size)
 
-    write_df = pd.DataFrame({
-                                "Provider ID":write_provider_id,
-                                "Segment ID":write_provider_element_id,
-                                "Parent Segment ID":write_parent_element_id,
-                                "Segment Name":write_display_name,
-                                "Buyable":write_buyable,
-                                "Description":write_description,
-                                "Audience Size":write_audience_size
-                            })
-    return write_excel.write(write_df, "The_Trade_Desk_" + function)
+        write_df = pd.DataFrame({
+                                    "Provider ID":write_provider_id,
+                                    "Segment ID":write_provider_element_id,
+                                    "Parent Segment ID":write_parent_element_id,
+                                    "Segment Name":write_display_name,
+                                    "Buyable":write_buyable,
+                                    "Description":write_description,
+                                    "Audience Size":write_audience_size
+                                })
+        return write_excel.write(write_df, "The_Trade_Desk_" + function)
+    except:
+        return {"message":"ERROR Processing TTD Json File"}
