@@ -823,7 +823,9 @@ def read_file_to_edit_segment_billings(file_path):
         current_data_category_id = data_category_list[i]
         current_is_public = is_public_list[i]
 
-        edit_segment_response = edit_segment_billing(current_segment_id)
+        edit_segment_response = edit_segment_billing(current_segment_id, current_state, current_data_category_id, current_is_public)
+        write_response.append(edit_segment_response)
+        member_id_list.append(MEMBER_ID)
 
     write_df = pd.DataFrame({
                     "Segment ID":segment_id_list,
@@ -969,6 +971,7 @@ def edit_segment_billing(segment_id, state, data_category_id, is_public):
                                 "member_id":MEMBER_ID,
                                 "data_segment_type_id":"Audience"
                             }
+    print(segment_billing_to_edit)
     try:
         request_to_send = requests.put(url_segment_billing_category,
                                     headers={
@@ -985,7 +988,10 @@ def edit_segment_billing(segment_id, state, data_category_id, is_public):
         edit_segment_billing_response = request_to_send.json()
         return edit_segment_billing_response["response"]["status"]
     except Exception:
-        return "Error editing billing for segment id {}. Retrieve this code's billing to ensure the data has been pushed through".format(segment_id)
+        try:
+            return edit_segment_billing_response["response"]["error"]
+        except:
+            return "Error editing billing for segment id {}. Retrieve this code's billing to ensure the data has been pushed through".format(segment_id)
 
 def get_segment_billing(segment_id):
     try:
