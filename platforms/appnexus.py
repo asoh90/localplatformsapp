@@ -487,23 +487,23 @@ def refresh_segment_ids(record_id, new_segment_id_list):
     print("Refreshing record id: {}".format(record_id))
     segment_list_to_send = {"segments":new_segment_id_list}
 
-    # try:
-    request_to_send = requests.put(url_buyer_member_data_sharing,
-                                            headers={
-                                                'Content-Type':'application/json',
-                                                'Authorization':auth_token
-                                            },
-                                            params={
-                                                'id':record_id
-                                            },
-                                            json={
-                                                'member_data_sharing':segment_list_to_send
-                                            })
-    print("Refresh Request URL: " + request_to_send.url)
-    refresh_response = request_to_send.json()
-    return refresh_response["response"]["status"]
-    # except Exception as e:
-    #     return refresh_response["response"]["error"]
+    try:
+        request_to_send = requests.put(url_buyer_member_data_sharing,
+                                                headers={
+                                                    'Content-Type':'application/json',
+                                                    'Authorization':auth_token
+                                                },
+                                                params={
+                                                    'id':record_id
+                                                },
+                                                json={
+                                                    'member_data_sharing':segment_list_to_send
+                                                })
+        print("Refresh Request URL: " + request_to_send.url)
+        refresh_response = request_to_send.json()
+        return refresh_response["response"]["status"]
+    except Exception as e:
+        return refresh_response["response"]["error"]
 # End Add Segments functions
 
 # def read_file_to_retrieve_segment_id(file_path):
