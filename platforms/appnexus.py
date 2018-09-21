@@ -55,12 +55,10 @@ def callAPI(platform, function, file_path):
         output = query_all_segments()
     elif (function == "Retrieve Segments"):
         output = read_file_to_retrieve_segments(file_path)
-    elif (function == "Add Segment Billings"):
-        output = read_file_to_add_segment_billings(file_path)
-    elif (function == "Edit Segment Billings"):
-        output = read_file_to_edit_segment_billings(file_path)
     elif (function == "Add Existing Segments to Specific Buyer Member"):
         output = read_file_to_add_existing_segments_to_buyer_member(file_path)
+    elif (function == "Add Segment Billings"):
+        output = read_file_to_add_segment_billings(file_path)
     elif (function == "Retrieve Buyer Member Segments"):
         output = read_file_to_retrieve_buyer_member_segments(file_path)
     return output
@@ -279,7 +277,6 @@ def read_file_to_edit_segments(file_path):
     except:
         return {"message":"File Path '{}' is not found".format(file_path)}
     
-    segment_id_list = read_df["Segment ID"]
     code_list = read_df["code"]
     segment_name_list = read_df["Segment Name"]
     price_list = read_df["Price"]
@@ -294,16 +291,9 @@ def read_file_to_edit_segments(file_path):
     file_name = file_name_with_extension.split(".xlsx")[0]
 
     write_segment_id_list = []
-    write_code_list = []
-    write_segment_name_list = []
-    write_price_list = []
-    write_duration_list = []
     write_member_id_list = []
-    write_state_list = []
-    write_is_public_list = []
-    write_data_category_list = []
-    write_buyer_member_id_list = []
     write_response = []
+    write_billing_response = []
 
 
     for i in range(len(code_list)):
@@ -315,64 +305,39 @@ def read_file_to_edit_segments(file_path):
 
         edit_response = edit_segment(current_code, current_segment_name, current_price, current_duration, current_state)
 
-        segment_id_added = False
-        code_added = False
-        segment_name_added = False
-        price_added = False
-        duration_added = False
-        state_added = False
-        response_added = False
+        current_segment_id = ""
         try:
-            edited_segment = edit_response["segment"]
-
-            write_segment_id_list.append(edited_segment["id"])
-            segment_id_added = True
-            write_code_list.append(edited_segment["code"])
-            code_added = True
-            write_segment_name_list.append(edited_segment["short_name"])
-            segment_name_added = True
-            write_price_list.append(edited_segment["price"])
-            price_added = True
-            write_duration_list.append(edited_segment["expire_minutes"])
-            duration_added = True
-            write_state_list.append(edited_segment["state"])
-            state_added = True
+            current_segment_id = edit_response["segment"]["id"]
+            write_segment_id_list.append(current_segment_id)
             write_response.append(edit_response["status"])
-            response_added = True
         except:
-            if not segment_id_added:
-                write_segment_id_list.append(segment_id_list[i])
-            if not code_added:
-                write_code_list.append(current_code)
-            if not segment_name_added:
-                write_segment_name_list.append(current_segment_name)
-            if not price_added:
-                write_price_list.append(current_price)
-            if not duration_added:
-                write_duration_list.append(current_duration)
-            if not state_added:
-                write_state_list.append(current_state)
-            if not response_added:
-                error_message = edit_response
-                write_response.append(error_message)
+            write_segment_id_list.append(current_segment_id)
+            error_message = edit_response
+            write_response.append(error_message)
+        
+        if current_segment_id == "":
+            write_billing_response.append("Unable to retrieve segment id")
+        else:
+            current_data_category_id = data_category_list[i]
+            current_is_public = is_public_list[i]
+            edit_segment_response = edit_segment_billing(current_segment_id, current_state, current_data_category_id, current_is_public)
+            write_billing_response.append(edit_segment_response)
 
         write_member_id_list.append(MEMBER_ID)
-        write_is_public_list.append(is_public_list[i])
-        write_data_category_list.append(data_category_list[i])
-        write_buyer_member_id_list.append(buyer_member_id_list[i])
 
     write_df = pd.DataFrame({
                 "Segment ID":write_segment_id_list,
-                'code':write_code_list,
-                'Segment Name':write_segment_name_list,
-                'Price':write_price_list,
-                'Duration':write_duration_list,
+                'code':code_list,
+                'Segment Name':segment_name_list,
+                'Price':price_list,
+                'Duration':duration_list,
                 'Member ID':write_member_id_list,
-                'State':write_state_list,
-                'Is Public':write_is_public_list,
-                'Data Category ID':write_data_category_list,
-                'Buyer Member ID':write_buyer_member_id_list,
-                'Response':write_response
+                'State':state_list,
+                'Is Public':is_public_list,
+                'Data Category ID':data_category_list,
+                'Buyer Member ID':buyer_member_id_list,
+                'Edit Segment Response':write_response,
+                'Edit Billing Response':write_billing_response
             })
         
     return write_excel.write(write_df, file_name + "_output_edit_segments")

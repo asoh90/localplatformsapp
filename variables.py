@@ -9,15 +9,13 @@ platform_functions = {
                         "AppNexus Staging": {"level":2,
                                     "functions": {
                                         "Segment":["Add Segments","Edit Segments","Query All Segments","Retrieve Segments"],
-                                        "Segment Billing":["Add Segment Billings","Edit Segment Billings"],
-                                        "Troubleshoot":["Add Existing Segments to Specific Buyer Member","Retrieve Buyer Member Segments"]
+                                        "Troubleshoot":["Add Existing Segments to Specific Buyer Member","Add Segment Billings","Retrieve Buyer Member Segments"]
                                         }
                                     },
                         "AppNexus": {"level":2,
                                     "functions": {
                                         "Segment":["Add Segments","Edit Segments","Query All Segments"],
-                                        "Segment Billing":["Add Segment Billings","Edit Segment Billings","Retrieve Segment Billings"],
-                                        "Troubleshoot":["Add Existing Segments to Specific Buyer Member","Retrieve Segment IDs","Retrieve Buyer Member Segments"]
+                                        "Troubleshoot":["Add Existing Segments to Specific Buyer Member","Add Segment Billings","Retrieve Buyer Member Segments"]
                                         }
                                     },
                         "The Trade Desk": {"level":1,
