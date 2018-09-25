@@ -196,6 +196,6 @@ def processJsonOutput(json_output, function):
                                     "Description":write_description,
                                     "Audience Size":write_audience_size
                                 })
-        return write_excel.write(write_df, "The_Trade_Desk_" + function)
+        return write_excel.write(write_df, "DONOTUPLOAD_The_Trade_Desk_" + function)
     except:
         return {"message":"ERROR Processing TTD Json File"}

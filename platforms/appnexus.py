@@ -121,7 +121,7 @@ def query_all_segments():
                     'State':write_state_list,
                     'Last Modified':write_last_modified_list,
                 })
-    return write_excel.write(write_df, "AppNexus_query_all")
+    return write_excel.write(write_df, "DONOTUPLOAD_AppNexus_query_all")
 
 def retrieve_segments(start_element, num_elements):
     try:
@@ -340,7 +340,7 @@ def read_file_to_edit_segments(file_path):
                 'Edit Billing Response':write_billing_response
             })
         
-    return write_excel.write(write_df, file_name + "_output_edit_segments")
+    return write_excel.write(write_df, "DONOTUPLOAD_" + file_name + "_edit_segments")
 
 def add_segment(code, segment_name, price, duration, state):
     segment_to_add = {
@@ -659,7 +659,7 @@ def read_file_to_add_existing_segments_to_buyer_member(file_path):
                         'Buyer Member ID':write_buyer_member_id_list,
                         'Response':write_response
                     })
-        return write_excel.write(write_df, file_name + "_output_add_to_buyer")
+        return write_excel.write(write_df, "DONOTUPLOAD_" + file_name + "_add_to_buyer")
     except:
         return {"message":"ERROR in the data file. Check if Segment IDs are all present."}
 
@@ -706,7 +706,7 @@ def read_file_to_retrieve_buyer_member_segments(file_path):
                     'Segment Name':write_segment_name_list,
                     "Buyer Member ID":write_buyer_member_id_list
                 })
-    return write_excel.write(write_df, file_name + "_output_buyer_segments")
+    return write_excel.write(write_df, "DONOTUPLOAD_" + file_name + "_buyer_segments")
 
 # Start of Segment Billing Functions
 def read_file_to_add_segment_billings(file_path):
@@ -756,7 +756,7 @@ def read_file_to_add_segment_billings(file_path):
                     'Buyer Member ID':buyer_member_id_list,
                     'Response':write_response
                 })
-    return write_excel.write(write_df, file_name + "_output_add_billing")
+    return write_excel.write(write_df, "DONOTUPLOAD_" + file_name + "_add_billing")
 
 def read_file_to_edit_segment_billings(file_path):
     read_df = None
@@ -805,7 +805,7 @@ def read_file_to_edit_segment_billings(file_path):
                     'Buyer Member ID':buyer_member_id_list,
                     'Response':write_response
                 })
-    return write_excel.write(write_df, file_name + "_output_edit_billing")
+    return write_excel.write(write_df, "DONOTUPLOAD_" + file_name + "_edit_billing")
 
 def read_file_to_retrieve_segments(file_path):
     read_df = None
@@ -887,7 +887,7 @@ def read_file_to_retrieve_segments(file_path):
                     'Data Category ID':write_data_category_list,
                     'Response':write_response
                 })
-    return write_excel.write(write_df, file_name + "_output_retrieve_segments")
+    return write_excel.write(write_df, "DONOTUPLOAD_" + file_name + "_retrieve_segments")
 
 
 def add_segment_billing(segment_id, state, data_category_id, is_public):
