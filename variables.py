@@ -14,7 +14,7 @@ platform_functions = {
                                     },
                         "AppNexus": {"level":2,
                                     "functions": {
-                                        "Segment":["Add Segments","Edit Segments","Query All Segments"],
+                                        "Segment":["Add Segments","Edit Segments","Query All Segments","Retrieve Segments"],
                                         "Troubleshoot":["Add Existing Segments to Specific Buyer Member","Add Segment Billings","Retrieve Buyer Member Segments"]
                                         }
                                     },
