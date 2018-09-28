@@ -77,7 +77,7 @@ def get_query_all():
                         'PageStartIndex':0,
                         'PageSize':None
                     }).json()
-    print("Query Request: " + query_data.url)
+    print("Query Request: " + URL_QUERY)
     # write to file
     return processJsonOutput(query_data, "query")
 
