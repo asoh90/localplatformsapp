@@ -65,7 +65,7 @@ def getAuthenticationCode():
 def get_query_all():
     auth_code = getAuthenticationCode()
     if (auth_code == None):
-        return{'message':"ERROR: getting TTD Auth Code. Please check <b>ttd.py</b> if credentials are correct."}
+        return{'message':"ERROR: getting TTD Auth Code. Please check .sh file if credentials are correct."}
 
     query_data = requests.post(URL_QUERY,
                     headers={
@@ -77,6 +77,7 @@ def get_query_all():
                         'PageStartIndex':0,
                         'PageSize':None
                     }).json()
+    print("Query Request: " + query_data.url)
     # write to file
     return processJsonOutput(query_data, "query")
 

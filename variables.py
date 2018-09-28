@@ -20,7 +20,10 @@ platform_functions = {
                                     },
                         "The Trade Desk": {"level":1,
                                             "functions":["Add","Edit","Query"]
-                                        }
+                                        },
+                        "Yahoo":{"level":1,
+                                    "functions":["Query"]
+                            }
                     }
 
 def read_credentials(input):

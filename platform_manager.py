@@ -8,5 +8,7 @@ def callAPI(platform, function, file_path):
     # AppNexus has staging and prod environment
     elif platform == "AppNexus" or platform == "AppNexus Staging":
         output = appnexus.callAPI(platform, function, file_path)
+    elif platform == "Yahoo":
+        output = yahoo.callAPI(function, file_path)
         
     return output
