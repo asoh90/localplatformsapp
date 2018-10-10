@@ -19,10 +19,13 @@ platform_functions = {
                                         }
                                     },
                         "The Trade Desk": {"level":1,
-                                            "functions":["Add","Edit","Query"]
+                                            "functions":["Add Segments","Edit Segments","Query All Segments"]
                                         },
+                        "Yahoo Staging":{"level":1,
+                                    "functions":["Add","Query"]
+                            },
                         "Yahoo":{"level":1,
-                                    "functions":["Query"]
+                                    "functions":["Add","Query"]
                             }
                     }
 
