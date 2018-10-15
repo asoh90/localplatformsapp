@@ -23,7 +23,7 @@ output = None
 
 # Add Taxo Fixed Information
 EXTENSIONS = {"urnType":"testid"}
-DESCRIPTION = "Eyeota Taxonomy"
+METADATA = {"description":"Eyeota Taxonomy"}
 GDPR_MODE = "oath_is_processor"
 
 def callAPI(platform, function, file_path):
@@ -49,8 +49,6 @@ def callAPI(platform, function, file_path):
         output = read_file_to_add_segments(file_path)
     elif (function == "Query"):
         output = get_query_all()
-    else:
-        output = read_file(file_path, function)
     return output
 
 # Authenticate using oauthlib
@@ -90,6 +88,7 @@ def get_query_all():
                         auth=oauth)
         print("Query Request: " + request_to_send.url)
         query_response = request_to_send.json()
+        print("Query Response: {}".format(query_response))
 
         for segment in query_response:
             read_child_segment(segment['name'], segment)
@@ -108,7 +107,7 @@ def get_query_all():
 
         return write_excel.write(write_df, "DONOTUPLOAD_Yahoo_" + "Query")
     except:
-        return {"message":"ERROR Processing Yahoo get_query_all function"}
+        return {"message":"ERROR: " + query_response["message"]}
 
 def split_segments_to_add(segment_dict, segment_name_list, segment_id):
     current_segment_name = segment_name_list[0]
@@ -184,7 +183,17 @@ def read_file_to_add_segments(file_path):
         segment_id = segment_id_list[row_num]
         segment_name_split = segment_name_list[row_num].split(" - ")
         segment_dict = split_segments_to_add(segment_dict, segment_name_split, segment_id)
-    print(segment_dict)
-    formatted_json = format_segment_json(segment_dict)
+    
+    data = format_segment_json(segment_dict)
+    files = {'metadata':METADATA, 'data':data}
+
+    oauth = authenticate()
+    requests_to_send = requests.post(url=URL,
+                                    auth=oauth,
+                                    files=files)
+
+    query_response = requests_to_send.json()
+
+    print(query_response)
 
     return {"message":"[{}]".format([])}
