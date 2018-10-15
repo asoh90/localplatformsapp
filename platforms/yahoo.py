@@ -110,12 +110,9 @@ def get_query_all():
     except:
         return {"message":"ERROR Processing Yahoo get_query_all function"}
 
-def split_segments_to_add(segment_dict, segment_name_list, segment_id, description):
-    # print("Segment Dict Length: {}".format(len(segment_dict)))
-    # print(segment_name_list)
+def split_segments_to_add(segment_dict, segment_name_list, segment_id):
     current_segment_name = segment_name_list[0]
     segment_name_list = segment_name_list[1:]
-    # print("Current Segment Name: {}".format(current_segment_name))
 
     # current_segment_name already in segment_dict
     if current_segment_name in segment_dict:
@@ -124,8 +121,6 @@ def split_segments_to_add(segment_dict, segment_name_list, segment_id, descripti
             segment_dict[current_segment_name]["id"] = segment_id
         # current_segment_name is not the lowest child segment
         else:
-            print("Current Segment Name: {}".format(current_segment_name))
-            print("Segment Dict: {}".format(segment_dict[current_segment_name]))
             # current_segment_name is already a parent in segment_dict
             if "subTaxonomy" in segment_dict[current_segment_name]:
                 temp_segment_dict = segment_dict[current_segment_name]["subTaxonomy"]
@@ -137,43 +132,41 @@ def split_segments_to_add(segment_dict, segment_name_list, segment_id, descripti
     else:
         # current_segment is the lowest child segment
         if len(segment_name_list) == 0:
-            # print("length is zero")
             segment_dict[current_segment_name] = {"id":segment_id}
         # current_segment_name is not the lowest child segment
         else:
-            # print("length is not zero")
             temp_subTaxonomy = split_segments_to_add({}, segment_name_list, segment_id)
             segment_dict[current_segment_name] = {"subTaxonomy":temp_subTaxonomy}
 
     return segment_dict
 
+# Returns a json file to be sent to Yahoo API
 def format_segment_json(segment_dict):
     # {"name": "AU CoreLogic RP Data", "type": "SEGMENT", "targetable": "false", "subTaxonomy": [
         # {"name": "Real Estate Indicator", "type": "SEGMENT", "targetable": "false", "subTaxonomy": [
     # print(segment_dict)
-    to_print = ""
-    is_first_segment_name = True
+    data = []
 
     for segment_name in segment_dict:
-        if is_first_segment_name:
-            is_first_segment_name = False
-        else:
-            to_print = to_print + ","
-        targetable = False
         # is most child segment
+        new_dict = {}
         if "id" in segment_dict[segment_name]:
-            targetable = True
-        if targetable:
-            to_print = to_print + "{{\"name\": \"{}\", \"id\":\"{}\", \"gdpr_mode\":\"{}\", \"type\":\"SEGMENT\", \"targetable\":\"{}\"".format(segment_name, segment_dict[segment_name]["id"],GDPR_MODE,targetable)
+            new_dict["name"] = segment_name
+            new_dict["id"] = segment_dict[segment_name]["id"]
+            new_dict["gdpr_mode"] = GDPR_MODE
+            new_dict["type"] = "SEGMENT"
+            new_dict["targetable"] = True
         else:
-            to_print = to_print + "{{\"name\": \"{}\", \"type\":\"SEGMENT\", \"targetable\":\"{}\"".format(segment_name, targetable)
+            new_dict["name"] = segment_name
+            new_dict["type"] = "SEGMENT"
+            new_dict["targetable"] = False
+
         if "subTaxonomy" in segment_dict[segment_name]:
-            to_print = to_print + (",\"subTaxonomy\":[")
-            to_print = to_print + format_segment_json(segment_dict[segment_name]["subTaxonomy"])
-            to_print = to_print + ("]}")
-        else:
-            to_print = to_print + ("}")
-    return to_print
+            new_dict["subTaxonomy"] = format_segment_json(segment_dict[segment_name]["subTaxonomy"])
+
+        data.append(new_dict)
+
+    return data
 
 def read_file_to_add_segments(file_path):
     read_df = None
@@ -189,10 +182,9 @@ def read_file_to_add_segments(file_path):
     segment_id_list = read_df["Segment ID"]
     for row_num in range(len(segment_name_list)):
         segment_id = segment_id_list[row_num]
-        # print("Segment Name: {}".format(segment_name_list[row_num]))
-        # print("Segment ID: {}".format(segment_id_list[row_num]))
         segment_name_split = segment_name_list[row_num].split(" - ")
         segment_dict = split_segments_to_add(segment_dict, segment_name_split, segment_id)
     print(segment_dict)
-    # print("[{}]".format(format_segment_json(segment_dict)))
-    return {"message":"[{}]".format(format_segment_json(segment_dict))}
+    formatted_json = format_segment_json(segment_dict)
+
+    return {"message":"[{}]".format([])}
