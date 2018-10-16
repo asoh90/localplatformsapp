@@ -22,10 +22,10 @@ platform_functions = {
                                             "functions":["Add Segments","Edit Segments","Query All Segments"]
                                         },
                         "Yahoo Staging":{"level":1,
-                                    "functions":["Add","Query"]
+                                    "functions":["Refresh Segments","Query"]
                             },
                         "Yahoo":{"level":1,
-                                    "functions":["Add","Query"]
+                                    "functions":["Refresh Segments","Query"]
                             }
                     }
 

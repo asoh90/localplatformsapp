@@ -5,6 +5,7 @@ import write_excel
 import pandas as pd
 import os
 import sys
+import numpy
 
 topdir = os.path.join(os.path.dirname(__file__),".")
 sys.path.append(topdir)
@@ -26,6 +27,9 @@ EXTENSIONS = {"urnType":"testid"}
 METADATA = {"description":"Eyeota Taxonomy"}
 GDPR_MODE = "oath_is_processor"
 
+METADATA_FILE = "upload/metadata.json"
+DATA_FILE = "upload/data.json"
+
 def callAPI(platform, function, file_path):
     try:
         global url
@@ -45,7 +49,7 @@ def callAPI(platform, function, file_path):
         return {"message":"ERROR: Incorrect login credentials! Please download 'asoh-flask-deploy.sh' file from <a href='https://eyeota.atlassian.net/wiki/pages/viewpageattachments.action?pageId=127336529&metadataLink=true'>Confluence</a> again!>"}
 
     output = "ERROR: option is not available"
-    if (function == "Add"):
+    if (function == "Refresh Segments"):
         output = read_file_to_add_segments(file_path)
     elif (function == "Query"):
         output = get_query_all()
@@ -55,9 +59,9 @@ def callAPI(platform, function, file_path):
 def authenticate():
     global key
     global secret
-    oauth = OAuth1(key, 
-                        client_secret=secret,
-                        signature_method=SIGNATURE_HMAC)
+    oauth = OAuth1(key,
+                client_secret=secret,
+                signature_method=SIGNATURE_HMAC)
     return oauth
 
 def read_child_segment(parent_segment, json_file):
@@ -117,7 +121,7 @@ def split_segments_to_add(segment_dict, segment_name_list, segment_id):
     if current_segment_name in segment_dict:
         # current_segment is the lowest child segment
         if len(segment_name_list) == 0:
-            segment_dict[current_segment_name]["id"] = segment_id
+            segment_dict[current_segment_name]["id"] = int(segment_id)
         # current_segment_name is not the lowest child segment
         else:
             # current_segment_name is already a parent in segment_dict
@@ -131,7 +135,7 @@ def split_segments_to_add(segment_dict, segment_name_list, segment_id):
     else:
         # current_segment is the lowest child segment
         if len(segment_name_list) == 0:
-            segment_dict[current_segment_name] = {"id":segment_id}
+            segment_dict[current_segment_name] = {"id":int(segment_id)}
         # current_segment_name is not the lowest child segment
         else:
             temp_subTaxonomy = split_segments_to_add({}, segment_name_list, segment_id)
@@ -185,15 +189,24 @@ def read_file_to_add_segments(file_path):
         segment_dict = split_segments_to_add(segment_dict, segment_name_split, segment_id)
     
     data = format_segment_json(segment_dict)
-    files = {'metadata':METADATA, 'data':data}
+
+    with open (METADATA_FILE, 'w') as fp:
+        json.dump(METADATA, fp)
+
+    with open (DATA_FILE, 'w') as fp:
+        json.dump(data, fp)
+
+    files = {'metadata':open(METADATA_FILE), 'data':open(DATA_FILE)}
 
     oauth = authenticate()
-    requests_to_send = requests.post(url=URL,
+    requests_to_send = requests.post(url=url,
                                     auth=oauth,
                                     files=files)
-
+    print("Query sent: {}".format(requests_to_send.url))
     query_response = requests_to_send.json()
 
-    print(query_response)
+    os.remove(file_path)
+    os.remove(METADATA_FILE)
+    os.remove(DATA_FILE)
 
-    return {"message":"[{}]".format([])}
+    return {"message":"Your request is {}. Please retrieve the taxonomy after an hour.".format(query_response['status']['state'])}
