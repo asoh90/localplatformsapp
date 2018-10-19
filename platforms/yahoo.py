@@ -5,7 +5,6 @@ import write_excel
 import pandas as pd
 import os
 import sys
-import numpy
 
 topdir = os.path.join(os.path.dirname(__file__),".")
 sys.path.append(topdir)
@@ -92,7 +91,7 @@ def get_query_all():
                         auth=oauth)
         print("Query Request: " + request_to_send.url)
         query_response = request_to_send.json()
-        print("Query Response: {}".format(query_response))
+        # print("Query Response: {}".format(query_response))
 
         for segment in query_response:
             read_child_segment(segment['name'], segment)
