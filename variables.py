@@ -18,6 +18,9 @@ platform_functions = {
                                         "Troubleshoot":["Add Existing Segments to Specific Buyer Member","Add Segment Billings","Retrieve Buyer Member Segments"]
                                         }
                                     },
+                        "MediaMath": {"level":1,
+                                    "functions":["Test"]
+                                    },
                         "The Trade Desk": {"level":1,
                                             "functions":["Add Segments","Edit Segments","Query All Segments"]
                                         },
