@@ -105,6 +105,10 @@ def get_all_data_source():
     print("Get Data Source URL: {}".format(get_data_source_request.url))
 
     data_source_json = get_data_source_request.json()
+    return access_token, data_source_json
+
+def get_data_source_id_dict():
+    access_token, data_source_json = get_all_data_source()
     data_source_dict = {}
 
     # commented out all the unused parameters
@@ -148,6 +152,23 @@ def get_all_data_source():
                                             "activation_price":activation_price,"activation_uom":activation_uom}
     return data_source_dict
 
+# able to search the data source by name, returns Data Source ID
+# Used for adding traits to existing data source
+def get_data_source_name_dict():
+    access_token, data_source_json = get_all_data_source()
+    data_source_dict = {}
+
+    # see get_data_source_id_dict for full list of fields available
+    for data_source in data_source_json:
+        # pid = data_source["pid"]
+        name = data_source["name"]
+        # so that when searching for the data source id, ignores case sensitivity
+        lowercase_name = name.lower()
+        dataSourceId = data_source["dataSourceId"]
+
+        data_source_dict[lowercase_name] = dataSourceId
+    return data_source_dict
+
 def get_traits(access_token):
     if access_token == None:
         access_token = authenticate()
@@ -176,7 +197,7 @@ def query_all_segments():
     activation_price_list = []
     activation_uom_list = []
 
-    data_source_dict = get_all_data_source()
+    data_source_dict = get_data_source_id_dict()
     traits_json = get_traits(None)
 
     for trait in traits_json:
