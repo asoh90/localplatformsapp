@@ -112,7 +112,7 @@ def query_all_segments():
             write_last_modified_list.append(segment["last_modified"])
 
     write_df = pd.DataFrame({
-                    "Segment id":write_segment_id_list,
+                    "Segment ID":write_segment_id_list,
                     'code':write_code_list,
                     'Segment Name':write_segment_name_list,
                     'Price':write_price_list,
