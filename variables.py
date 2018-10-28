@@ -7,7 +7,7 @@ login_credentials = {}
 platform_functions = {
                         "--Select Platform--":[],
                         "Adobe AAM":{"level":1,
-                                    "functions":["Query All Segments"]
+                                    "functions":["Add Segments", "Query All Segments"]
                                     },
                         "AppNexus Staging": {"level":2,
                                     "functions": {
