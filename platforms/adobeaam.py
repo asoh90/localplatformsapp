@@ -9,8 +9,10 @@ URL = "https://api.demdex.com:443/"
 AUTH_URL = URL + "oauth/token"
 API_URL = URL + "v1/"
 DATA_SOURCE_URL = API_URL + "datasources/"
-DATA_FEED_URL = API_URL + "data-feeds/{}/plans"
-TRAITS_URL = API_URL + "traits/"
+DATA_FEED_URL = API_URL + "data-feeds/"
+DATA_FEED_PLAN_URL = API_URL + "data-feeds/{}/plans/"
+TRAIT_FOLDER_URL = API_URL + "folders/traits/"
+TRAIT_URL = API_URL + "traits/"
 
 CONTENT_TYPE = "application/x-www-form-urlencoded"
 AUTHORIZATION = "Basic ZXllb3RhLWJhYWFtOnJvZDZsOWluamRzZmwyN2E2cGUybjNsam50cmhndnRpM3A5NGN1YnUyMXVzdjZ2MXBicg=="
@@ -20,8 +22,27 @@ GRANT_TYPE = "password"
 DATA_SOURCE_ID_TYPE = "COOKIE"
 DATA_EXPORT_RESTRICTIONS = ['PII', 'ONSITE_PERSONALIZATION']
 DATA_SOURCE_TYPE = "GENERAL"
+ALLOW_DATA_SHARING = True
 INBOUNDS2S = True
 OUTBOUNDS2S = False
+
+# constants to add data feed
+ADD_DATA_FEED_DATA_BRANDING_TYPE = "BRANDED"
+# Linda, Derek's account
+ADD_DATA_FEED_CONTACT_USER_IDS = [56139,74130]
+ADD_DATA_FEED_DESCRIPTION = ""
+ADD_DATA_FEED_DISTRIBUTION = "PUBLIC"
+ADD_DATA_FEED_BILLING = "ADOBE"
+ADD_DATA_FEED_STATUS = "INACTIVE"
+
+# constants to add data feed plan
+ADD_DATA_FEED_PLAN_DESCRIPTION = ""
+ADD_DATA_FEED_PLAN_BILLING_CYCLE = "MONTHLY_IN_ARREARS"
+ADD_DATA_FEED_PLAN_STATUS = "ACTIVE"
+ADD_DATA_FEED_PLAN_SEGMENT_AND_OVERLAP_BILLING_UNIT = "FIXED"
+
+# constant to add trait folder
+ADD_TRAIT_FOLDER_PID = 7784
 
 # Login credentials
 username = None
@@ -40,8 +61,10 @@ def callAPI(platform, function, file_path):
         output = read_all_to_add_segments(file_path)
     elif function == "Query All Segments":
         output = query_all_segments()
-    return output
+    elif function == "Test":
+        output = read_all_to_add_trait_folder(file_path)
     
+    return output
 
 def authenticate():
     data = {
@@ -57,25 +80,25 @@ def authenticate():
                             data=data).json()
     return auth_json["access_token"]
 
-def get_data_feed(access_token, data_source_id):
+def get_data_feed_plan(access_token, data_source_id):
     if access_token == None:
         access_token = authenticate()
 
     # Only Activation should be CPM, the rest should be fixed
     data_feed_dict = {"SEGMENTS_AND_OVERLAP_PRICE":None,"MODELING_PRICE":None,"ACTIVATION_PRICE":None,
                     "SEGMENTS_AND_OVERLAP_UoM":None,"MODELING_UoM":None,"ACTIVATION_UoM":None}
-    get_data_feed_request = requests.get(DATA_FEED_URL.format(data_source_id),
+    get_data_feed_plan_request = requests.get(DATA_FEED_PLAN_URL.format(data_source_id),
                         headers={
                             'Content-Type':"application/json",
                             'Authorization':"Bearer " + access_token
                         })
-    print("Get Data Feed URL: {}".format(get_data_feed_request.url))
+    print("Get Data Feed Plans URL: {}".format(get_data_feed_plan_request.url))
     
     # No data feed for this data source
-    if get_data_feed_request.status_code == 404:
+    if get_data_feed_plan_request.status_code == 404:
         return data_feed_dict
 
-    data_feed_json = get_data_feed_request.json()
+    data_feed_json = get_data_feed_plan_request.json()
     for data_feed in data_feed_json:
         useCase = data_feed["useCase"]
         billingUnit = data_feed["billingUnit"]
@@ -151,7 +174,7 @@ def get_data_source_id_dict():
         # samplingEnabled = data_source["samplingEnabled"]
 
         # Get data feed for Data Source ID
-        data_feed_dict = get_data_feed(access_token, dataSourceId)
+        data_feed_dict = get_data_feed_plan(access_token, dataSourceId)
         segments_and_overlap_price = data_feed_dict["SEGMENTS_AND_OVERLAP_PRICE"]
         segments_and_overlap_uom = data_feed_dict["SEGMENTS_AND_OVERLAP_UoM"]
         modeling_price = data_feed_dict["MODELING_PRICE"]
@@ -162,7 +185,40 @@ def get_data_source_id_dict():
         data_source_dict[dataSourceId] = {"name":name, "segments_and_overlap_price":segments_and_overlap_price,"segments_and_overlap_uom":segments_and_overlap_uom,
                                             "modeling_price":modeling_price,"modeling_uom":modeling_uom,
                                             "activation_price":activation_price,"activation_uom":activation_uom}
-    return data_source_dict
+    return access_token, data_source_dict
+
+def get_data_feed_dict(access_token):
+    data_feed_dict = {}
+
+    if access_token == None:
+        access_token = authenticate()
+
+    get_data_feed_request = requests.get(DATA_FEED_URL,
+                            headers={
+                                'Content-Type':"application/json",
+                                'Authorization':"Bearer " + access_token
+                            })
+    print("Get Data Feed URL: {}".format(get_data_feed_request.url))
+
+    data_feed_json = get_data_feed_request.json()
+
+    for data_feed in data_feed_json:
+        # name = data_feed["name"]
+        description = data_feed["description"]
+        # billing = data_feed["billing"]
+        # distribution = data_feed["distribution"]
+        # status = data_feed["status"]
+        # crUID = data_feed["crUID"]
+        # upUID = data_feed["upUID"]
+        # createTime = data_feed["createTime"]
+        # updateTime = data_feed["updateTime"]
+        # pid = data_feed["pid"]
+        # contactUserIds = data_feed["contactUserIds"]
+        dataSourceId = data_feed["dataSourceId"]
+
+        data_feed_dict[dataSourceId] = description
+
+    return data_feed_dict
 
 # able to search the data source by name, returns Data Source ID
 # Used for adding traits to existing data source
@@ -179,21 +235,21 @@ def get_data_source_name_dict():
         dataSourceId = data_source["dataSourceId"]
 
         data_source_dict[lowercase_name] = dataSourceId
-    return data_source_dict
+    return access_token, data_source_dict
 
 def get_traits(access_token):
     if access_token == None:
         access_token = authenticate()
 
-    get_traits_request = requests.get(TRAITS_URL,
+    get_trait_request = requests.get(TRAIT_URL,
                             headers={
                                 'Content-Type':"application/json",
                                 'Authorization':"Bearer " + access_token
                             })
-    print("Get Traits URL: {}".format(get_traits_request.url))
+    print("Get Trait URL: {}".format(get_trait_request.url))
 
-    traits_json = get_traits_request.json()
-    return traits_json
+    trait_json = get_trait_request.json()
+    return access_token, trait_json
 
 # Adding Data Source will add the name as the description as well
 def add_data_source(access_token, data_source_name):
@@ -205,26 +261,194 @@ def add_data_source(access_token, data_source_name):
                             'Content-Type':"application/json",
                             'Authorization':"Bearer " + access_token
                         },
-                        params={
+                        json={
                             "idType":DATA_SOURCE_ID_TYPE,
                             "outboundS2S":OUTBOUNDS2S,
                             "name":data_source_name,
                             "description":data_source_name,
+                            "allowDataSharing":ALLOW_DATA_SHARING,
                             "inboundS2S":INBOUNDS2S,
                             "type":DATA_SOURCE_TYPE,
                             "dataExportRestrictions":DATA_EXPORT_RESTRICTIONS
                         })
-    print("Add Data Source URL: {}".format(get_data_source_request.url))
+    print("Add Data Source URL: {}".format(add_data_source_request.url))
 
     add_data_source_status = add_data_source_request.status_code
+
+    # Fail if status code is not 201
+    if not add_data_source_status == 201:
+        return access_token, None
+
     add_data_source_json = add_data_source_request.json()
     data_source_id = add_data_source_json["dataSourceId"]
 
-    return add_data_source_status, data_source_id
+    return access_token, data_source_id
+
+def add_data_feed(access_token, data_source_id, data_source_name, data_feed_description):
+    if access_token == None:
+        access_token = authenticate()
+
+    add_data_feed_request = requests.post(DATA_FEED_URL,
+                                headers={
+                                    'Content-Type':"application/json",
+                                    'Authorization':"Bearer " + access_token
+                                },
+                                json={
+                                    "dataBrandingType":ADD_DATA_FEED_DATA_BRANDING_TYPE,
+                                    "dataSourceId":data_source_id,
+                                    "name":data_source_name,
+                                    "description":data_feed_description,
+                                    "distribution":ADD_DATA_FEED_DISTRIBUTION,
+                                    "contactUserIds":ADD_DATA_FEED_CONTACT_USER_IDS,
+                                    "billing":ADD_DATA_FEED_BILLING,
+                                    "status":ADD_DATA_FEED_STATUS
+                                }
+                            )
+
+    print("Add Data Feed URL: {}".format(add_data_feed_request.url))
+    add_data_feed_response = add_data_feed_request.json()
+
+    if not add_data_feed_request.status_code == 201:
+        return access_token, add_data_feed_response["message"]
+
+    return access_token, "Created"
+
+def add_data_feed_plan(access_token, dataSourceId, useCase, billingUnit, price):
+    if access_token == None:
+        access_token = authenticate()
+    
+    add_data_feed_plan_request = requests.post(DATA_FEED_PLAN_URL.format(dataSourceId),
+                                    headers={
+                                        'Content-Type':"application/json",
+                                        'Authorization':"Bearer " + access_token
+                                    },
+                                    json={
+                                        "useCase":useCase,
+                                        "billingCycle":ADD_DATA_FEED_PLAN_BILLING_CYCLE,
+                                        "price":price,
+                                        "description":ADD_DATA_FEED_PLAN_DESCRIPTION,
+                                        "billingUnit":billingUnit,
+                                        "status":ADD_DATA_FEED_PLAN_STATUS
+                                    }
+                                )
+
+    print("Add Data Feed Plan URL: {}".format(add_data_feed_plan_request.url))
+    add_data_feed_plan_response = add_data_feed_plan_request.json()
+
+    if not add_data_feed_plan_request.status_code == 201:
+        return access_token, add_data_feed_plan_response["message"]
+    
+    return access_token, "Created"
+
+def get_trait_folders(access_token):
+    if access_token == None:
+        access_token = authenticate()
+    
+    get_trait_folder_request = requests.get(TRAIT_FOLDER_URL,
+                                headers={
+                                    'Content-Type':'application/json',
+                                    'Authorization':"Bearer " + access_token
+                                }
+                            )
+    print("Get Trait Folder URL: {}".format(get_trait_folder_request.url))
+    get_trait_folder_json = get_trait_folder_request.json()
+
+    if not get_trait_folder_request.status_code == 200:
+        return None
+
+    return access_token, get_trait_folder_json
+
+# method to merge two dictionaries
+def merge_dicts(dict_1, dict_2):
+    temp_dict = dict_1.copy()
+    temp_dict.update(dict_2)
+    return temp_dict
+
+# For query all function
+def get_trait_folder_id_dict(access_token, trait_folder_json):
+    trait_folder_dict = {}
+
+    for trait_folder in trait_folder_json:
+        folderId = trait_folder["folderId"]
+        path = trait_folder["path"]
+
+        if "subFolders" in trait_folder:
+            subFolders = trait_folder["subFolders"]
+
+            trait_subfolder_dict = get_trait_folder_id_dict(access_token, subFolders)
+            trait_folder_dict = merge_dicts(trait_folder_dict, trait_subfolder_dict)
+        
+        trait_folder_dict[folderId] = path
+
+    return trait_folder_dict
+
+# For add segments function
+def get_trait_folder_path_dict(access_token, trait_folder_json):
+    trait_folder_dict = {}
+
+    for trait_folder in trait_folder_json:
+        folderId = trait_folder["folderId"]
+        path = trait_folder["path"]
+
+        if "subFolders" in trait_folder:
+            subFolders = trait_folder["subFolders"]
+
+            trait_subfolder_dict = get_trait_folder_path_dict(access_token, subFolders)
+            trait_folder_dict = merge_dicts(trait_folder_dict, trait_subfolder_dict)
+        
+        trait_folder_dict[path] = folderId
+
+    return trait_folder_dict
+
+def add_trait_folder(access_token, parentFolderId, name):
+    if access_token == None:
+        access_token = authenticate()
+
+    add_trait_folder_request = requests.post(TRAIT_FOLDER_URL,
+                                headers={
+                                    'Content-Type':'application/json',
+                                    'Authorization':"Bearer " + access_token
+                                },
+                                json={
+                                    "parentFolderId":parentFolderId,
+                                    "name":name,
+                                    "pid":ADD_TRAIT_FOLDER_PID
+                                }
+                            )
+    print("Add Trait Folder URL: {}".format(add_trait_folder_request.url))
+    add_trait_folder_response = add_trait_folder_request.json()
+    return access_token, add_trait_folder_response["folderId"]
+
+def check_and_add_trait_folder(access_token, checked_path, trait_folder_path_list, trait_folder_name_dict, parent_folder_id):
+    folder_id = None
+
+    current_folder_name = trait_folder_path_list.pop(0)
+    checked_path = checked_path + "/" + current_folder_name
+
+    # This is not the childmost folder
+    if len(trait_folder_path_list) > 0:
+        # current path folder already exists
+        if checked_path in trait_folder_name_dict:
+            folder_id = trait_folder_name_dict[checked_path]
+        # current path folder does not exist, create folder, append to dict, then look for next folder path
+        else:
+            access_token, folder_id = add_trait_folder(access_token, parent_folder_id, current_folder_name)
+            trait_folder_name_dict[checked_path] = folder_id
+        trait_folder_name_dict, folder_id = check_and_add_trait_folder(access_token, checked_path, trait_folder_path_list, trait_folder_name_dict, folder_id)
+
+    else:
+        if checked_path in trait_folder_name_dict:
+            folder_id = trait_folder_name_dict[checked_path]
+        else:
+            access_token, folder_id = add_trait_folder(access_token, parent_folder_id, current_folder_name)
+            trait_folder_name_dict[checked_path] = folder_id
+
+    return trait_folder_name_dict, folder_id
+
 
 # Process of getting all segments:
 # 1. get all the data sources
-# 2. for each data source ID, get the data feeds (contains the price of segments_and_overlap, modeling, and activation)
+# 2. for each data source ID, get the data feed plan (contains the price of segments_and_overlap, modeling, and activation)
 # 3. get all the traits (these are your segments)
 # 4. match them all together, you will get the segments to the data source, then to the data feeds to get the rates of each traits(segments)
 def query_all_segments():
@@ -232,8 +456,10 @@ def query_all_segments():
     segment_name_list = []
     segment_description_list = []
     segment_status_list = []
+    trait_folder_path_list = []
     data_source_id_list = []
     data_source_name_list = []
+    data_feed_description_list = []
     segments_and_overlap_price_list = []
     segments_and_overlap_uom_list = []
     modeling_price_list = []
@@ -241,10 +467,15 @@ def query_all_segments():
     activation_price_list = []
     activation_uom_list = []
 
-    data_source_dict = get_data_source_id_dict()
-    traits_json = get_traits(None)
+    access_token, data_source_dict = get_data_source_id_dict()
+    data_feed_dict = get_data_feed_dict(access_token)
+    access_token, trait_json = get_traits(None)
 
-    for trait in traits_json:
+    # Get Trait Folder
+    access_token, trait_folder_json = get_trait_folders(access_token)
+    trait_folder_id_dict = get_trait_folder_id_dict(access_token, trait_folder_json)
+
+    for trait in trait_json:
         # createTime = trait["createTime"]
         # updateTime = trait["updateTime"]
         sid = trait["sid"]
@@ -257,23 +488,32 @@ def query_all_segments():
         # upUID = trait["upUID"]
         # integrationCode = trait["integrationCode"]
         dataSourceId = trait["dataSourceId"]
-        # folderId = trait["folderId"]
+        folderId = trait["folderId"]
 
         data_source = data_source_dict[dataSourceId]
         data_source_name = data_source["name"]
+
+        # some data source might not have data feed
+        data_feed_description = ""
+        if dataSourceId in data_feed_dict:
+            data_feed_description = data_feed_dict[dataSourceId]
+        
         segments_and_overlap_price = data_source["segments_and_overlap_price"]
         segments_and_overlap_uom = data_source["segments_and_overlap_uom"]
         modeling_price = data_source["modeling_price"]
         modeling_uom = data_source["modeling_uom"]
         activation_price = data_source["activation_price"]
         activation_uom = data_source["activation_uom"]
+        trait_folder_path = trait_folder_id_dict[folderId]
 
         segment_id_list.append(sid)
         segment_name_list.append(name)
         segment_description_list.append(description)
         segment_status_list.append(status)
+        trait_folder_path_list.append(trait_folder_path)
         data_source_id_list.append(dataSourceId)
         data_source_name_list.append(data_source_name)
+        data_feed_description_list.append(data_feed_description)
         segments_and_overlap_price_list.append(segments_and_overlap_price)
         segments_and_overlap_uom_list.append(segments_and_overlap_uom)
         modeling_price_list.append(modeling_price)
@@ -286,8 +526,10 @@ def query_all_segments():
                     "Segment Name":segment_name_list,
                     "Segment Description":segment_description_list,
                     "Segment Status":segment_status_list,
+                    "Trait Folder Path":trait_folder_path_list,
                     "Data Source ID":data_source_id_list,
                     "Data Source Name":data_source_name_list,
+                    "Data Feed Description":data_feed_description_list,
                     "Segments and Overlap Price":segments_and_overlap_price_list,
                     "Segments and Overlap UoM":segments_and_overlap_uom_list,
                     "Modeling Price":modeling_price_list,
@@ -296,10 +538,14 @@ def query_all_segments():
                     "Activation UoM":activation_uom_list
                 })
     return write_excel.write(write_df, "DONOTUPLOAD_AdobeAAM_query_all")
-    
-def read_all_to_add_segments(file_path):
-    data_source_name_dict = get_data_source_name_dict()
 
+# Process to add segments:
+# 1. Check if data source exists, if not, create data source
+# 2. if data source is created, create data feed
+# 3. if data feed is created, create data feed plan
+# 4. Check if trait folder exists, if not, create trait folder
+# 5. create trait
+def read_all_to_add_segments(file_path):
     read_df = None
     try:
         # Skip row 2 ([1]) tha indicates if field is mandatory or not
@@ -311,8 +557,10 @@ def read_all_to_add_segments(file_path):
     segment_name_list = read_df["Segment Name"]
     segment_description_list = read_df["Segment Description"]
     segment_status_list = []
+    trait_folder_path_list = read_df["Trait Folder Path"]
     data_source_id_list = []
     data_source_name_list = read_df["Data Source Name"]
+    data_feed_description_list = read_df["Data Feed Description"]
     segments_and_overlap_price_list = read_df["Segments and Overlap Price"]
     segments_and_overlap_uom_list = []
     modeling_price_list = read_df["Modeling Price"]
@@ -320,25 +568,114 @@ def read_all_to_add_segments(file_path):
     activation_price_list = read_df["Activation Price"]
     activation_uom_list = read_df["Activation UoM"]
     data_source_result = []
+    data_feed_result = []
+    segments_and_overlap_plan_result = []
+    modeling_plan_result = []
+    activation_plan_result = []
+    create_trait_folder_result = []
+    create_trait_result = []
 
-    # if name not in dict, add data source, append data source to dict (lowercase name: data source id)
-    data_source_name_dict = get_data_source_name_dict()
+    access_token, data_source_name_dict = get_data_source_name_dict()
+
+    access_token, trait_folder_json = get_trait_folders(access_token)
+    trait_folder_path_dict = get_trait_folder_path_dict(access_token, trait_folder_json)
+
+    row_counter = 0
     for data_source_name in data_source_name_list:
+        # boolean value to create traits or not
+        create_data_source_success = False
+
         lowercase_data_source_name = data_source_name.lower()
         
         data_source_id = None
         if lowercase_data_source_name in data_source_name_dict:
             data_source_id = data_source_name_dict[lowercase_data_source_name]
-            data_source_result.append("OK")
+            data_source_result.append("Existing Data Source")
+            data_feed_result.append(None)
+            segments_and_overlap_plan_result.append(None)
+            modeling_plan_result.append(None)
+            activation_plan_result.append(None)
+        # if name not in dict, add data source, append data source to dict (lowercase name: data source id)
         else:
             # Add case sensitive name for data source
-            add_data_source_status, data_source_id = add_data_source(None, data_source_name)
-            # Append lower case name to data source name dict
-            data_source_name_dict[lowercase_data_source_name] = data_source_id
-            data_source_result.append(add_data_source_status)
+            access_token, data_source_id = add_data_source(None, data_source_name)
 
-            print("Add Data Source Status: {}".format(add_data_source_status))
-            print("New Data Source ID: {}".format(data_source_id))
+            # Fail to add new data source
+            if data_source_id == None:
+                data_source_result.append("FAILED")
+                data_feed_result.append(None)
+                segments_and_overlap_plan_result.append(None)
+                modeling_plan_result.append(None)
+                activation_plan_result.append(None)
+            else:
+                # Append lower case name to data source name dict
+                data_source_name_dict[lowercase_data_source_name] = data_source_id
+                data_source_result.append("Created")
+
+                data_source_name = data_source_name_list[row_counter]
+                data_feed_description = data_feed_description_list[row_counter]
+                access_token, add_data_feed_output = add_data_feed(access_token, data_source_id, data_source_name, data_feed_description)
+
+                if not add_data_feed_output == "Created":
+                    data_feed_result.append("Failed. " + add_data_feed_output)
+                    segments_and_overlap_plan_result.append(None)
+                    modeling_plan_result.append(None)
+                    activation_plan_result.append(None)
+                else:
+                    data_feed_result.append("Created")
+                    
+                    # Segments and overlap must be created
+                    segments_and_overlap_price = segments_and_overlap_price_list[row_counter]
+                    # convert segments_and_overlap_price to int
+                    try:
+                        segments_and_overlap_price = int(segments_and_overlap_price)
+                        access_token, segments_and_overlap_output = add_data_feed_plan(access_token, data_source_id, ["SEGMENTS_AND_OVERLAP"], ADD_DATA_FEED_PLAN_SEGMENT_AND_OVERLAP_BILLING_UNIT, segments_and_overlap_price)
+                        segments_and_overlap_plan_result.append(segments_and_overlap_output)
+                        create_data_source_success = True
+                    except:
+                        segments_and_overlap_plan_result.append("FAILED. Please enter a number for Segments and Overlap Price")
+
+                    # Modeling will be created if modeling price is not empty
+                    modeling_billing_unit = modeling_uom_list[row_counter]
+
+                    if not pd.isna(modeling_billing_unit):
+                        modeling_price = modeling_price_list[row_counter]
+                        
+                        if modeling_billing_unit == "FIXED" or modeling_billing_unit == "CPM":
+                            # convert modeling_price to int
+                            try:
+                                modeling_price = int(modeling_price)
+                                access_token, modeling_plan_output = add_data_feed_plan(access_token, data_source_id, ["MODELING"], modeling_billing_unit, modeling_price)
+                                modeling_plan_result.append(modeling_plan_output)
+                            except:
+                                modeling_plan_result.append("FAILED. Please enter a number for Modeling Price")
+                        else:
+                            modeling_plan_result.append("Failed. Only enter FIXED or CPM for Modeling UoM")
+                    else:
+                        modeling_plan_result.append(None)
+                        
+
+                    # Activation will be created if activation price is not empty (what billing unit to add?)
+                    activation_plan_result.append(None)
+
+            if create_data_source_success:
+                # TO DO: create trait folder
+                trait_folder_path = trait_folder_path_list[row_counter]
+
+                folder_id = None
+                if trait_folder_path in trait_folder_path_dict:
+                    folder_id = trait_folder_path_dict[trait_folder_path]
+                else:
+                    # remove first slash from the path
+                    trait_folder_path = trait_folder_path[1:]
+                    trait_folder_path_list = trait_folder_path.split("/")
+                    trait_folder_path_dict, folder_id = check_and_add_trait_folder(access_token, "", trait_folder_path_list, trait_folder_path_dict)
+
+            else:
+                create_trait_folder_result.append(None)
+                create_trait_result.append(None)
+
+            row_counter += 1
 
         data_source_id_list.append(data_source_id)
 
@@ -349,6 +686,47 @@ def read_all_to_add_segments(file_path):
     write_df = pd.DataFrame({
                     "Data Source ID":data_source_id_list,
                     "Data Source Name":data_source_name_list,
-                    "Data Source Result":data_source_result
+                    "Data Source Result":data_source_result,
+                    "Data Feed Result":data_feed_result,
+                    "Segments and Overlap Plan Result":segments_and_overlap_plan_result,
+                    "Modeling Plan Result":modeling_plan_result,
+                    "Activation Plan Result":activation_plan_result
                 })
     return write_excel.write(write_df, file_name + "_output_add_segments")
+
+def read_all_to_add_trait_folder(file_path):
+    folder_id_list = []
+
+    read_df = None
+    try:
+        # Skip row 2 ([1]) tha indicates if field is mandatory or not
+        read_df = pd.read_excel(file_path, sheet_name="Adobe AAM", skiprows=[1])
+    except:
+        return {"message":"File Path '{}' is not found".format(file_path)}
+
+    trait_folder_path_list = read_df["Trait Folder Path"]
+
+    access_token, trait_folder_json = get_trait_folders(None)
+    trait_folder_path_dict = get_trait_folder_path_dict(access_token, trait_folder_json)
+
+    for trait_folder_path in trait_folder_path_list:
+        folder_id = None
+        if trait_folder_path in trait_folder_path_dict:
+            folder_id = trait_folder_path_dict[trait_folder_path]
+        else:
+            # remove first slash from the path
+            trait_folder_path = trait_folder_path[1:]
+            trait_folder_path_list = trait_folder_path.split("/")
+            trait_folder_path_dict, folder_id = check_and_add_trait_folder(access_token, "", trait_folder_path_list, trait_folder_path_dict, 0)
+
+        folder_id_list.append(folder_id)
+    
+    os.remove(file_path)
+    file_name_with_extension = file_path.split("/")[-1]
+    file_name = file_name_with_extension.split(".xlsx")[0]
+
+    write_df = pd.DataFrame({
+                    "Folder ID":folder_id_list
+                })
+    return write_excel.write(write_df, file_name + "_output_add_trait_folders")
+    
