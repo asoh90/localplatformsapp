@@ -6,6 +6,9 @@ login_credentials = {}
 
 platform_functions = {
                         "--Select Platform--":[],
+                        "Adform":{"level":1,
+                                    "functions":["Query Test"]
+                                 },
                         "Adobe AAM":{"level":1,
                                     "functions":["Add Segments", "Query All Segments"]
                                     },
