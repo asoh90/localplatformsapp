@@ -1,10 +1,12 @@
 import requests
+import variables
 
 # Authenticate credentials
 AUTHENTICATE_URL = "https://auth.mediamath.com/oauth/token"
 URL = "https://api.mediamath.com/"
 API_URL = URL + "api/v2.0/"
 SESSION_URL = API_URL + "session"
+GET_SEGMENTS_URL = API_URL + "audience_segments"
 
 CLIENT_ID = "IBxiUniDVrRYSdSXUHJgoq6KdJ7F5oN0"
 CLIENT_SECRET = "NnU9qtfRtruQypo7e2QJh_as_HjlDjppZAhBP0wWeRkqdSzcVrZSln_8PdXrOn50"
@@ -12,8 +14,8 @@ CLIENT_SECRET = "NnU9qtfRtruQypo7e2QJh_as_HjlDjppZAhBP0wWeRkqdSzcVrZSln_8PdXrOn5
 
 
 def callAPI(platform, function, file_path):
-    if function == "Test":
-        authenticate()
+    if function == "Query All Segments":
+        get_all_segments()
 
 def authenticate():
     username = variables.login_credentials['MediaMath']['Login']
@@ -54,3 +56,24 @@ def get_session(access_token):
         adama_session = session_dict["adama_session"]
 
     return adama_session
+
+def get_segments(access_token, session):
+    get_segments_request = requests.get(GET_SEGMENTS_URL,
+                            headers={
+                                'Authorization':"Bearer " + access_token,
+                                'adama_session':session,
+                                'Content-Type':"application/json"
+                            })
+    print("Get Segments URL: {}".format(get_segments_request.url))
+
+    get_segments_response = None
+    if get_segments_request.status_code == 200:
+        get_segments_response = get_segments_request.content()
+
+    print(get_segments_response)
+
+def get_all_segments():
+    access_token = authenticate()
+    session = get_session(access_token)
+
+    get_segments(access_token, session)

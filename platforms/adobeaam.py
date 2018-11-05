@@ -748,7 +748,23 @@ def read_all_to_add_segments(file_path):
                         
 
                     # Activation will be created if activation price is not empty (what billing unit to add?)
-                    activation_plan_result.append(None)
+                    activation_billing_unit = activation_uom_list[row_counter]
+
+                    if not pd.isna(activation_billing_unit):
+                        activation_price = activation_price_list[row_counter]
+                        
+                        if activation_billing_unit == "FIXED" or activation_billing_unit == "CPM":
+                            # convert activation_price to int
+                            try:
+                                activation_price = int(activation_price)
+                                access_token, activation_plan_output = add_data_feed_plan(access_token, data_source_id, ['AD_TARGETING', 'PERSONALIZATION_AND_TESTING', 'FEED_EXPORT'], activation_billing_unit, activation_price)
+                                activation_plan_result.append(activation_plan_output)
+                            except:
+                                activation_plan_result.append("FAILED. Please enter a number for Activation Price")
+                        else:
+                            activation_plan_result.append("Failed. Only enter FIXED or CPM for Activation UoM")
+                    else:
+                        activation_plan_result.append(None)
             
         folder_id = None
         # Create trait folder if data source exists

@@ -22,7 +22,7 @@ platform_functions = {
                                         }
                                     },
                         "MediaMath": {"level":1,
-                                    "functions":["Test"]
+                                    "functions":["Query All Segments"]
                                     },
                         "The Trade Desk": {"level":1,
                                             "functions":["Add Segments","Edit Segments","Query All Segments"]
