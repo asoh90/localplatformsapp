@@ -176,12 +176,12 @@ def get_all_segments():
     write_df = pd.DataFrame({
         "Ref ID":segment_refId_list,
         "Segment Name":segment_name_list,
-        "Segment Status":segment_status_list,
-        "Segment Fee":segment_fee_list,
-        "Segment TTL":segment_ttl_list,
-        "Segment Audience":segment_audience_list,
-        "Segment Clicks":segment_clicks_list,
-        "Segment Impressions":segment_impressions_list,
+        "Status":segment_status_list,
+        "Fee":segment_fee_list,
+        "TTL":segment_ttl_list,
+        "Audience":segment_audience_list,
+        "Clicks":segment_clicks_list,
+        "Impressions":segment_impressions_list,
         "Data Provider ID":segment_dataProviderId_list,
         "Category ID":segment_categoryId_list,
         "Segment ID":segment_id_list
