@@ -15,12 +15,14 @@ platform_functions = {
                         "AppNexus Staging": {"level":2,
                                     "functions": {
                                         "Segment":["Add Segments","Edit Segments","Query All Segments","Retrieve Segments"],
+                                        "Report":["Segment Loads Report"],
                                         "Troubleshoot":["Add Existing Segments to Specific Buyer Member","Add Segment Billings","Retrieve Buyer Member Segments"]
                                         }
                                     },
                         "AppNexus": {"level":2,
                                     "functions": {
                                         "Segment":["Add Segments","Edit Segments","Query All Segments","Retrieve Segments"],
+                                        "Report":["Segment Loads Report"],
                                         "Troubleshoot":["Add Existing Segments to Specific Buyer Member","Add Segment Billings","Retrieve Buyer Member Segments"]
                                         }
                                     },

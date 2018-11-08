@@ -13,6 +13,7 @@ url_auth = None
 url_segment = None
 url_buyer_member_data_sharing = None
 url_segment_billing_category = None
+url_segment_loads_report = None
 
 # Folder to retrieve uploaded file
 UPLOAD_FOLDER = variables.UPLOAD_FOLDER
@@ -36,6 +37,7 @@ def callAPI(platform, function, file_path):
     global url_segment; url_segment = url_home + "segment"
     global url_buyer_member_data_sharing; url_buyer_member_data_sharing = url_home + "member-data-sharing"
     global url_segment_billing_category; url_segment_billing_category = url_home + "segment-billing-category"
+    global url_segment_loads_report; url_segment_loads_report = url_home + "report"
 
     try:
         # Login credentials
@@ -61,17 +63,21 @@ def callAPI(platform, function, file_path):
         output = read_file_to_add_segment_billings(file_path)
     elif (function == "Retrieve Buyer Member Segments"):
         output = read_file_to_retrieve_buyer_member_segments(file_path)
+    elif (function == "Segment Loads Report"):
+        output = read_file_to_get_segment_loads(file_path)
     return output
 
 def authenticate():
     auth_credentials = {'username':login,'password':password}
-    auth_json = requests.post(url_auth,
+    auth_request = requests.post(url_auth,
                               headers={
                                   'Content-Type':'application/json'
                               },
                               json={
                                   'auth':auth_credentials
-                              }).json()
+                              })
+    print("Authenticate URL: {}".format(auth_request.url))
+    auth_json = auth_request.json()
     response = auth_json['response']
     global auth_token; auth_token = response['token']
 
@@ -806,6 +812,73 @@ def read_file_to_edit_segment_billings(file_path):
                     'Response':write_response
                 })
     return write_excel.write(write_df, "DONOTUPLOAD_" + file_name + "_edit_billing")
+
+def get_segment_loads_report(email, start_date, end_date):
+    request_json = {
+                        "report":{
+                                    "report_type":"segment_load",
+                                    "columns":["segment_id","segment_name","month","total_loads","monthly_uniques","avg_daily_uniques"],
+                                    "groups":["segment_id","month"],
+                                    "orders":["month"],
+                                    "emails":email,
+                                    "format":"xlsx",
+                                    "start_date":str(start_date),
+                                    "end_date":str(end_date)
+                        }
+                    }
+    request_segment_loads_report = requests.post(url_segment_loads_report,
+                                    headers={
+                                        "Content-Type":"application/json",
+                                        'Authorization':auth_token
+                                    },
+                                    json=request_json)
+    print("Get Segments Loads Report URL: {}".format(request_segment_loads_report.url))
+    
+    response = request_segment_loads_report.json()
+    if response["response"]["status"] == "error":
+        return response["response"]["error"]
+    else:
+        return "OK"
+
+def read_file_to_get_segment_loads(file_path):
+    read_df = None
+    try:
+        # Skip row 2 ([1]) tha indicates if field is mandatory or not
+        read_df = pd.read_excel(file_path, sheet_name="AppNexus", skiprows=[1])
+    except:
+        return {"message":"File Path '{}' is not found".format(file_path)}
+
+    start_date_list = read_df["Report Start Date"]
+    end_date_list = read_df["Report End Date"]
+    email_list = read_df["Report Email"]
+
+    unique_email_list = []
+
+    os.remove(file_path)
+    file_name_with_extension = file_path.split("/")[-1]
+    file_name = file_name_with_extension.split(".xlsx")[0]
+
+    row_counter = 0
+    for start_date in start_date_list:
+        end_date = end_date_list[row_counter]
+        email = email_list[row_counter]
+
+        email_list_value = email.split(",")
+        if len(email_list_value) > 1:
+            email = [email_value.strip() for email_value in email_list_value]
+        else:
+            email = [email]
+
+        if not email in unique_email_list:
+            unique_email_list.append(email)
+
+        segment_loads_report_response = get_segment_loads_report(email, start_date, end_date)
+        if not segment_loads_report_response == "OK":
+            return {"message":"ERROR: " + segment_loads_report_response}
+
+        row_counter += 1
+
+    return {"message":"Report(s) will be sent to {} shortly".format(unique_email_list)}
 
 def read_file_to_retrieve_segments(file_path):
     read_df = None
