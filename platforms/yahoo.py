@@ -50,7 +50,7 @@ def callAPI(platform, function, file_path):
     output = "ERROR: option is not available"
     if (function == "Refresh Segments"):
         output = read_file_to_add_segments(file_path)
-    elif (function == "Query"):
+    elif (function == "Query All Segments"):
         output = get_query_all()
     return output
 
