@@ -263,30 +263,32 @@ def add_trait(access_token, name, description, ttl, folderId, dataSourceId):
 
     add_trait_request = requests.post(TRAIT_URL,
                             headers={
-                            'Content-Type':"application/json",
-                            'Authorization':"Bearer " + access_token
-                        },
-                        json={
-                            'backfillStatus':ADD_TRAIT_BACKFILL_STATUS,
-                            'description':description,
-                            'pid':PID,
-                            'type':ADD_TRAIT_TYPE,
-                            'folderId':folderId,
-                            'ttl':ttl,
-                            'dataSourceId':dataSourceId,
-                            'traitType':ADD_TRAIT_TRAIT_TYPE,
-                            'name':name,
-                            'status':ADD_TRAIT_STATUS
-                        }
-                    )
+                                'Content-Type':"application/json",
+                                'Authorization':"Bearer " + access_token
+                            },
+                            json={
+                                'backfillStatus':ADD_TRAIT_BACKFILL_STATUS,
+                                'description':description,
+                                'pid':PID,
+                                'type':ADD_TRAIT_TYPE,
+                                'folderId':folderId,
+                                'ttl':ttl,
+                                'dataSourceId':dataSourceId,
+                                'traitType':ADD_TRAIT_TRAIT_TYPE,
+                                'name':name,
+                                'status':ADD_TRAIT_STATUS
+                            }
+                        )
     print("Add Trait URL: {}".format(add_trait_request.url))
 
     add_trait_json = add_trait_request.json()
+    # print(add_trait_json)
 
-    if not add_trait_request.status_code == 201:
-        return access_token, None
+    response_status_code = add_trait_request.status_code
+    if not response_status_code == 201:
+        return access_token, response_status_code, add_trait_json['childMessages']
     
-    return access_token, add_trait_json['sid']
+    return access_token, response_status_code, add_trait_json['sid']
 
 def edit_trait_rule(access_token, sid, folderId, dataSourceId, name, description, ttl):
     if access_token == None:
@@ -487,6 +489,7 @@ def add_trait_folder(access_token, parentFolderId, name):
                             )
     print("Add Trait Folder URL: {}".format(add_trait_folder_request.url))
     add_trait_folder_response = add_trait_folder_request.json()
+    # print(add_trait_folder_response)
     return access_token, add_trait_folder_response["folderId"]
 
 def check_and_add_trait_folder(access_token, checked_path, trait_folder_path_list, trait_folder_name_dict, parent_folder_id):
@@ -801,16 +804,16 @@ def read_all_to_add_segments(file_path):
 
         # segment lifetime is numerical
         if create_trait_output == None:
-            access_token, trait_id = add_trait(access_token, segment_name, segment_description, segment_lifetime, folder_id, data_source_id)
+            access_token, status_code, output = add_trait(access_token, segment_name, segment_description, segment_lifetime, folder_id, data_source_id)
 
-            if trait_id == None:
+            if not status_code == 201:
                 segment_id_list.append(None)
                 segment_status_list.append(None)
-                create_trait_output = "Failed to create segment"
+                create_trait_output = output
             else:
-                segment_id_list.append(trait_id)
+                segment_id_list.append(output)
                 segment_status_list.append(ADD_TRAIT_STATUS)
-                access_token, edit_trait_result = edit_trait_rule(access_token, trait_id, folder_id, data_source_id, segment_name, segment_description, segment_lifetime)
+                access_token, edit_trait_result = edit_trait_rule(access_token, output, folder_id, data_source_id, segment_name, segment_description, segment_lifetime)
 
                 if edit_trait_result == None:
                     create_trait_output = "Failed to edit Trait Expression"
