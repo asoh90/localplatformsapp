@@ -488,8 +488,12 @@ def add_trait_folder(access_token, parentFolderId, name):
                                 }
                             )
     print("Add Trait Folder URL: {}".format(add_trait_folder_request.url))
+    print("access token: {}".format(access_token))
+    print("parentFolderId: {}".format(parentFolderId))
+    print("name: {}".format(name))
+    print("pid: {}".format(PID))
     add_trait_folder_response = add_trait_folder_request.json()
-    # print(add_trait_folder_response)
+    print(add_trait_folder_response)
     return access_token, add_trait_folder_response["folderId"]
 
 def check_and_add_trait_folder(access_token, checked_path, trait_folder_path_list, trait_folder_name_dict, parent_folder_id):
