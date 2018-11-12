@@ -33,7 +33,7 @@ ADD_DATA_FEED_CONTACT_USER_IDS = [56139,74130]
 ADD_DATA_FEED_DESCRIPTION = ""
 ADD_DATA_FEED_DISTRIBUTION = "PUBLIC"
 ADD_DATA_FEED_BILLING = "ADOBE"
-ADD_DATA_FEED_STATUS = "ACTIVE"  # ****TO CHANGE TO ACTIVE****
+ADD_DATA_FEED_STATUS = "INACTIVE"  # ****TO CHANGE TO ACTIVE****
 
 # constants to add data feed plan
 ADD_DATA_FEED_PLAN_DESCRIPTION = ""
@@ -45,7 +45,7 @@ ADD_DATA_FEED_PLAN_SEGMENT_AND_OVERLAP_BILLING_UNIT = "FIXED"
 ADD_TRAIT_BACKFILL_STATUS = "NONE"
 ADD_TRAIT_TYPE = 0
 ADD_TRAIT_TRAIT_TYPE = "ON_BOARDED_TRAIT"
-ADD_TRAIT_STATUS = "ACTIVE"   # ****TO CHANGE TO ACTIVE****
+ADD_TRAIT_STATUS = "INACTIVE"   # ****TO CHANGE TO ACTIVE****
 
 # constant to add trait folder
 PID = 7784
@@ -286,7 +286,10 @@ def add_trait(access_token, name, description, ttl, folderId, dataSourceId):
 
     response_status_code = add_trait_request.status_code
     if not response_status_code == 201:
-        return access_token, response_status_code, add_trait_json['childMessages']
+        if 'childMessages' in add_trait_json:
+            return access_token, response_status_code, add_trait_json['childMessages']
+        else:
+            return access_token, response_status_code, add_trait_json['message']
     
     return access_token, response_status_code, add_trait_json['sid']
 
@@ -488,12 +491,12 @@ def add_trait_folder(access_token, parentFolderId, name):
                                 }
                             )
     print("Add Trait Folder URL: {}".format(add_trait_folder_request.url))
-    print("access token: {}".format(access_token))
-    print("parentFolderId: {}".format(parentFolderId))
-    print("name: {}".format(name))
-    print("pid: {}".format(PID))
+    # print("access token: {}".format(access_token))
+    # print("parentFolderId: {}".format(parentFolderId))
+    # print("name: {}".format(name))
+    # print("pid: {}".format(PID))
     add_trait_folder_response = add_trait_folder_request.json()
-    print(add_trait_folder_response)
+    # print(add_trait_folder_response)
     return access_token, add_trait_folder_response["folderId"]
 
 def check_and_add_trait_folder(access_token, checked_path, trait_folder_path_list, trait_folder_name_dict, parent_folder_id):

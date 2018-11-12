@@ -5,6 +5,7 @@ import write_excel
 import pandas as pd
 import os
 import sys
+import codecs
 
 topdir = os.path.join(os.path.dirname(__file__),".")
 sys.path.append(topdir)
@@ -112,7 +113,7 @@ def get_query_all():
     except:
         return {"message":"ERROR: " + query_response["message"]}
 
-def split_segments_to_add(segment_dict, segment_name_list, segment_id):
+def split_segments_to_add(segment_dict, segment_name_list, segment_id, segment_description):
     current_segment_name = segment_name_list[0]
     segment_name_list = segment_name_list[1:]
 
@@ -126,18 +127,18 @@ def split_segments_to_add(segment_dict, segment_name_list, segment_id):
             # current_segment_name is already a parent in segment_dict
             if "subTaxonomy" in segment_dict[current_segment_name]:
                 temp_segment_dict = segment_dict[current_segment_name]["subTaxonomy"]
-                segment_dict[current_segment_name]["subTaxonomy"] = split_segments_to_add(temp_segment_dict, segment_name_list, segment_id)
+                segment_dict[current_segment_name]["subTaxonomy"] = split_segments_to_add(temp_segment_dict, segment_name_list, segment_id, segment_description)
             else:
-                temp_subTaxonomy = split_segments_to_add({}, segment_name_list, segment_id)
+                temp_subTaxonomy = split_segments_to_add({}, segment_name_list, segment_id, segment_description)
                 segment_dict[current_segment_name]["subTaxonomy"] = temp_subTaxonomy
     # current_segment_name is not a parent in segment_dict
     else:
         # current_segment is the lowest child segment
         if len(segment_name_list) == 0:
-            segment_dict[current_segment_name] = {"id":int(segment_id)}
+            segment_dict[current_segment_name] = {"id":int(segment_id),"description":str(segment_description)}
         # current_segment_name is not the lowest child segment
         else:
-            temp_subTaxonomy = split_segments_to_add({}, segment_name_list, segment_id)
+            temp_subTaxonomy = split_segments_to_add({}, segment_name_list, segment_id, segment_description)
             segment_dict[current_segment_name] = {"subTaxonomy":temp_subTaxonomy}
 
     return segment_dict
@@ -155,6 +156,7 @@ def format_segment_json(segment_dict):
         if "id" in segment_dict[segment_name]:
             new_dict["name"] = segment_name
             new_dict["id"] = segment_dict[segment_name]["id"]
+            new_dict["description"] = segment_dict[segment_name]["description"]
             new_dict["gdpr_mode"] = GDPR_MODE
             new_dict["type"] = "SEGMENT"
             new_dict["targetable"] = True
@@ -171,9 +173,10 @@ def format_segment_json(segment_dict):
     return data
 
 def read_file_to_add_segments(file_path):
+    able_to_upload = True
     read_df = None
     try:
-        read_df = pd.read_excel(file_path, sheet_name="Yahoo", skiprows=[1])
+        read_df = pd.read_excel(file_path, sheet_name="Yahoo", skiprows=[1], encoding='utf-8')
     except:
         return {"message":"File Path '{}' is not found".format(file_path)}
 
@@ -182,10 +185,15 @@ def read_file_to_add_segments(file_path):
     
     segment_name_list = read_df["Segment Name"]
     segment_id_list = read_df["Segment ID"]
+    segment_description_list = read_df["Segment Description"]
+    
     for row_num in range(len(segment_name_list)):
         segment_id = segment_id_list[row_num]
-        segment_name_split = segment_name_list[row_num].split(" - ")
-        segment_dict = split_segments_to_add(segment_dict, segment_name_split, segment_id)
+        segment_name = segment_name_list[row_num]
+        segment_name_split = segment_name.split(" - ")
+        segment_description = segment_description_list[row_num]
+
+        segment_dict = split_segments_to_add(segment_dict, segment_name_split, segment_id, segment_description)
     
     data = format_segment_json(segment_dict)
 
@@ -203,9 +211,10 @@ def read_file_to_add_segments(file_path):
                                     files=files)
     print("Query sent: {}".format(requests_to_send.url))
     query_response = requests_to_send.json()
+    # print(query_response)
 
     os.remove(file_path)
     os.remove(METADATA_FILE)
     os.remove(DATA_FILE)
 
-    return {"message":"Your request is {}. Please retrieve the taxonomy after an hour.".format(query_response['status']['state'])}
+    return {"message": "File has been uploaded. Please wait 1 hour to retrieve the updated segments."}
