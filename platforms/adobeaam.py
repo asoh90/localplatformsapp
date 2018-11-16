@@ -255,6 +255,7 @@ def get_traits(access_token):
     print("Get Trait URL: {}".format(get_trait_request.url))
 
     trait_json = get_trait_request.json()
+    # print(trait_json)
     return access_token, trait_json
 
 def add_trait(access_token, name, description, ttl, folderId, dataSourceId):
@@ -427,6 +428,7 @@ def get_trait_folders(access_token):
                             )
     print("Get Trait Folder URL: {}".format(get_trait_folder_request.url))
     get_trait_folder_json = get_trait_folder_request.json()
+    # print(get_trait_folder_json)
 
     if not get_trait_folder_request.status_code == 200:
         return None
@@ -563,13 +565,15 @@ def query_all_segments():
         # traitType = trait["traitType"]
         name = trait["name"]
         description = trait["description"]
-        status = trait["status"]
+        status = None
+        if "status" in trait:
+            status = trait["status"]
         # pid = trait["pid"]
         # crUID = trait["crUID"]
         # upUID = trait["upUID"]
         ttl = None
-        if 'ttl' in item:
-            ttl = item['ttl']
+        if 'ttl' in trait:
+            ttl = trait['ttl']
         # integrationCode = trait["integrationCode"]
         # traitRule = None
         # if 'traitRule' in item:

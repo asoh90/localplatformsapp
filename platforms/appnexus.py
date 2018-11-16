@@ -902,6 +902,7 @@ def get_segment_loads_report(email, start_date, end_date):
                                     "end_date":str(end_date)
                         }
                     }
+    # print(request_json)
     request_segment_loads_report = requests.post(url_segment_loads_report,
                                     headers={
                                         "Content-Type":"application/json",
