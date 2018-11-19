@@ -39,6 +39,7 @@ def callAPI(platform, function, file_path):
     global url_buyer_member_data_sharing; url_buyer_member_data_sharing = url_home + "member-data-sharing"
     global url_segment_billing_category; url_segment_billing_category = url_home + "segment-billing-category"
     global url_segment_loads_report; url_segment_loads_report = url_home + "report"
+    global url_download_report; url_download_report = url_home + "report-download"
 
     try:
         # Login credentials
@@ -65,7 +66,9 @@ def callAPI(platform, function, file_path):
     elif (function == "Retrieve Buyer Member Segments"):
         output = read_file_to_retrieve_buyer_member_segments(file_path)
     elif (function == "Segment Loads Report"):
-        output = read_file_to_get_segment_loads(file_path)
+        file_names = read_file_to_get_report(file_path, "segment_loads")
+        output = write_excel.return_report(file_names)
+
     return output
 
 def authenticate():
@@ -889,15 +892,14 @@ def read_file_to_add_segment_billings(file_path):
 #                 })
 #     return write_excel.write(write_df, "DONOTUPLOAD_" + file_name + "_edit_billing")
 
-def get_segment_loads_report(email, start_date, end_date):
+def get_segment_loads_report(start_date, end_date):
     request_json = {
                         "report":{
                                     "report_type":"segment_load",
                                     "columns":["segment_id","segment_name","month","total_loads","monthly_uniques","avg_daily_uniques"],
                                     "groups":["segment_id","month"],
                                     "orders":["month"],
-                                    "emails":email,
-                                    "format":"xlsx",
+                                    "format":"excel",
                                     "start_date":str(start_date),
                                     "end_date":str(end_date)
                         }
@@ -913,11 +915,26 @@ def get_segment_loads_report(email, start_date, end_date):
     
     response = request_segment_loads_report.json()
     if response["response"]["status"] == "error":
-        return response["response"]["error"]
+        return "error", response["response"]["error"]
     else:
-        return "OK"
+        return "OK", response["response"]["report_id"],
 
-def read_file_to_get_segment_loads(file_path):
+def download_report(report_id):
+    print("Sleep 5 seconds before retrieving report")
+    time.sleep(5)
+    request_report = requests.get(url_download_report,
+                    params={
+                        "id":report_id
+                    },
+                    headers={
+                        'Authorization':auth_token
+                    })
+    request_report_string = request_report.content
+    request_report_string_list = request_report_string.split(b"\r\n")
+    # print(request_report_string_list)
+    return request_report_string_list
+
+def read_file_to_get_report(file_path, report_type):
     read_df = None
     try:
         # Skip row 2 ([1]) tha indicates if field is mandatory or not
@@ -927,9 +944,8 @@ def read_file_to_get_segment_loads(file_path):
 
     start_date_list = read_df["Report Start Date"]
     end_date_list = read_df["Report End Date"]
-    email_list = read_df["Report Email"]
 
-    unique_email_list = []
+    file_names = []
 
     os.remove(file_path)
     file_name_with_extension = file_path.split("/")[-1]
@@ -938,24 +954,56 @@ def read_file_to_get_segment_loads(file_path):
     row_counter = 0
     for start_date in start_date_list:
         end_date = end_date_list[row_counter]
-        email = email_list[row_counter]
-
-        email_list_value = email.split(",")
-        if len(email_list_value) > 1:
-            email = [email_value.strip() for email_value in email_list_value]
-        else:
-            email = [email]
-
-        if not email in unique_email_list:
-            unique_email_list.append(email)
-
-        segment_loads_report_response = get_segment_loads_report(email, start_date, end_date)
-        if not segment_loads_report_response == "OK":
-            return {"message":"ERROR: " + segment_loads_report_response}
+        file_name = get_report(start_date, end_date, report_type, row_counter)
+        file_names.append(file_name)
 
         row_counter += 1
 
+    return file_names
+
     return {"message":"Report(s) will be sent to {} shortly".format(unique_email_list)}
+
+def get_report(start_date, end_date, report_type, row_counter):
+    if report_type == "segment_loads":
+        segment_loads_report_status, segment_loads_report_response = get_segment_loads_report(start_date, end_date)
+        
+        report_id = segment_loads_report_response
+        report_data = download_report(report_id)
+
+        is_report_line_header = True
+        segment_id_list = []
+        segment_name_list = []
+        month_list = []
+        total_loads_list = []
+        monthly_uniques_list = []
+        avg_daily_uniques_list = []
+
+        # report is returned in string
+        for report_line in report_data:
+            if is_report_line_header:
+                is_report_line_header = False
+                continue
+
+            report_line_data = report_line.split(b"\t")
+            # print(report_line_data)
+            if len(report_line_data) > 1:
+                segment_id_list.append(report_line_data[0])
+                segment_name_list.append(report_line_data[1])
+                month_list.append(report_line_data[2])
+                total_loads_list.append(report_line_data[3])
+                monthly_uniques_list.append(report_line_data[4])
+                avg_daily_uniques_list.append(report_line_data[5])
+
+        write_df = pd.DataFrame({
+            "segment_id":segment_id_list,
+            "segment_name":segment_name_list,
+            "month":month_list,
+            "total_loads":total_loads_list,
+            "monthly_uniques":monthly_uniques_list,
+            "avg_daily_uniques":avg_daily_uniques_list
+        })
+
+        return write_excel.write_without_return(write_df, "AppNexus_segment_loads_report_" + str(row_counter))
 
 def read_file_to_retrieve_segments(file_path):
     read_df = None

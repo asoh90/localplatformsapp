@@ -40,7 +40,8 @@ def callAPI(function, file_path):
     elif function == "Query All Segments":
         output = get_all_segments()
     elif function == "Data Usage Report":
-        output = read_file_to_get_data_usage_report(file_path)
+        file_names = read_file_to_get_data_usage_report(file_path)
+        output = write_excel.return_report(file_names)
 
     return output
 
@@ -566,9 +567,4 @@ def read_file_to_get_data_usage_report(file_path):
 
         row_counter += 1
 
-    print(file_names)
-    
-    if row_counter < 1:
-        return write_excel.return_single_file(file_names[0])
-    else:
-        return write_excel.write_zip_file(file_names, "Adform_data_usage_zip")
+    return file_names

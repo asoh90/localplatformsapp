@@ -44,3 +44,11 @@ def return_single_file(file_name):
     # file name from write_without_return should have .xlsx extension, but without OUTPUT_PATH
     return {"message":"{} has been downloaded".format(file_name),
             "file":file_name}
+
+
+def return_report(file_names):
+    # Has 1 or 0 file, return the actual file. Else, return a zipped file.
+    if len(file_names) < 2:
+        return return_single_file(file_names[0])
+    else:
+        return write_zip_file(file_names, "reports")
