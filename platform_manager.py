@@ -1,5 +1,7 @@
 from platforms import *
 
+ALL_REPORT_PLATFORMS_SHEET_NAME = "All Reports Platform"
+
 def callAPI(platform, function, file_path):
     output = {"message":"Platform not found"}
 
@@ -16,5 +18,7 @@ def callAPI(platform, function, file_path):
         output = adobeaam.callAPI(platform, function, file_path)
     elif platform == "Yahoo" or platform == "Yahoo Staging":
         output = yahoo.callAPI(platform, function, file_path)
+    elif platform == "All Report Platforms":
+        output = all_report_platforms.get_report(function, file_path)
         
     return output

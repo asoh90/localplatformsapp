@@ -11,7 +11,7 @@ GET_SEGMENTS_URL = API_URL + "audience_segments"
 CLIENT_ID = "IBxiUniDVrRYSdSXUHJgoq6KdJ7F5oN0"
 CLIENT_SECRET = "NnU9qtfRtruQypo7e2QJh_as_HjlDjppZAhBP0wWeRkqdSzcVrZSln_8PdXrOn50"
 
-
+SHEET_NAME = "MediaMath"
 
 def callAPI(platform, function, file_path):
     if function == "Query All Segments":

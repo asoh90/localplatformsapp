@@ -14,6 +14,8 @@ DATA_FEED_PLAN_URL = API_URL + "data-feeds/{}/plans/"
 TRAIT_FOLDER_URL = API_URL + "folders/traits/"
 TRAIT_URL = API_URL + "traits/"
 
+SHEET_NAME = "Adobe AAM"
+
 CONTENT_TYPE = "application/x-www-form-urlencoded"
 AUTHORIZATION = "Basic ZXllb3RhLWJhYWFtOnJvZDZsOWluamRzZmwyN2E2cGUybjNsam50cmhndnRpM3A5NGN1YnUyMXVzdjZ2MXBicg=="
 GRANT_TYPE = "password"
@@ -626,7 +628,6 @@ def query_all_segments():
                     "Segment ID":segment_id_list,
                     "Segment Name":segment_name_list,
                     "Segment Description":segment_description_list,
-                    "Segment Status":segment_status_list,
                     "Segment Lifetime":segment_lifetime_list,
                     "Trait Folder Path":trait_folder_path_list,
                     "Data Source ID":data_source_id_list,
@@ -637,7 +638,8 @@ def query_all_segments():
                     "Modeling Price":modeling_price_list,
                     "Modeling UoM":modeling_uom_list,
                     "Activation Price":activation_price_list,
-                    "Activation UoM":activation_uom_list
+                    "Activation UoM":activation_uom_list,
+                    "Segment Status":segment_status_list,
                 })
     return write_excel.write(write_df, "DONOTUPLOAD_AdobeAAM_query_all")
 
@@ -651,7 +653,7 @@ def read_all_to_add_segments(file_path):
     read_df = None
     try:
         # Skip row 2 ([1]) tha indicates if field is mandatory or not
-        read_df = pd.read_excel(file_path, sheet_name="Adobe AAM", skiprows=[1])
+        read_df = pd.read_excel(file_path, sheet_name=SHEET_NAME, skiprows=[1])
     except:
         return {"message":"File Path '{}' is not found".format(file_path)}
     

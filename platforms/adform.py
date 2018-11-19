@@ -9,6 +9,8 @@ import os
 AUTH_URL = "https://dmp-api.adform.com/v1/token"
 API_URL = "https://api.adform.com/v1/dmp/"
 
+SHEET_NAME = "Adform"
+
 # Login credentials
 username = None
 password = None
@@ -27,12 +29,6 @@ SEGMENT_STATUS = "inactive"
 REPORTS_URL = API_URL + "reports/datausage"
 
 def callAPI(function, file_path):
-    try:
-        global username; username = variables.login_credentials['Adform']['Login']
-        global password; password = variables.login_credentials['Adform']['PW']
-    except:
-        return {"message":"ERROR: Incorrect login credentials! Please download 'asoh-flask-deploy.sh' file from <a href='https://eyeota.atlassian.net/wiki/pages/viewpageattachments.action?pageId=127336529&metadataLink=true'>Confluence</a> again!>"}
-
     output = {"message":"ERROR: option is not available"}
 
     if function == "Add Segments":
@@ -40,12 +36,18 @@ def callAPI(function, file_path):
     elif function == "Query All Segments":
         output = get_all_segments()
     elif function == "Data Usage Report":
-        file_names = read_file_to_get_data_usage_report(file_path)
-        output = write_excel.return_report(file_names)
+        file_names = read_file_to_get_data_usage_report(file_path, SHEET_NAME)
+        output = write_excel.return_report(file_names, file_path)
 
     return output
 
 def authenticate():
+    try:
+        global username; username = variables.login_credentials['Adform']['Login']
+        global password; password = variables.login_credentials['Adform']['PW']
+    except:
+        return {"message":"ERROR: Incorrect login credentials! Please download 'asoh-flask-deploy.sh' file from <a href='https://eyeota.atlassian.net/wiki/pages/viewpageattachments.action?pageId=127336529&metadataLink=true'>Confluence</a> again!>"}
+
     data = {
                 "grant_type":GRANT_TYPE,
                 "username":username,
@@ -133,6 +135,9 @@ def get_all_segments():
     segment_impressions_list = []
 
     access_token = authenticate()
+    if "message" in access_token:
+        return access_token
+
     categories_json = get_categories(access_token)
 
     if categories_json == None:
@@ -304,11 +309,14 @@ def read_file_to_add_segments(file_path):
     read_df = None
     try:
         # Skip row 2 ([1]) tha indicates if field is mandatory or not
-        read_df = pd.read_excel(file_path, sheet_name="Adform", skiprows=[1])
+        read_df = pd.read_excel(file_path, sheet_name=SHEET_NAME, skiprows=[1])
     except:
         return {"message":"File Path '{}' is not found".format(file_path)}
 
     access_token = authenticate()
+    if "message" in access_token:
+        return access_token
+
     categories_json = get_categories(access_token)
     categories_dict_by_name = store_category_in_dict_by_name(categories_json)
 
@@ -444,22 +452,20 @@ def get_data_usage_report(access_token, start_date, end_date):
     
     return data_usage_report_request.json()
 
-def read_file_to_get_data_usage_report(file_path):
+def read_file_to_get_data_usage_report(file_path, sheet):
     read_df = None
     try:
         # Skip row 2 ([1]) tha indicates if field is mandatory or not
-        read_df = pd.read_excel(file_path, sheet_name="Adform", skiprows=[1])
+        read_df = pd.read_excel(file_path, sheet_name=sheet, skiprows=[1])
     except:
         return {"message":"File Path '{}' is not found".format(file_path)}
 
     start_date_list = read_df["Report Start Date"]
     end_date_list = read_df["Report End Date"]
 
-    os.remove(file_path)
-    file_name_with_extension = file_path.split("/")[-1]
-    file_name = file_name_with_extension.split(".xlsx")[0]
-
     access_token = authenticate()
+    if "message" in access_token:
+        return access_token
 
     row_counter = 0
     file_names = []

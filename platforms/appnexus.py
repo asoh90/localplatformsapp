@@ -14,7 +14,7 @@ url_auth = None
 url_segment = None
 url_buyer_member_data_sharing = None
 url_segment_billing_category = None
-url_segment_loads_report = None
+url_report = None
 
 # Folder to retrieve uploaded file
 UPLOAD_FOLDER = variables.UPLOAD_FOLDER
@@ -26,7 +26,42 @@ password = None
 auth_token = None
 RETRIEVE_SEGMENTS_NUM_ELEMENTS = 100
 
+SHEET_NAME = "AppNexus"
+
 def callAPI(platform, function, file_path):
+    get_urls_output = get_urls(platform)
+    if "message" in get_urls_output:
+        return get_urls_output
+
+    output = {"message":"ERROR: option is not available"}
+    auth_token = authenticate()
+    if "message" in auth_token:
+        return auth_token
+    
+    if function == "Add Segments":
+        output = read_file_to_add_segments(file_path)
+    elif function == "Edit Segments":
+        output = read_file_to_edit_segments(file_path)
+    elif function == "Query All Segments":
+        output = query_all_segments()
+    elif function == "Retrieve Segments":
+        output = read_file_to_retrieve_segments(file_path)
+    elif function == "Add Existing Segments to Specific Buyer Member":
+        output = read_file_to_add_existing_segments_to_buyer_member(file_path)
+    elif function == "Add Segment Billings":
+        output = read_file_to_add_segment_billings(file_path)
+    elif function == "Retrieve Buyer Member Segments":
+        output = read_file_to_retrieve_buyer_member_segments(file_path)
+    elif function == "Segment Loads Report":
+        file_names = read_file_to_get_report(file_path, "segment_loads", SHEET_NAME)
+        output = write_excel.return_report(file_names, file_path)
+    elif function == "Data Usage Report":
+        file_names = read_file_to_get_report(file_path, "data_usage", SHEET_NAME)
+        output = write_excel.return_report(file_names, file_path)
+
+    return output
+
+def get_urls(platform):
     global url_home
     if platform == "AppNexus":
         url_home = 'https://api.appnexus.com/'
@@ -34,13 +69,18 @@ def callAPI(platform, function, file_path):
         url_home = 'https://api-test.appnexus.com/'
     else:
         return {"message":"ERROR: platform {} is not available in appnexus.py".format(platform)}
+
     global url_auth; url_auth = url_home + "auth"
     global url_segment; url_segment = url_home + "segment"
     global url_buyer_member_data_sharing; url_buyer_member_data_sharing = url_home + "member-data-sharing"
     global url_segment_billing_category; url_segment_billing_category = url_home + "segment-billing-category"
-    global url_segment_loads_report; url_segment_loads_report = url_home + "report"
+    global url_report; url_report = url_home + "report"
     global url_download_report; url_download_report = url_home + "report-download"
 
+    return {}
+
+
+def authenticate():
     try:
         # Login credentials
         global login; login = variables.login_credentials['AppNexus']['Login']
@@ -48,30 +88,6 @@ def callAPI(platform, function, file_path):
     except:
         return {"message":"ERROR: Incorrect login credentials! Please download 'asoh-flask-deploy.sh' file from <a href='https://eyeota.atlassian.net/wiki/pages/viewpageattachments.action?pageId=127336529&metadataLink=true'>Confluence</a> again!>"}
 
-    output = {"message":"ERROR: option is not available"}
-    authenticate()
-    
-    if (function == "Add Segments"):
-        output = read_file_to_add_segments(file_path)
-    elif (function == "Edit Segments"):
-        output = read_file_to_edit_segments(file_path)
-    elif (function == "Query All Segments"):
-        output = query_all_segments()
-    elif (function == "Retrieve Segments"):
-        output = read_file_to_retrieve_segments(file_path)
-    elif (function == "Add Existing Segments to Specific Buyer Member"):
-        output = read_file_to_add_existing_segments_to_buyer_member(file_path)
-    elif (function == "Add Segment Billings"):
-        output = read_file_to_add_segment_billings(file_path)
-    elif (function == "Retrieve Buyer Member Segments"):
-        output = read_file_to_retrieve_buyer_member_segments(file_path)
-    elif (function == "Segment Loads Report"):
-        file_names = read_file_to_get_report(file_path, "segment_loads")
-        output = write_excel.return_report(file_names)
-
-    return output
-
-def authenticate():
     auth_credentials = {'username':login,'password':password}
     auth_request = requests.post(url_auth,
                               headers={
@@ -83,7 +99,9 @@ def authenticate():
     print("Authenticate URL: {}".format(auth_request.url))
     auth_json = auth_request.json()
     response = auth_json['response']
+    # print(response)
     global auth_token; auth_token = response['token']
+    return auth_token
 
 # Start Query Segments functions
 def query_all_segments():
@@ -179,7 +197,7 @@ def read_file_to_add_segments(file_path):
     read_df = None
     try:
         # Skip row 2 ([1]) tha indicates if field is mandatory or not
-        read_df = pd.read_excel(file_path, sheet_name="AppNexus", skiprows=[1])
+        read_df = pd.read_excel(file_path, sheet_name=SHEET_NAME, skiprows=[1])
     except:
         return {"message":"File Path '{}' is not found".format(file_path)}
     
@@ -319,7 +337,7 @@ def read_file_to_edit_segments(file_path):
     read_df = None
     try:
         # Skip row 2 ([1]) tha indicates if field is mandatory or not
-        read_df = pd.read_excel(file_path, sheet_name="AppNexus", skiprows=[1])
+        read_df = pd.read_excel(file_path, sheet_name=SHEET_NAME, skiprows=[1])
     except:
         return {"message":"File Path '{}' is not found".format(file_path)}
     
@@ -534,7 +552,7 @@ def refresh_segment_ids(record_id, new_segment_id_list):
 #     read_df = None
 #     try:
 #         # Skip row 2 ([1]) tha indicates if field is mandatory or not
-#         read_df = pd.read_excel(file_path, sheet_name="AppNexus", skiprows=[1])
+#         read_df = pd.read_excel(file_path, sheet_name=SHEET_NAME, skiprows=[1])
 #     except:
 #         return {"message":"File Path '{}' is not found".format(file_name)}
     
@@ -625,7 +643,7 @@ def read_file_to_add_existing_segments_to_buyer_member(file_path):
     read_df = None
     try:
         # Skip row 2 ([1]) tha indicates if field is mandatory or not
-        read_df = pd.read_excel(file_path, sheet_name="AppNexus", skiprows=[1])
+        read_df = pd.read_excel(file_path, sheet_name=SHEET_NAME, skiprows=[1])
     except:
         return {"message":"File Path '{}' is not found".format(file_name)}
     
@@ -739,7 +757,7 @@ def read_file_to_retrieve_buyer_member_segments(file_path):
     read_df = None
     try:
         # Skip row 2 ([1]) tha indicates if field is mandatory or not
-        read_df = pd.read_excel(file_path, sheet_name="AppNexus", skiprows=[1])
+        read_df = pd.read_excel(file_path, sheet_name=SHEET_NAME, skiprows=[1])
     except:
         return {"message":"File Path '{}' is not found".format(file_path)}
 
@@ -785,7 +803,7 @@ def read_file_to_add_segment_billings(file_path):
     read_df = None
     try:
         # Skip row 2 ([1]) tha indicates if field is mandatory or not
-        read_df = pd.read_excel(file_path, sheet_name="AppNexus", skiprows=[1])
+        read_df = pd.read_excel(file_path, sheet_name=SHEET_NAME, skiprows=[1])
     except:
         return {"message":"File Path '{}' is not found".format(file_path)}
     
@@ -839,7 +857,7 @@ def read_file_to_add_segment_billings(file_path):
 #     read_df = None
 #     try:
 #         # Skip row 2 ([1]) tha indicates if field is mandatory or not
-#         read_df = pd.read_excel(file_path, sheet_name="AppNexus", skiprows=[1])
+#         read_df = pd.read_excel(file_path, sheet_name=SHEET_NAME, skiprows=[1])
 #     except:
 #         return {"message":"File Path '{}' is not found".format(file_path)}
     
@@ -904,8 +922,7 @@ def get_segment_loads_report(start_date, end_date):
                                     "end_date":str(end_date)
                         }
                     }
-    # print(request_json)
-    request_segment_loads_report = requests.post(url_segment_loads_report,
+    request_segment_loads_report = requests.post(url_report,
                                     headers={
                                         "Content-Type":"application/json",
                                         'Authorization':auth_token
@@ -917,7 +934,43 @@ def get_segment_loads_report(start_date, end_date):
     if response["response"]["status"] == "error":
         return "error", response["response"]["error"]
     else:
-        return "OK", response["response"]["report_id"],
+        return "OK", response["response"]["report_id"]
+
+def get_data_usage_report(start_date, end_date):
+    request_json = {
+                        "report":{
+                                    "report_type":"data_usage_analytics_for_data_providers",
+                                    "columns":["geo_country",
+                                                "day",
+                                                "buyer_member_id",
+                                                "campaign_id",
+                                                "campaign_name",
+                                                "targeted_segment_ids",
+                                                "cpm_usd",
+                                                "imps",
+                                                "data_costs",
+                                                "data_clearing_fee_usd",
+                                                "data_provider_payout_usd"],
+                                    "groups":["day"],
+                                    "orders":["day"],
+                                    "format":"excel",
+                                    "start_date":str(start_date),
+                                    "end_date":str(end_date)
+                        }
+                    }
+    request_data_usage_report = requests.post(url_report,
+                                    headers={
+                                        "Content-Type":"application/json",
+                                        'Authorization':auth_token
+                                    },
+                                    json=request_json)
+    print("Get Data Usage Report URL: {}".format(request_data_usage_report.url))
+    
+    response = request_data_usage_report.json()
+    if response["response"]["status"] == "error":
+        return "error", response["response"]["error"]
+    else:
+        return "OK", response["response"]["report_id"]
 
 def download_report(report_id):
     print("Sleep 5 seconds before retrieving report")
@@ -934,11 +987,15 @@ def download_report(report_id):
     # print(request_report_string_list)
     return request_report_string_list
 
-def read_file_to_get_report(file_path, report_type):
+def read_file_to_get_report(file_path, report_type, sheet):
+    auth_token = authenticate()
+    if "message" in auth_token:
+        return auth_token
+
     read_df = None
     try:
         # Skip row 2 ([1]) tha indicates if field is mandatory or not
-        read_df = pd.read_excel(file_path, sheet_name="AppNexus", skiprows=[1])
+        read_df = pd.read_excel(file_path, sheet_name=sheet, skiprows=[1])
     except:
         return {"message":"File Path '{}' is not found".format(file_path)}
 
@@ -946,10 +1003,6 @@ def read_file_to_get_report(file_path, report_type):
     end_date_list = read_df["Report End Date"]
 
     file_names = []
-
-    os.remove(file_path)
-    file_name_with_extension = file_path.split("/")[-1]
-    file_name = file_name_with_extension.split(".xlsx")[0]
 
     row_counter = 0
     for start_date in start_date_list:
@@ -961,16 +1014,14 @@ def read_file_to_get_report(file_path, report_type):
 
     return file_names
 
-    return {"message":"Report(s) will be sent to {} shortly".format(unique_email_list)}
-
 def get_report(start_date, end_date, report_type, row_counter):
+    is_report_line_header = True
+
     if report_type == "segment_loads":
-        segment_loads_report_status, segment_loads_report_response = get_segment_loads_report(start_date, end_date)
-        
-        report_id = segment_loads_report_response
+        report_status, report_response = get_segment_loads_report(start_date, end_date)
+        report_id = report_response
         report_data = download_report(report_id)
 
-        is_report_line_header = True
         segment_id_list = []
         segment_name_list = []
         month_list = []
@@ -1005,11 +1056,64 @@ def get_report(start_date, end_date, report_type, row_counter):
 
         return write_excel.write_without_return(write_df, "AppNexus_segment_loads_report_" + str(row_counter))
 
+    elif report_type == "data_usage":
+        report_status, report_response = get_data_usage_report(start_date, end_date)
+        report_id = report_response
+        report_data = download_report(report_id)
+
+        geo_country_list = []
+        day_list = []
+        buyer_member_id_list = []
+        campaign_id_list = []
+        campaign_name_list = []
+        targeted_segment_ids_list = []
+        cpm_usd_list = []
+        imps_list = []
+        data_costs_list = []
+        data_clearing_fee_usd_list = []
+        data_provider_payout_usd_list = []
+
+        for report_line in report_data:
+            if is_report_line_header:
+                is_report_line_header = False
+                continue
+
+            report_line_data = report_line.split(b"\t")
+
+            if len(report_line_data) > 1:
+                geo_country_list.append(report_line_data[0])
+                day_list.append(report_line_data[1])
+                buyer_member_id_list.append(report_line_data[2])
+                campaign_id_list.append(report_line_data[3])
+                campaign_name_list.append(report_line_data[4])
+                targeted_segment_ids_list.append(report_line_data[5])
+                cpm_usd_list.append(report_line_data[6])
+                imps_list.append(report_line_data[7])
+                data_costs_list.append(report_line_data[8])
+                data_clearing_fee_usd_list.append(report_line_data[9])
+                data_provider_payout_usd_list.append(report_line_data[10])
+
+        write_df = pd.DataFrame({
+            "geo_country":geo_country_list,
+            "day":day_list,
+            "buyer_member_id":buyer_member_id_list,
+            "campaign_id":campaign_id_list,
+            "campaign_name":campaign_name_list,
+            "targeted_segment_ids_list":targeted_segment_ids_list,
+            "cpm_usd":cpm_usd_list,
+            "imps":imps_list,
+            "data_costs":data_costs_list,
+            "data_clearing_fee_usd":data_clearing_fee_usd_list,
+            "data_provider_payout_usd":data_provider_payout_usd_list
+        })
+
+        return write_excel.write_without_return(write_df, "AppNexus_data_usage_report_" + str(row_counter))
+
 def read_file_to_retrieve_segments(file_path):
     read_df = None
     try:
         # Skip row 2 ([1]) tha indicates if field is mandatory or not
-        read_df = pd.read_excel(file_path, sheet_name="AppNexus", skiprows=[1])
+        read_df = pd.read_excel(file_path, sheet_name=SHEET_NAME, skiprows=[1])
     except:
         return {"message":"File Path '{}' is not found".format(file_path)}
     

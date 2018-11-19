@@ -9,6 +9,8 @@ URL_AUTHENTICATION = URL_HOME + "authentication"
 URL_CREATE_OR_EDIT = URL_HOME + "thirdpartydata"
 URL_QUERY = URL_HOME + "thirdpartydata/query"
 
+SHEET_NAME = "TTD"
+
 # Folder to retrieve uploaded file
 UPLOAD_FOLDER = variables.UPLOAD_FOLDER
 
@@ -92,7 +94,7 @@ def get_query_all():
     return query_data
 
 def read_file(file_path, function):
-    read_df = pd.read_excel(file_path, sheet_name="TTD", skiprows=[1])
+    read_df = pd.read_excel(file_path, sheet_name=SHEET_NAME, skiprows=[1])
 
     segment_id_list = read_df['Segment ID']
     parent_segment_id_list = read_df['Parent Segment ID']

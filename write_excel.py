@@ -1,4 +1,5 @@
 import pandas as pd
+import os
 import variables
 from datetime import datetime
 import zipfile
@@ -46,7 +47,11 @@ def return_single_file(file_name):
             "file":file_name}
 
 
-def return_report(file_names):
+def return_report(file_names, file_path):
+    os.remove(file_path)
+    file_name_with_extension = file_path.split("/")[-1]
+    file_name = file_name_with_extension.split(".xlsx")[0]
+
     # Has 1 or 0 file, return the actual file. Else, return a zipped file.
     if len(file_names) < 2:
         return return_single_file(file_names[0])

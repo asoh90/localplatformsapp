@@ -16,6 +16,8 @@ key = None
 secret = None
 SIGNATURE_HMAC = "HMAC-SHA1"
 
+SHEET_NAME = "Yahoo"
+
 # URL
 url = None
 
@@ -176,7 +178,7 @@ def read_file_to_add_segments(file_path):
     able_to_upload = True
     read_df = None
     try:
-        read_df = pd.read_excel(file_path, sheet_name="Yahoo", skiprows=[1], encoding='utf-8')
+        read_df = pd.read_excel(file_path, sheet_name=SHEET_NAME, skiprows=[1], encoding='utf-8')
     except:
         return {"message":"File Path '{}' is not found".format(file_path)}
 

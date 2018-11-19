@@ -18,14 +18,14 @@ platform_functions = {
                         "AppNexus Staging": {"level":2,
                                     "functions": {
                                         "Segment":["Add Segments","Edit Segments","Query All Segments","Retrieve Segments"],
-                                        "Report":["Segment Loads Report"],
+                                        "Report":["Data Usage Report", "Segment Loads Report"],
                                         "Troubleshoot":["Add Existing Segments to Specific Buyer Member","Add Segment Billings","Retrieve Buyer Member Segments"]
                                         }
                                     },
                         "AppNexus": {"level":2,
                                     "functions": {
                                         "Segment":["Add Segments","Edit Segments","Query All Segments","Retrieve Segments"],
-                                        "Report":["Segment Loads Report"],
+                                        "Report":["Data Usage Report", "Segment Loads Report"],
                                         "Troubleshoot":["Add Existing Segments to Specific Buyer Member","Add Segment Billings","Retrieve Buyer Member Segments"]
                                         }
                                     },
@@ -40,7 +40,10 @@ platform_functions = {
                             },
                         "Yahoo":{"level":1,
                                     "functions":["Refresh Segments","Query All Segments"]
-                            }
+                            },
+                        "All Report Platforms":{"level":1,
+                                    "functions":["Data Usage Report"]
+                        }
                     }
 
 def read_credentials(input):
