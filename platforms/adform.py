@@ -41,7 +41,7 @@ def callAPI(function, file_path):
     elif function == "Query All Segments":
         output = get_all_segments()
     elif function == "Data Usage Report":
-        file_names = read_file_to_get_report(file_path, SHEET_NAME, "datausage")
+        file_names = read_file_to_get_report(file_path, SHEET_NAME, "data_usage")
         output = write_excel.return_report(file_names, file_path)
     elif function == "Audience Report":
         file_names = read_file_to_get_report(file_path, SHEET_NAME, "audience")
@@ -518,7 +518,7 @@ def read_file_to_get_report(file_path, sheet, report_type):
             return {"message":"ERROR: Report End Date '{}' should be in date format.".format(end_date)}
 
         write_df = None
-        if report_type == "datausage":
+        if report_type == "data_usage":
             write_advertiser_list = []
             write_advertiserId_list = []
             write_advertiserCurrency_list = []

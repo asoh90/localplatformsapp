@@ -42,7 +42,7 @@ platform_functions = {
                                     "functions":["Refresh Segments","Query All Segments"]
                             },
                         "All Report Platforms":{"level":1,
-                                    "functions":["Data Usage Report"]
+                                    "functions":["Data Usage Report","Volumes Report"]
                         }
                     }
 
