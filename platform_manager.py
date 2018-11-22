@@ -1,7 +1,5 @@
 from platforms import *
 
-ALL_REPORT_PLATFORMS_SHEET_NAME = "All Reports Platform"
-
 def callAPI(platform, function, file_path):
     output = {"message":"Platform not found"}
 

@@ -9,7 +9,7 @@ platform_functions = {
                         "Adform":{"level":2,
                                     "functions":{
                                         "Segment":["Add Segments", "Query All Segments"],
-                                        "Report":["Data Usage Report"]
+                                        "Report":["Audience Report","Data Usage Report"]
                                     }
                                  },
                         "Adobe AAM":{"level":1,

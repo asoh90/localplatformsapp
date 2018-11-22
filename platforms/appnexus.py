@@ -5,8 +5,10 @@ import pandas as pd
 import os
 import numpy
 import time
+from threading import Thread
 
 MEMBER_ID = 1706
+THREAD_LIMIT = 15
 
 # API URL
 url_home  = None
@@ -53,10 +55,11 @@ def callAPI(platform, function, file_path):
     elif function == "Retrieve Buyer Member Segments":
         output = read_file_to_retrieve_buyer_member_segments(file_path)
     elif function == "Segment Loads Report":
-        file_names = read_file_to_get_report(file_path, "segment_loads", SHEET_NAME)
+        file_names = read_file_to_get_report(file_path, "segment_loads", SHEET_NAME, None)
         output = write_excel.return_report(file_names, file_path)
     elif function == "Data Usage Report":
-        file_names = read_file_to_get_report(file_path, "data_usage", SHEET_NAME)
+        segment_dict = retrieve_all_segments()
+        file_names = read_file_to_get_report(file_path, "data_usage", SHEET_NAME, segment_dict)
         output = write_excel.return_report(file_names, file_path)
 
     return output
@@ -105,9 +108,6 @@ def authenticate():
 
 # Start Query Segments functions
 def query_all_segments():
-    total_segments = 1
-    start_element = 0
-
     write_segment_id_list = []
     write_code_list = []
     write_segment_name_list = []
@@ -122,40 +122,30 @@ def query_all_segments():
     write_data_category_id_list = []
 
     segment_billing_dict = get_all_segment_billing()
+    segment_dict = retrieve_all_segments()
+    
+    for segment_id in segment_dict:
+        segment = segment_dict[segment_id]
 
-    while start_element < total_segments:
-        retrieve_response = retrieve_segments(start_element, RETRIEVE_SEGMENTS_NUM_ELEMENTS)
-        if ("message" in retrieve_response):
-            return retrieve_response
+        write_segment_id_list.append(segment_id)
+        write_code_list.append(segment["code"])
+        write_segment_name_list.append(segment["short_name"])
+        write_segment_description_list.append(segment["description"])
+        write_price_list.append(segment["price"])
+        write_duration_list.append(segment["expire_minutes"])
+        write_member_id_list.append(segment["member_id"])
+        write_state_list.append(segment["state"])
+        write_last_modified_list.append(segment["last_modified"])
 
-        if (total_segments == 1):
-            total_segments = retrieve_response["count"]
-        print("Retrieving {} of {} segments".format(start_element, total_segments))
-        
-        start_element += RETRIEVE_SEGMENTS_NUM_ELEMENTS
-        response_segment = retrieve_response["segments"]
-
-        for segment in response_segment:
-            segment_id = segment["id"]
-            write_segment_id_list.append(segment_id)
-            write_code_list.append(segment["code"])
-            write_segment_name_list.append(segment["short_name"])
-            write_segment_description_list.append(segment["description"])
-            write_price_list.append(segment["price"])
-            write_duration_list.append(segment["expire_minutes"])
-            write_member_id_list.append(segment["member_id"])
-            write_state_list.append(segment["state"])
-            write_last_modified_list.append(segment["last_modified"])
-
-            if segment_id in segment_billing_dict:
-                segment_billing = segment_billing_dict[segment_id]
-                write_is_public_list.append(segment_billing["is_public"])
-                write_data_segment_type_id_list.append(segment_billing["data_segment_type_id"])
-                write_data_category_id_list.append(segment_billing["data_category_id"])
-            else:
-                write_is_public_list.append(None)
-                write_data_segment_type_id_list.append(None)
-                write_data_category_id_list.append(None)
+        if segment_id in segment_billing_dict:
+            segment_billing = segment_billing_dict[segment_id]
+            write_is_public_list.append(segment_billing["is_public"])
+            write_data_segment_type_id_list.append(segment_billing["data_segment_type_id"])
+            write_data_category_id_list.append(segment_billing["data_category_id"])
+        else:
+            write_is_public_list.append(None)
+            write_data_segment_type_id_list.append(None)
+            write_data_category_id_list.append(None)
 
     write_df = pd.DataFrame({
                     "Segment ID":write_segment_id_list,
@@ -173,26 +163,129 @@ def query_all_segments():
                 })
     return write_excel.write(write_df, "DONOTUPLOAD_AppNexus_query_all")
 
-def retrieve_segments(start_element, num_elements):
+def retrieve_all_segments():
+    segment_dict = {}
+    threads = []
+
+    total_segments = [1]
+    start_element = 0
+
+    while start_element < total_segments[0]:
+        thread_counter = 0
+
+        while thread_counter < THREAD_LIMIT and start_element < total_segments[0]:
+            process = Thread(target=retrieve_segments, args=[start_element, RETRIEVE_SEGMENTS_NUM_ELEMENTS, segment_dict, total_segments])
+            process.start()
+            threads.append(process)
+            thread_counter += 1
+            start_element += RETRIEVE_SEGMENTS_NUM_ELEMENTS
+
+        for process in threads:
+            process.join()
+
+        # print("Total Segments: {}".format(total_segments[0]))
+        print("Sleep for 20 seconds to avoid call limit")
+        time.sleep(20)
+
+    return segment_dict
+
+
+def retrieve_segments(start_element, num_elements, segment_dict, total_segments):
+    request_to_send = requests.get(url_segment,
+                                headers={
+                                    'Content-Type':'application/json',
+                                    'Authorization':auth_token
+                                },
+                                params={
+                                    "start_element":start_element,
+                                    "num_elements":num_elements,
+                                    "member_id":MEMBER_ID
+                                })
+    print("Retrieve Request: " + request_to_send.url)
+    retrieve_response = request_to_send.json()
+    # print(retrieve_response)
+
+    if (total_segments[0] == 1):
+        total_segments[0] = retrieve_response["response"]["count"]
+    print("Retrieving {} of {} segments".format(start_element, total_segments))
+
+    # print(retrieve_response)
     try:
-        request_to_send = requests.get(url_segment,
+        for segment in retrieve_response['response']['segments']:
+            segment_id = segment["id"]
+            code = segment["code"]
+            segment_name = segment["short_name"]
+            segment_description = segment["description"]
+            price = segment["price"]
+            duration = segment["expire_minutes"]
+            member_id = segment["member_id"]
+            state = segment["state"]
+            last_modified = segment["last_modified"]
+
+            segment_dict[segment_id] = {
+                                            "code":code,
+                                            "short_name":segment_name,
+                                            "description":segment_description,
+                                            "price":price,
+                                            "expire_minutes":duration,
+                                            "member_id":member_id,
+                                            "state":state,
+                                            "last_modified":last_modified                
+            }
+    except:
+        print(retrieve_response['response']['error'])
+# End Query Segments functions
+
+# Start Add Segments functions
+# Many input fields due to multithreading. current_segments will then be called again so that all the data are aligned
+def add_segment(code, segment_name, segment_description, price, duration, state, is_public, data_segment_type_id, data_category_id, buyer_member_id, current_segments, output_messages):
+    segment_to_add = {
+                        "code":str(code),
+                        "expire_minutes":int(duration),
+                        "short_name":segment_name,
+                        "description":str(segment_description),
+                        "price":float(price),
+                        "state":state
+                    }
+    try:
+        request_to_send = requests.post(url_segment,
                                     headers={
                                         'Content-Type':'application/json',
                                         'Authorization':auth_token
                                     },
                                     params={
-                                        "start_element":start_element,
-                                        "num_elements":num_elements,
-                                        "member_id":MEMBER_ID
+                                        'member_id':MEMBER_ID
+                                    },
+                                    json={
+                                        'segment':segment_to_add
                                     })
-        print("Retrieve Request: " + request_to_send.url)
-        retrieve_response = request_to_send.json()
-        return retrieve_response["response"]
+        print("Add Request: " + request_to_send.url)
+        add_response = request_to_send.json()
+        # print(add_response)
+        response = add_response["response"]
+        segment_id = response["id"]
+        current_segments[code] = {
+                                    "segment_id":segment_id,
+                                    "segment_name":segment_name,
+                                    "segment_description":segment_description,
+                                    "price":price,
+                                    "duration":duration,
+                                    "state":state,
+                                    "is_public":is_public,
+                                    "data_segment_type_id":data_segment_type_id,
+                                    "data_category_id":data_category_id,
+                                    "buyer_member_id":buyer_member_id
+                                }
+        # print("NEW Segment ID: {}".format(segment_id))
+        output_messages[code] = "OK"
     except:
-        return {"messsage":"Unable to retrieve all segments where start_element: {}  |  num_elements: {}".format(start_element, num_elements)}
-# End Query Segments functions
+        current_segments[code] = None
+        try:
+            error_message = response["error"]
+            output_messages[code] = error_message
+        except:
+            output_messages[code] = response
 
-# Start Add Segments functions
 def read_file_to_add_segments(file_path):
     read_df = None
     try:
@@ -233,88 +326,232 @@ def read_file_to_add_segments(file_path):
 
     private_segment_list = {}
 
-    for i in range(len(code_list)):
-        current_code = code_list[i]
-        current_segment_name = segment_name_list[i]
-        current_segment_description = segment_description_list[i]
-        current_price = price_list[i]
-        current_duration = duration_list[i]
-        current_state = state_list[i]
-        current_is_public = is_public_list[i]
-        current_data_segment_type_id = data_segment_type_id_list[i]
-        current_data_category_id = data_category_id_list[i]
-        current_buyer_member_id = buyer_member_id_list[i]
+    add_segment_row_num = 0
+    add_billing_row_num = 0
 
-        add_response = add_segment(current_code, current_segment_name, current_segment_description, current_price, current_duration, current_state)
-        current_segment_id = add_response["id"]
-        # Private segments will append to a list to be added to specific buyer member
-        if not current_is_public and not current_segment_id == None:
-            # Buyer member does not already have a list
-            if not current_buyer_member_id in private_segment_list:
-                private_segment_list[current_buyer_member_id] = {}
+    while add_segment_row_num < len(code_list):
+        add_segment_thread_counter = 0
+        current_segments = {}
+        output_messages = {}
+        add_billing_outputs = {}
 
-            buyer_member_private_segment = private_segment_list[current_buyer_member_id]
-            buyer_member_private_segment[current_segment_id] = {
-                                                        "segment_id":current_segment_id,
-                                                        "code":current_code,
-                                                        "segment_name":current_segment_name,
-                                                        "segment_description":current_segment_description,
-                                                        "price":current_price,
-                                                        "duration":current_duration,
-                                                        "state":current_state,
-                                                        "is_public":current_is_public,
-                                                        "segment_id_type":current_segment_id_type,
-                                                        "data_category_id":current_data_category_id,
-                                                        "response":None
-                                                    }
-        # Public segments can add response to the list
-        else:
-            write_segment_id_list.append(current_segment_id)
-            write_code_list.append(current_code)
-            write_segment_name_list.append(current_segment_name)
-            write_segment_description_list.append(current_segment_description)
-            write_price_list.append(current_price)
-            write_duration_list.append(current_duration)
-            write_member_id_list.append(MEMBER_ID)
-            write_state_list.append(current_state)
-            write_is_public_list.append(current_is_public)
-            write_data_segment_type_id_list.append(current_data_segment_type_id)
-            write_data_category_id_list.append(current_data_category_id)
-            write_buyer_member_id_list.append(current_buyer_member_id)
-            write_response.append(add_response["response"])
-            if current_segment_id == None:
-                write_billing_response.append("")
+        add_segment_threads = []
+        add_billing_threads = []
+
+        while add_segment_thread_counter < THREAD_LIMIT and add_segment_row_num < len(code_list):
+            current_code = code_list[add_segment_row_num]
+            current_segment_name = segment_name_list[add_segment_row_num]
+            current_segment_description = segment_description_list[add_segment_row_num]
+            current_price = price_list[add_segment_row_num]
+            current_duration = duration_list[add_segment_row_num]
+            current_state = state_list[add_segment_row_num]
+            current_is_public = is_public_list[add_segment_row_num]
+            current_data_segment_type_id = data_segment_type_id_list[add_segment_row_num]
+            current_data_category_id = data_category_id_list[add_segment_row_num]
+            current_buyer_member_id = buyer_member_id_list[add_segment_row_num]
+
+            # print("Adding {} segment".format(str(add_segment_row_num+1)))
+
+            # print("Adding code: {}".format(current_code))
+            add_segment_process = Thread(target=add_segment, args=[current_code, current_segment_name, current_segment_description, current_price, current_duration, current_state, current_is_public, current_data_segment_type_id, current_data_category_id, current_buyer_member_id, current_segments, output_messages])
+            add_segment_process.start()
+            add_segment_threads.append(add_segment_process)
+
+            add_segment_thread_counter += 1
+            add_segment_row_num += 1
+
+        for add_segment_thread in add_segment_threads:
+            add_segment_thread.join()
+            # print("Length of current segments: {}".format(len(current_segments)))
+        
+        add_billing_thread_counter = 0
+
+        while add_billing_thread_counter < THREAD_LIMIT and add_billing_row_num < len(code_list):
+            add_billing_code = code_list[add_billing_row_num]
+            add_billing_segment_name = segment_name_list[add_billing_row_num]
+            add_billing_segment_description = segment_description_list[add_billing_row_num]
+            add_billing_price = price_list[add_billing_row_num]
+            add_billing_duration = duration_list[add_billing_row_num]
+            add_billing_state = state_list[add_billing_row_num]
+            add_billing_is_public = is_public_list[add_billing_row_num]
+            add_billing_data_segment_type_id = data_segment_type_id_list[add_billing_row_num]
+            add_billing_data_category_id = data_category_id_list[add_billing_row_num]
+            add_billing_buyer_member_id = buyer_member_id_list[add_billing_row_num]
+
+            add_billing_segment_id = None
+            if add_billing_code in current_segments:
+                add_billing_segment_id = current_segments[add_billing_code]["segment_id"]
+            # print("current_segment_id: {}".format(current_segment_id))
+
+            # Private segments will append to a list to be added to specific buyer member
+            if not add_billing_is_public and not add_billing_segment_id == None:
+                # Buyer member does not already have a list
+                if not add_billing_buyer_member_id in private_segment_list:
+                    private_segment_list[current_buyer_member_id] = {}
+
+                buyer_member_private_segment = private_segment_list[add_billing_buyer_member_id]
+                buyer_member_private_segment[add_billing_segment_id] = {
+                                                            "segment_id":add_billing_segment_id,
+                                                            "code":add_billing_code,
+                                                            "segment_name":add_billing_segment_name,
+                                                            "segment_description":add_billing_segment_description,
+                                                            "price":add_billing_price,
+                                                            "duration":add_billing_duration,
+                                                            "state":add_billing_state,
+                                                            "is_public":add_billing_is_public,
+                                                            "segment_id_type":add_billing_segment_id_type,
+                                                            "data_category_id":add_billing_data_category_id,
+                                                            "response":None
+                                                        }
+            # Public segments can add response to the list
             else:
-                add_billing_response = add_segment_billing(current_segment_id, current_state, current_data_category_id, current_is_public, current_data_segment_type_id)
-                write_billing_response.append(add_billing_response)
+                if add_billing_segment_id == None:
+                    add_billing_outputs[add_billing_code] = None
+                else:
+                    add_billing_process = Thread(target=add_segment_billing, args=[add_billing_segment_id, add_billing_code, add_billing_state, add_billing_data_category_id, add_billing_is_public, add_billing_data_segment_type_id, add_billing_outputs])
+                    add_billing_process.start()
+                    add_billing_threads.append(add_billing_process)
+
+            add_billing_thread_counter += 1
+            add_billing_row_num += 1
+
+        for add_billing_thread in add_billing_threads:
+            add_billing_thread.join()
+
+        # if len(add_billing_outputs) > 0:
+        #     print("Sleep for 60 seconds for billing to be updated")
+        #     time.sleep(60)
+
+        for after_add_billing_code in add_billing_outputs:
+            after_add_billing_segment = current_segments[after_add_billing_code]
+
+            after_add_billing_segment_id = None
+            after_add_billing_segment_name = None
+            after_add_billing_segment_description = None
+            after_add_billing_price = None
+            after_add_billing_duration = None
+            after_add_billing_state = None
+            after_add_billing_is_public = None
+            after_add_billing_data_segment_type_id = None
+            after_add_billing_data_category_id = None
+            after_add_billing_buyer_member_id = None
+
+            if not after_add_billing_segment == None:
+                after_add_billing_segment_id = after_add_billing_segment["segment_id"]
+                after_add_billing_segment_name = after_add_billing_segment["segment_name"]
+                after_add_billing_segment_description = after_add_billing_segment["segment_description"]
+                after_add_billing_price = after_add_billing_segment["price"]
+                after_add_billing_duration = after_add_billing_segment["duration"]
+                after_add_billing_state = after_add_billing_segment["state"]
+                after_add_billing_is_public = after_add_billing_segment["is_public"]
+                after_add_billing_data_segment_type_id = after_add_billing_segment["data_segment_type_id"]
+                after_add_billing_data_category_id = after_add_billing_segment["data_category_id"]
+                after_add_billing_buyer_member_id = after_add_billing_segment["buyer_member_id"]
+
+            after_add_billing_response = output_messages[after_add_billing_code]
+            after_add_billing_billing_response = add_billing_outputs[after_add_billing_code]
+
+            write_segment_id_list.append(after_add_billing_segment_id)
+            write_code_list.append(after_add_billing_code)
+            write_segment_name_list.append(after_add_billing_segment_name)
+            write_segment_description_list.append(after_add_billing_segment_description)
+            write_price_list.append(after_add_billing_price)
+            write_duration_list.append(after_add_billing_duration)
+            write_member_id_list.append(MEMBER_ID)
+            write_state_list.append(after_add_billing_state)
+            write_is_public_list.append(after_add_billing_is_public)
+            write_data_segment_type_id_list.append(after_add_billing_data_segment_type_id)
+            write_data_category_id_list.append(after_add_billing_data_category_id)
+            write_buyer_member_id_list.append(after_add_billing_buyer_member_id)
+            write_response.append(after_add_billing_response)
+            write_billing_response.append(after_add_billing_billing_response)
 
     # Add private segments to specific buyer_member_id
     private_segments_to_add = private_segment_list.keys()
     if len(private_segments_to_add) > 0:
-        for buyer_member_id in private_segments_to_add:
-            buyer_member_private_segment_list = private_segment_list[buyer_member_id]
-            private_segment_response = refresh_segments(buyer_member_id, buyer_member_private_segment_list)
+        private_segment_row_num = 0
+        private_segment_thread_counter = 0
+        private_segment_billing_outputs = {}
+        private_segment_threads = []
+        private_segments = {}
 
-            for segment_id in private_segment_response:
-                private_segment_details = private_segment_response[segment_id]
-                write_segment_id_list.append(private_segment_details["segment_id"])
-                write_code_list.append(private_segment_details["code"])
-                write_segment_name_list.append(private_segment_details["segment_name"])
-                write_segment_description_list.append(private_segment_details["segment_description"])
-                write_price_list.append(private_segment_details["price"])
-                write_duration_list.append(private_segment_details["duration"])
-                write_member_id_list.append(MEMBER_ID)
-                write_state_list.append(private_segment_details["state"])
-                write_is_public_list.append(private_segment_details["is_public"])
-                write_data_segment_type_id_list.append(private_segment_details["data_segment_type_id"])
-                write_data_category_id_list.append(private_segment_details["data_category_id"])
-                write_buyer_member_id_list.append(buyer_member_id)
-                write_response.append(private_segment_details["response"])
+        # for buyer_member_id in private_segments_to_add:
+        while private_segment_row_num < len(private_segments_to_add):
 
-                add_billing_response = add_segment_billing(private_segment_details["segment_id"], private_segment_details["state"], private_segment_details["data_category_id"], private_segment_details["is_public"], private_segment_details["data_segment_type_id"])
-                write_billing_response.append(add_billing_response)
+            while private_segment_thread_counter < THREAD_LIMIT and private_segment_row_num < len(private_segments_to_add):
+                buyer_member_id = private_segments_to_add[private_segment_row_num]
+                buyer_member_private_segment_list = private_segment_list[buyer_member_id]
+                private_segment_response = refresh_segments(buyer_member_id, buyer_member_private_segment_list)
+
+                for segment_id in private_segment_response:
+                    private_segment_details = private_segment_response[segment_id]
+                    private_segment_code = private_segment_details["code"]
+
+                    private_segments[private_segment_code] = {
+                                                                "segment_id":private_segment_details["segment_id"],
+                                                                "segment_name":private_segment_details["segment_name"],
+                                                                "segment_description":private_segment_details["segment_description"],
+                                                                "price":private_segment_details["price"],
+                                                                "duration":private_segment_details["duration"],
+                                                                "state":private_segment_details["state"],
+                                                                "is_public":private_segment_details["is_public"],
+                                                                "data_segment_type_id":private_segment_details["data_segment_type_id"],
+                                                                "data_category_id":private_segment_details["data_category_id"],
+                                                                "buyer_member_id":buyer_member_id,
+                                                                "response":private_segment_details["response"]
+                                                            }
+
+                    private_segment_billing_process = Thread(target=add_segment_billing, args=[private_segment_details["segment_id"], private_segment_code, private_segment_details["state"], private_segment_details["data_category_id"], private_segment_details["is_public"], private_segment_details["data_segment_type_id"], private_segment_billing_outputs])
+                    private_segment_billing_process.start()
+                    private_segment_billing_threads.append(private_segment_billing_process)
+
+                private_segment_thread_counter += 1
+                private_segment_row_num += 1
+
+        for private_segment_billing_thread in private_segment_billing_threads:
+            private_segment_billing_thread.join()
+
+        # if len(private_segment_billing_outputs) > 0:
+        #     print("Sleep for 60 seconds for billing to be updated")
+        #     time.sleep(60)
+
+        for private_segment_code in private_segments:
+            private_segment = private_segments[private_segment_code]
+
+            write_segment_id_list.append(private_segment["segment_id"])
+            write_code_list.append(private_segment["code"])
+            write_segment_name_list.append(private_segment["segment_name"])
+            write_segment_description_list.append(private_segment["segment_description"])
+            write_price_list.append(private_segment["price"])
+            write_duration_list.append(private_segment["duration"])
+            write_member_id_list.append(MEMBER_ID)
+            write_state_list.append(private_segment["state"])
+            write_is_public_list.append(private_segment["is_public"])
+            write_data_segment_type_id_list.append(private_segment["data_segment_type_id"])
+            write_data_category_id_list.append(private_segment["data_category_id"])
+            write_buyer_member_id_list.append(private_segment["buyer_member_id"])
+            write_response.append(private_segment["response"])
+
+            private_segment_billing_response = private_segment_billing_outputs[private_segment_code]
+            write_billing_response.append(private_segment_billing_response)
 
     # Print result of creating segments
+    # print("Segment ID len: {}".format(len(write_segment_id_list)))
+    # print("code len: {}".format(len(write_code_list)))
+    # print("Segment Name len: {}".format(len(write_segment_name_list)))
+    # print("Segment Description len: {}".format(len(write_segment_description_list)))
+    # print("Price len: {}".format(len(write_price_list)))
+    # print("Duration len: {}".format(len(write_duration_list)))
+    # print("Member ID len: {}".format(len(write_member_id_list)))
+    # print("State len: {}".format(len(write_state_list)))
+    # print("Is Public len: {}".format(len(write_is_public_list)))
+    # print("Data Segment Type ID len: {}".format(len(write_data_segment_type_id_list)))
+    # print("Data Category ID len: {}".format(len(write_data_category_id_list)))
+    # print("Buyer Member ID len: {}".format(len(write_buyer_member_id_list)))
+    # print("Add Segment Response len: {}".format(len(write_response)))
+    # print("Add Billing Response len: {}".format(len(write_billing_response)))
+
+
     write_df = pd.DataFrame({
                     "Segment ID":write_segment_id_list,
                     'code':write_code_list,
@@ -333,117 +570,8 @@ def read_file_to_add_segments(file_path):
                 })
     return write_excel.write(write_df, file_name + "_output_add_segments")
 
-def read_file_to_edit_segments(file_path):
-    read_df = None
-    try:
-        # Skip row 2 ([1]) tha indicates if field is mandatory or not
-        read_df = pd.read_excel(file_path, sheet_name=SHEET_NAME, skiprows=[1])
-    except:
-        return {"message":"File Path '{}' is not found".format(file_path)}
-    
-    code_list = read_df["code"]
-    segment_name_list = read_df["Segment Name"]
-    segment_description_list = read_df["Segment Description"]
-    price_list = read_df["Price"]
-    duration_list = read_df["Duration"]
-    state_list = read_df["State"]
-    is_public_list = read_df["Is Public"]
-    data_segment_type_id_list = read_df["Data Segment Type ID"]
-    data_category_id_list = read_df["Data Category ID"]
-    buyer_member_id_list = read_df["Buyer Member ID"]
-
-    os.remove(file_path)
-    file_name_with_extension = file_path.split("/")[-1]
-    file_name = file_name_with_extension.split(".xlsx")[0]
-
-    write_segment_id_list = []
-    write_member_id_list = []
-    write_response = []
-    write_billing_response = []
-
-
-    for i in range(len(code_list)):
-        current_code = code_list[i]
-        current_segment_name = segment_name_list[i]
-        current_segment_description = segment_description_list[i]
-        current_price = price_list[i]
-        current_duration = duration_list[i]
-        current_state = state_list[i]
-
-        edit_response = edit_segment(current_code, current_segment_name, current_segment_description, current_price, current_duration, current_state)
-
-        current_segment_id = ""
-        try:
-            current_segment_id = edit_response["segment"]["id"]
-            write_segment_id_list.append(current_segment_id)
-            write_response.append(edit_response["status"])
-        except:
-            write_segment_id_list.append(current_segment_id)
-            error_message = edit_response
-            write_response.append(error_message)
-        
-        if current_segment_id == "":
-            write_billing_response.append("Unable to retrieve segment id")
-        else:
-            current_data_category_id = data_category_id_list[i]
-            current_is_public = is_public_list[i]
-            current_data_segment_type_id = data_segment_type_id_list[i]
-            segment_billing_response = get_segment_billing(current_segment_id)
-            segment_billing_id = segment_billing_response["segment-billing-categories"][0]["id"]
-            edit_segment_response = edit_segment_billing(segment_billing_id, current_segment_id, current_state, current_data_category_id, current_is_public, current_data_segment_type_id)
-            write_billing_response.append(edit_segment_response)
-
-        write_member_id_list.append(MEMBER_ID)
-
-    write_df = pd.DataFrame({
-                "Segment ID":write_segment_id_list,
-                'code':code_list,
-                'Segment Name':segment_name_list,
-                'Segment Description':segment_description_list,
-                'Price':price_list,
-                'Duration':duration_list,
-                'Member ID':write_member_id_list,
-                'State':state_list,
-                'Is Public':is_public_list,
-                'Data Segment Type ID':data_segment_type_id_list,
-                'Data Category ID':data_category_id_list,
-                'Buyer Member ID':buyer_member_id_list,
-                'Edit Segment Response':write_response,
-                'Edit Billing Response':write_billing_response
-            })
-        
-    return write_excel.write(write_df, "DONOTUPLOAD_" + file_name + "_edit_segments")
-
-def add_segment(code, segment_name, segment_description, price, duration, state):
-    segment_to_add = {
-                        "code":str(code),
-                        "expire_minutes":int(duration),
-                        "short_name":segment_name,
-                        "description":str(segment_description),
-                        "price":float(price),
-                        "state":state
-                    }
-    try:
-        request_to_send = requests.post(url_segment,
-                                    headers={
-                                        'Content-Type':'application/json',
-                                        'Authorization':auth_token
-                                    },
-                                    params={
-                                        'member_id':MEMBER_ID
-                                    },
-                                    json={
-                                        'segment':segment_to_add
-                                    })
-        print("Add Request: " + request_to_send.url)
-        add_response = request_to_send.json()
-        # print(add_response)
-        response = add_response["response"]
-        return {'id':response["id"],"response":response["status"]}
-    except:
-        return {'id':None,"response":response["error"]}
-
-def edit_segment(code, segment_name, segment_description, price, duration, state):
+# # Many input fields due to multithreading. current_segments will then be called again so that all the data are aligned
+def edit_segment(code, segment_name, segment_description, price, duration, state, is_public, data_segment_type_id, data_category_id, buyer_member_id, current_segments, output_messages):
     segment_to_edit = {
                         "member_id":MEMBER_ID,
                         "code":str(code),
@@ -471,9 +599,195 @@ def edit_segment(code, segment_name, segment_description, price, duration, state
         edit_response = request_to_send.json()
         # print(edit_response)
         response = edit_response["response"]
-        return response
+        segment_id = response["id"]
+        current_segments[code] = {
+                                    "segment_id":segment_id,
+                                    "segment_name":segment_name,
+                                    "segment_description":segment_description,
+                                    "price":price,
+                                    "duration":duration,
+                                    "state":state,
+                                    "is_public":is_public,
+                                    "data_segment_type_id":data_segment_type_id,
+                                    "data_category_id":data_category_id,
+                                    "buyer_member_id":buyer_member_id
+                                }
+        output_messages[code] = "OK"
     except:
-        return response["error"]
+        current_segments[code] = None
+
+        try:
+            error_message = response["error"]
+            output_messages[code] = error_message
+        except:
+            output_messages[code] = response
+
+def read_file_to_edit_segments(file_path):
+    read_df = None
+    try:
+        # Skip row 2 ([1]) tha indicates if field is mandatory or not
+        read_df = pd.read_excel(file_path, sheet_name=SHEET_NAME, skiprows=[1])
+    except:
+        return {"message":"File Path '{}' is not found".format(file_path)}
+    
+    code_list = read_df["code"]
+    segment_name_list = read_df["Segment Name"]
+    segment_description_list = read_df["Segment Description"]
+    price_list = read_df["Price"]
+    duration_list = read_df["Duration"]
+    state_list = read_df["State"]
+    is_public_list = read_df["Is Public"]
+    data_segment_type_id_list = read_df["Data Segment Type ID"]
+    data_category_id_list = read_df["Data Category ID"]
+    buyer_member_id_list = read_df["Buyer Member ID"]
+
+    os.remove(file_path)
+    file_name_with_extension = file_path.split("/")[-1]
+    file_name = file_name_with_extension.split(".xlsx")[0]
+
+    write_segment_id_list = []
+    write_code_list = []
+    write_segment_name_list = []
+    write_segment_description_list = []
+    write_price_list = []
+    write_duration_list = []
+    write_member_id_list = []
+    write_state_list = []
+    write_is_public_list = []
+    write_data_segment_type_id_list = []
+    write_data_category_id_list = []
+    write_buyer_member_id_list = []
+    write_response = []
+    write_billing_response = []
+
+    edit_segment_row_num = 0
+    edit_billing_row_num = 0
+
+    while edit_segment_row_num < len(code_list):
+        edit_segment_thread_counter = 0
+        current_segments = {}
+        output_messages = {}
+        edit_billing_outputs = {}
+
+        edit_segment_threads = []
+        edit_billing_threads = []
+
+        while edit_segment_thread_counter < THREAD_LIMIT and edit_segment_row_num < len(code_list):
+            current_code = code_list[edit_segment_row_num]
+            current_segment_name = segment_name_list[edit_segment_row_num]
+            current_segment_description = segment_description_list[edit_segment_row_num]
+            current_price = price_list[edit_segment_row_num]
+            current_duration = duration_list[edit_segment_row_num]
+            current_state = state_list[edit_segment_row_num]
+            current_is_public = is_public_list[edit_segment_row_num]
+            current_data_segment_type_id = data_segment_type_id_list[edit_segment_row_num]
+            current_data_category_id = data_category_id_list[edit_segment_row_num]
+            current_buyer_member_id = buyer_member_id_list[edit_segment_row_num]
+
+            edit_segment_process = Thread(target=edit_segment, args=[current_code, current_segment_name, current_segment_description, current_price, current_duration, current_state, current_is_public, current_data_segment_type_id, current_data_category_id, current_buyer_member_id, current_segments, output_messages])
+            edit_segment_process.start()
+            edit_segment_threads.append(edit_segment_process)
+
+            edit_segment_thread_counter += 1
+            edit_segment_row_num += 1
+        
+        for edit_segment_thread in edit_segment_threads:
+            edit_segment_thread.join()
+
+        edit_billing_thread_counter = 0
+
+        while edit_billing_thread_counter < THREAD_LIMIT and edit_billing_row_num < len(code_list):
+            edit_billing_code = code_list[edit_billing_row_num]
+            edit_billing_state = state_list[edit_billing_row_num]
+            edit_billing_data_category_id = data_category_id_list[edit_billing_row_num]
+            edit_billing_is_public = is_public_list[edit_billing_row_num]
+            edit_billing_data_segment_type_id = data_segment_type_id_list[edit_billing_row_num]
+
+            edit_billing_segment_id = None
+            if edit_billing_code in current_segments:
+                edit_billing_segment_id = current_segments[edit_billing_code]["segment_id"]
+
+            edit_billing_segment_billing_id = None
+            if not edit_billing_segment_id == None:
+                segment_billing_response = get_segment_billing(edit_billing_segment_id)
+                edit_billing_segment_billing_id = segment_billing_response["segment-billing-categories"][0]["id"]
+
+            if edit_billing_segment_id == None:
+                edit_billing_outputs[edit_billing_code] = "Unable to retrieve segment id"
+            else:
+                # segment_billing_id, segment_id, code, state, data_category_id, is_public, data_segment_type_id, edit_billing_outputs
+                edit_billing_process = Thread(target=edit_segment_billing, args=[edit_billing_segment_billing_id, edit_billing_segment_id, edit_billing_code, edit_billing_state, edit_billing_data_category_id, edit_billing_is_public, edit_billing_data_segment_type_id, edit_billing_outputs])
+                edit_billing_process.start()
+                edit_billing_threads.append(edit_billing_process)
+
+            edit_billing_thread_counter += 1
+            edit_billing_row_num += 1
+        
+        for edit_billing_thread in edit_billing_threads:
+            edit_billing_thread.join()
+
+        for after_edit_billing_code in edit_billing_outputs:
+            after_edit_billing_segment = current_segments[after_edit_billing_code]
+
+            after_edit_billing_segment_id = None
+            after_edit_billing_segment_name = None
+            after_edit_billing_segment_description = None
+            after_edit_billing_price = None
+            after_edit_billing_duration = None
+            after_edit_billing_state = None
+            after_edit_billing_is_public = None
+            after_edit_billing_data_segment_type_id = None
+            after_edit_billing_data_category_id = None
+            after_edit_billing_buyer_member_id = None
+            after_edit_billing_response = output_messages[after_edit_billing_code]
+            after_edit_billing_billing_response = add_billing_outputs[after_edit_billing_code]
+
+            if not after_edit_billing_segment == None:
+                after_edit_billing_segment_id = after_edit_billing_segment["segment_id"]
+                after_edit_billing_segment_name = after_edit_billing_segment["segment_name"]
+                after_edit_billing_segment_description = after_edit_billing_segment["segment_description"]
+                after_edit_billing_price = after_edit_billing_segment["price"]
+                after_edit_billing_duration = after_edit_billing_segment["duration"]
+                after_edit_billing_state = after_edit_billing_segment["state"]
+                after_edit_billing_is_public = after_edit_billing_segment["is_public"]
+                after_edit_billing_data_segment_type_id = after_edit_billing_segment["data_segment_type_id"]
+                after_edit_billing_data_category_id = after_edit_billing_segment["data_category_id"]
+                after_edit_billing_buyer_member_id = after_edit_billing_segment["buyer_member_id"]
+
+            write_segment_id_list.append(after_edit_billing_segment_id)
+            write_code_list.append(after_edit_billing_code)
+            write_segment_name_list.append(after_edit_billing_segment_name)
+            write_segment_description_list.append(after_edit_billing_segment_description)
+            write_price_list.append(after_edit_billing_price)
+            write_duration_list.append(after_edit_billing_duration)
+            write_member_id_list.append(MEMBER_ID)
+            write_state_list.append(after_edit_billing_state)
+            write_is_public_list.append(after_edit_billing_is_public)
+            write_data_segment_type_id_list.append(after_edit_billing_data_segment_type_id)
+            write_data_category_id_list.append(after_edit_billing_data_category_id)
+            write_buyer_member_id_list.append(after_edit_billing_buyer_member_id)
+            write_response.append(after_edit_billing_response)
+            write_billing_response.append(after_edit_billing_billing_response)
+
+
+    write_df = pd.DataFrame({
+                "Segment ID":write_segment_id_list,
+                'code':code_list,
+                'Segment Name':segment_name_list,
+                'Segment Description':segment_description_list,
+                'Price':price_list,
+                'Duration':duration_list,
+                'Member ID':write_member_id_list,
+                'State':state_list,
+                'Is Public':is_public_list,
+                'Data Segment Type ID':data_segment_type_id_list,
+                'Data Category ID':data_category_id_list,
+                'Buyer Member ID':buyer_member_id_list,
+                'Edit Segment Response':write_response,
+                'Edit Billing Response':write_billing_response
+            })
+        
+    return write_excel.write(write_df, "DONOTUPLOAD_" + file_name + "_edit_segments")
 
 # overwrites segments for specific buyer member id
 def refresh_segments(buyer_member_id, buyer_member_private_segment_list):
@@ -545,64 +859,13 @@ def refresh_segment_ids(record_id, new_segment_id_list):
         refresh_response = request_to_send.json()
         return refresh_response["response"]["status"]
     except Exception as e:
+        if request_to_send.status_code == 504:
+            return "timed out"
+
         return refresh_response["response"]["error"]
 # End Add Segments functions
 
-# def read_file_to_retrieve_segment_id(file_path):
-#     read_df = None
-#     try:
-#         # Skip row 2 ([1]) tha indicates if field is mandatory or not
-#         read_df = pd.read_excel(file_path, sheet_name=SHEET_NAME, skiprows=[1])
-#     except:
-#         return {"message":"File Path '{}' is not found".format(file_name)}
-    
-#     code_list = read_df["code"]
-#     is_public_list = read_df["Is Public"]
-#     data_category_id_list = read_df["Data Category ID"]
-#     buyer_member_id_list = read_df["Buyer Member ID"]
-
-#     os.remove(file_path)
-#     file_name_with_extension = file_path.split("/")[-1]
-#     file_name = file_name_with_extension.split(".xlsx")[0]
-
-#     write_segment_id_list = []
-#     write_segment_name_list = []
-#     write_description_list = []
-#     write_price_list = []
-#     write_duration_list = []
-#     write_member_id_list = []
-#     write_state_list = []
-#     write_is_public_list = []
-#     write_data_category_id_list = []
-#     write_buyer_member_id_list = []
-
-#     for row_num in range(len(code_list)):
-#         current_code = code_list[row_num]
-
-#         retrieved_segment_details = retrieve_segment(current_code)
-#         write_segment_id_list.append(retrieved_segment_details["id"])
-#         write_segment_name_list.append(retrieved_segment_details["short_name"])
-#         write_segment_description_list.append(retrieved_segment_details["description"])
-#         write_price_list.append(retrieved_segment_details["price"])
-#         write_duration_list.append(retrieved_segment_details["expire_minutes"])
-#         write_member_id_list.append(MEMBER_ID)
-#         write_state_list.append(retrieved_segment_details["state"])
-
-#     write_df = pd.DataFrame({
-#                     "Segment ID":write_segment_id_list,
-#                     'code':code_list,
-#                     'Segment Name':write_segment_name_list,
-#                     'Price':write_price_list,
-#                     'Duration':write_duration_list,
-#                     'Member ID':write_member_id_list,
-#                     'State':write_state_list,
-#                     'Is Public':is_public_list,
-#                     'Data Category ID':data_category_id_list,
-#                     'Buyer Member ID':buyer_member_id_list
-#                 })
-#     return write_excel.write(write_df, file_name + "_output_retrieve_segment_ids")
-
-def retrieve_segment(code):
+def retrieve_segment(code, current_segments, output_messages):
     try:
         request_to_send = requests.get(url_segment,
                                             headers={
@@ -616,9 +879,17 @@ def retrieve_segment(code):
         print("Retrieve Segment ID Request URL: " + request_to_send.url)
         retrieve_response = request_to_send.json()
         segment = retrieve_response["response"]["segment"]
-        return segment
+        current_segments[code] = {
+                                    "segment_id":segment["id"],
+                                    "segment_name":segment["short_name"],
+                                    "description":segment["description"],
+                                    "price":segment["price"],
+                                    "duration":segment["expire_minutes"],
+                                    "member_id":segment["member_id"]
+                                }
+        output_messages[code] = "OK"
     except Exception:
-        return "Unable to find code {}".format(code)
+        output_messages[code] = "Unable to find code {}".format(code)
 
 def retrieve_segment_by_id(segment_id):
     segment_id = segment_id
@@ -818,97 +1089,114 @@ def read_file_to_add_segment_billings(file_path):
     data_segment_type_id_list = read_df["Data Segment Type ID"]
     data_category_id_list = read_df["Data Category ID"]
     buyer_member_id_list = read_df["Buyer Member ID"]
-    write_response = []
-    member_id_list = []
+    
+    write_segment_id_list = []
+    write_code_list = []
+    write_segment_name_list = []
+    write_segment_description_list = []
+    write_price_list = []
+    write_duration_list = []
+    write_member_id_list = []
+    write_state_list = []
+    write_is_public_list = []
+    write_data_segment_type_id_list = []
+    write_data_category_id_list = []
+    write_buyer_member_id_list = []
+    write_billing_response = []
 
     os.remove(file_path)
     file_name_with_extension = file_path.split("/")[-1]
     file_name = file_name_with_extension.split(".xlsx")[0]
 
-    for i in range(len(segment_id_list)):
-        current_segment_id = segment_id_list[i]
-        current_state = state_list[i]
-        current_data_category_id = data_category_id_list[i]
-        current_is_public = is_public_list[i]
-        current_data_segment_type_id = data_segment_type_id_list[i]
+    add_billing_row_num = 0
+    add_billing_outputs = {}
 
-        add_segment_billing_response = add_segment_billing(current_segment_id, current_state, current_data_category_id, current_is_public, current_data_segment_type_id)
-        write_response.append(add_segment_billing_response)
-        member_id_list.append(MEMBER_ID)
+    while add_billing_row_num < len(segment_id_list):
+        add_billing_thread_counter = 0
+        add_billing_threads = []
+        current_segments = {}
+
+        while add_billing_thread_counter < THREAD_LIMIT and add_billing_row_num < len(segment_id_list):
+            add_billing_segment_id = segment_id_list[add_billing_row_num]
+            add_billing_code = code_list[add_billing_row_num]
+            add_billing_segment_name = segment_name_list[add_billing_row_num]
+            add_billing_segment_description = segment_description_list[add_billing_row_num]
+            add_billing_price = price_list[add_billing_row_num]
+            add_billing_duration = duration_list[add_billing_row_num]
+            add_billing_state = state_list[add_billing_row_num]
+            add_billing_is_public = is_public_list[add_billing_row_num]
+            add_billing_data_segment_type_id = data_segment_type_id_list[add_billing_row_num]
+            add_billing_data_category_id = data_category_id_list[add_billing_row_num]
+            add_billing_buyer_member_id = buyer_member_id_list[add_billing_row_num]
+
+            current_segments[add_billing_code] = {
+                                                    "segment_id":add_billing_segment_id,
+                                                    "segment_name":add_billing_segment_name,
+                                                    "segment_description":add_billing_segment_description,
+                                                    "price":add_billing_price,
+                                                    "duration":add_billing_duration,
+                                                    "state":add_billing_state,
+                                                    "is_public":add_billing_is_public,
+                                                    "data_segment_type_id":add_billing_data_segment_type_id,
+                                                    "data_category_id":add_billing_data_category_id,
+                                                    "buyer_member_id":add_billing_buyer_member_id
+                                                }
+
+            add_billing_process = Thread(target=add_segment_billing, args=[add_billing_segment_id, add_billing_code, add_billing_state, add_billing_data_category_id, add_billing_is_public, add_billing_data_segment_type_id, add_billing_outputs])
+            add_billing_process.start()
+            add_billing_threads.append(add_billing_process)
+
+            add_billing_row_num += 1
+            add_billing_thread_counter += 1
+
+        for add_billing_thread in add_billing_threads:
+            add_billing_thread.join()
+
+    for after_add_billing_code in current_segments:
+        after_add_billing_segment = current_segments[after_add_billing_code]
+
+        after_add_billing_segment_id = after_add_billing_segment["segment_id"]
+        after_add_billing_segment_name = after_add_billing_segment["segment_name"]
+        after_add_billing_segment_description = after_add_billing_segment["segment_description"]
+        after_add_billing_price = after_add_billing_segment["price"]
+        after_add_billing_duration = after_add_billing_segment["duration"]
+        after_add_billing_state = after_add_billing_segment["state"]
+        after_add_billing_is_public = after_add_billing_segment["is_public"]
+        after_add_billing_data_segment_type_id = after_add_billing_segment["data_segment_type_id"]
+        after_add_billing_data_category_id = after_add_billing_segment["data_category_id"]
+        after_add_billing_buyer_member_id = after_add_billing_segment["buyer_member_id"]
+        after_add_billing_billing_response = add_billing_outputs[after_add_billing_code]
+
+        write_segment_id_list.append(after_add_billing_segment_id)
+        write_code_list.append(after_add_billing_code)
+        write_segment_name_list.append(after_add_billing_segment_name)
+        write_segment_description_list.append(after_add_billing_segment_description)
+        write_price_list.append(after_add_billing_price)
+        write_duration_list.append(after_add_billing_duration)
+        write_member_id_list.append(MEMBER_ID)
+        write_state_list.append(after_add_billing_state)
+        write_is_public_list.append(after_add_billing_is_public)
+        write_data_segment_type_id_list.append(after_add_billing_data_segment_type_id)
+        write_data_category_id_list.append(after_add_billing_data_category_id)
+        write_buyer_member_id_list.append(after_add_billing_buyer_member_id)
+        write_billing_response.append(after_add_billing_billing_response)
     
     write_df = pd.DataFrame({
-                    "Segment ID":segment_id_list,
-                    'code':code_list,
-                    'Segment Name':segment_name_list,
-                    'Segment Description':segment_description_list,
-                    'Price':price_list,
-                    'Duration':duration_list,
-                    'Member ID':member_id_list,
-                    'State':state_list,
-                    'Is Public':is_public_list,
-                    "Data Segment Type ID":data_segment_type_id_list,
-                    'Data Category ID':data_category_id_list,
-                    'Buyer Member ID':buyer_member_id_list,
-                    'Response':write_response
+                    "Segment ID":write_segment_id_list,
+                    'code':write_code_list,
+                    'Segment Name':write_segment_name_list,
+                    'Segment Description':write_segment_description_list,
+                    'Price':write_price_list,
+                    'Duration':write_duration_list,
+                    'Member ID':write_member_id_list,
+                    'State':write_state_list,
+                    'Is Public':write_is_public_list,
+                    "Data Segment Type ID":write_data_segment_type_id_list,
+                    'Data Category ID':write_data_category_id_list,
+                    'Buyer Member ID':write_buyer_member_id_list,
+                    'Billing Response':write_billing_response
                 })
     return write_excel.write(write_df, "DONOTUPLOAD_" + file_name + "_add_billing")
-
-# def read_file_to_edit_segment_billings(file_path):
-#     read_df = None
-#     try:
-#         # Skip row 2 ([1]) tha indicates if field is mandatory or not
-#         read_df = pd.read_excel(file_path, sheet_name=SHEET_NAME, skiprows=[1])
-#     except:
-#         return {"message":"File Path '{}' is not found".format(file_path)}
-    
-#     segment_id_list = read_df["Segment ID"]
-#     code_list = read_df["code"]
-#     segment_name_list = read_df["Segment Name"]
-#     segment_description_list = read_df["Segment Description"]
-#     price_list = read_df["Price"]
-#     duration_list = read_df["Duration"]
-#     member_id_list = []
-#     state_list = read_df["State"]
-#     is_public_list = read_df["Is Public"]
-#     data_segment_type_id_list = read_df["Data Segment Type ID"]
-#     data_category_id_list = read_df["Data Category ID"]
-#     buyer_member_id_list = read_df["Buyer Member ID"]
-#     write_response = []
-
-#     os.remove(file_path)
-#     file_name_with_extension = file_path.split("/")[-1]
-#     file_name = file_name_with_extension.split(".xlsx")[0]
-
-#     for i in range(len(segment_id_list)):
-#         current_segment_id = segment_id_list[i]
-#         current_state = state_list[i]
-#         current_data_category_id = data_category_id_list[i]
-#         current_is_public = is_public_list[i]
-#         current_data_segment_type_id = data_segment_type_id_list[i]
-
-#         segment_billing_response = get_segment_billing(current_segment_id)
-#         segemnt_billing_id = segment_billing_response["segment-billing-categories"][0]["id"]
-
-#         edit_segment_response = edit_segment_billing(segment_billing_id, current_segment_id, current_state, current_data_category_id, current_is_public, data_segment_type_id)
-#         write_response.append(edit_segment_response)
-#         member_id_list.append(MEMBER_ID)
-
-#     write_df = pd.DataFrame({
-#                     "Segment ID":segment_id_list,
-#                     'code':code_list,
-#                     'Segment Name':segment_name_list,
-#                     'Segment Description':segment_description_list,
-#                     'Price':price_list,
-#                     'Duration':duration_list,
-#                     'Member ID':member_id_list,
-#                     'State':state_list,
-#                     'Is Public':is_public_list,
-#                     "Data Segment Type ID":data_segment_type_id_list,
-#                     'Data Category ID':data_category_id_list,
-#                     'Buyer Member ID':buyer_member_id_list,
-#                     'Response':write_response
-#                 })
-#     return write_excel.write(write_df, "DONOTUPLOAD_" + file_name + "_edit_billing")
 
 def get_segment_loads_report(start_date, end_date):
     request_json = {
@@ -987,7 +1275,7 @@ def download_report(report_id):
     # print(request_report_string_list)
     return request_report_string_list
 
-def read_file_to_get_report(file_path, report_type, sheet):
+def read_file_to_get_report(file_path, report_type, sheet, segment_dict):
     auth_token = authenticate()
     if "message" in auth_token:
         return auth_token
@@ -1007,14 +1295,14 @@ def read_file_to_get_report(file_path, report_type, sheet):
     row_counter = 0
     for start_date in start_date_list:
         end_date = end_date_list[row_counter]
-        file_name = get_report(start_date, end_date, report_type, row_counter)
+        file_name = get_report(start_date, end_date, report_type, row_counter, segment_dict)
         file_names.append(file_name)
 
         row_counter += 1
 
     return file_names
 
-def get_report(start_date, end_date, report_type, row_counter):
+def get_report(start_date, end_date, report_type, row_counter, segment_dict):
     is_report_line_header = True
 
     if report_type == "segment_loads":
@@ -1066,7 +1354,7 @@ def get_report(start_date, end_date, report_type, row_counter):
         buyer_member_id_list = []
         campaign_id_list = []
         campaign_name_list = []
-        targeted_segment_ids_list = []
+        targeted_segment_name_list = []
         cpm_usd_list = []
         imps_list = []
         data_costs_list = []
@@ -1086,7 +1374,22 @@ def get_report(start_date, end_date, report_type, row_counter):
                 buyer_member_id_list.append(report_line_data[2])
                 campaign_id_list.append(report_line_data[3])
                 campaign_name_list.append(report_line_data[4])
-                targeted_segment_ids_list.append(report_line_data[5])
+
+                targeted_segment_ids = report_line_data[5]
+                targeted_segment_id_list = targeted_segment_ids.split(b",")
+                formatted_targeted_segment_names = ""
+
+                is_first_segment = True
+                for targeted_segment_id in targeted_segment_id_list:
+                    targeted_segment_name = segment_dict[int(targeted_segment_id)]["short_name"]
+
+                    if is_first_segment:
+                        formatted_targeted_segment_names = targeted_segment_name
+                        is_first_segment = False
+                    else:
+                        formatted_targeted_segment_names = formatted_targeted_segment_names + "," + targeted_segment_name
+                targeted_segment_name_list.append(formatted_targeted_segment_names)
+
                 cpm_usd_list.append(report_line_data[6])
                 imps_list.append(report_line_data[7])
                 data_costs_list.append(report_line_data[8])
@@ -1099,7 +1402,7 @@ def get_report(start_date, end_date, report_type, row_counter):
             "buyer_member_id":buyer_member_id_list,
             "campaign_id":campaign_id_list,
             "campaign_name":campaign_name_list,
-            "targeted_segment_ids_list":targeted_segment_ids_list,
+            "targeted_segment_names":targeted_segment_name_list,
             "cpm_usd":cpm_usd_list,
             "imps":imps_list,
             "data_costs":data_costs_list,
@@ -1120,6 +1423,7 @@ def read_file_to_retrieve_segments(file_path):
     code_list = read_df["code"]
 
     write_segment_id_list = []
+    write_code_list = []
     write_segment_name_list = []
     write_segment_description_list = []
     write_price_list = []
@@ -1127,66 +1431,96 @@ def read_file_to_retrieve_segments(file_path):
     write_member_id_list = []
     write_state_list = []
     write_is_public_list = []
-    write_data_segment_type_id = []
+    write_data_segment_type_id_list = []
     write_data_category_id_list = []
     write_response = []
+    write_billing_response = []
 
     os.remove(file_path)
     file_name_with_extension = file_path.split("/")[-1]
     file_name = file_name_with_extension.split(".xlsx")[0]
 
-    for i in range(len(code_list)):
-        current_segment_id = None
-        current_code = code_list[i]
+    get_segment_row_num = 0
 
-        try:
-            current_segment = retrieve_segment(current_code)
-            current_segment_id = current_segment["id"]
-            write_segment_id_list.append(current_segment_id)
-            write_segment_name_list.append(current_segment["short_name"])
-            write_segment_description_list.append(current_segment["description"])
-            write_price_list.append(current_segment["price"])
-            write_duration_list.append(current_segment["expire_minutes"])
-            write_member_id_list.append(current_segment["member_id"])
-        except:
-            current_segment_id = None
-            write_segment_id_list.append(None)
-            write_segment_name_list.append(None)
-            write_segment_description_list.append(None)
-            write_price_list.append(None)
-            write_duration_list.append(None)
-            write_member_id_list.append(None)
+    while get_segment_row_num < len(code_list):
+        get_segment_threads = []
+        get_segment_thread_counter = 0
+        current_segments = {}
+        output_messages = {}
 
-        if current_segment_id == None:
-            write_state_list.append(None)
-            write_is_public_list.append(None)
-            write_data_segment_type_id_list.append(None)
-            write_data_category_id_list.append(None)
-            write_response.append("Segment ID not found for code {}".format(current_code))
-        else:
-            retrieve_billing_response = get_segment_billing(current_segment_id)
-            try:
-                segment_billing_category = retrieve_billing_response["segment-billing-categories"][0]
-                current_state = segment_billing_category["active"]
-                if current_state:
-                    current_state = "active"
-                else:
-                    current_state = "inactive"
-                write_state_list.append(current_state)
-                write_is_public_list.append(segment_billing_category["is_public"])
-                write_data_segment_type_id_list.append(segment_billing_category["data_segment_type_id"])
-                write_data_category_id_list.append(segment_billing_category["data_category_id"])
-                write_response.append(retrieve_billing_response["status"])
-            except:
+        while get_segment_thread_counter < THREAD_LIMIT and get_segment_row_num < len(code_list):
+            current_code = code_list[get_segment_row_num]
+            get_segment_process = Thread(target=retrieve_segment, args=[current_code, current_segments, output_messages])
+            get_segment_process.start()
+            get_segment_threads.append(get_segment_process)
+
+            get_segment_thread_counter += 1
+            get_segment_row_num += 1
+        
+        for get_segment_thread in get_segment_threads:
+            get_segment_thread.join()
+
+        get_billing_threads = []
+        get_billing_thread_counter = 0
+        get_billing_row_num = 0
+        current_segment_billings = {}
+        billing_output_messages = {}
+        get_billing_code_list = list(current_segments.keys())
+
+        while get_billing_thread_counter < THREAD_LIMIT and get_billing_row_num < len(get_billing_code_list):
+            get_billing_segment_code = get_billing_code_list[get_billing_row_num]
+            get_billing_segment = current_segments[get_billing_segment_code]
+
+            if "segment_id" in get_billing_segment:
+                get_billing_segment_id = get_billing_segment["segment_id"]
+                get_billing_process = Thread(target=get_segment_billing, args=[get_billing_segment_id, get_billing_segment_code, current_segment_billings, billing_output_messages])
+                get_billing_process.start()
+                get_billing_threads.append(get_billing_process)
+            else:
+                billing_output_messages[get_billing_segment_code] = "Unable to retrieve segment id for code {}".format(get_billing_segment_code)
+
+            get_billing_thread_counter += 1
+            get_billing_row_num += 1
+
+        for get_billing_thread in get_billing_threads:
+            get_billing_thread.join()
+
+        for after_billing_code in current_segments:
+            after_billing_segment = current_segments[after_billing_code]
+            if "segment_id" in after_billing_segment:
+                write_segment_id_list.append(after_billing_segment["segment_id"])
+                write_code_list.append(after_billing_code)
+                write_segment_name_list.append(after_billing_segment["segment_name"])
+                write_segment_description_list.append(after_billing_segment["description"])
+                write_price_list.append(after_billing_segment["price"])
+                write_duration_list.append(after_billing_segment["duration"])
+                write_member_id_list.append(MEMBER_ID)
+            else:
+                write_segment_id_list.append(None)
+                write_code_list.append(None)
+                write_segment_name_list.append(None)
+                write_segment_description_list.append(None)
+                write_price_list.append(None)
+                write_duration_list.append(None)
+                write_member_id_list.append(None)
+            write_response.append(output_messages[after_billing_code])
+
+            after_billing_segment_billing = current_segment_billings[after_billing_code]
+            if not after_billing_segment_billing == None:
+                write_state_list.append(after_billing_segment_billing["state"])
+                write_is_public_list.append(after_billing_segment_billing["is_public"])
+                write_data_segment_type_id_list.append(after_billing_segment_billing["data_segment_type_id"])
+                write_data_category_id_list.append(after_billing_segment_billing["data_category_id"])
+            else:
                 write_state_list.append(None)
                 write_is_public_list.append(None)
                 write_data_segment_type_id_list.append(None)
                 write_data_category_id_list.append(None)
-                write_response.append(retrieve_billing_response)
+            write_billing_response.append(billing_output_messages[after_billing_code])
 
     write_df = pd.DataFrame({
                     "Segment ID":write_segment_id_list,
-                    'code':code_list,
+                    'code':write_code_list,
                     'Segment Name':write_segment_name_list,
                     "Segment Description":write_segment_description_list,
                     'Price':write_price_list,
@@ -1196,12 +1530,13 @@ def read_file_to_retrieve_segments(file_path):
                     'Is Public':write_is_public_list,
                     "Data Segment Type ID":write_data_segment_type_id_list,
                     'Data Category ID':write_data_category_id_list,
-                    'Response':write_response
+                    'Get Segment Response':write_response,
+                    'Get Billing Response':write_billing_response
                 })
     return write_excel.write(write_df, "DONOTUPLOAD_" + file_name + "_retrieve_segments")
 
 
-def add_segment_billing(segment_id, state, data_category_id, is_public, data_segment_type_id):
+def add_segment_billing(segment_id, code, state, data_category_id, is_public, data_segment_type_id, add_billing_outputs):
     state = str(state).lower() == "active"
     is_public = str(is_public).lower() == "true"
 
@@ -1229,11 +1564,16 @@ def add_segment_billing(segment_id, state, data_category_id, is_public, data_seg
         print("Add Segment Billing Request: " + request_to_send.url)
         add_segment_billing_response = request_to_send.json()
         # print(add_segment_billing_response)
-        return add_segment_billing_response["response"]["status"]
+        add_billing_outputs[code] = add_segment_billing_response["response"]["status"]
     except Exception:
-        return "Error adding billing for segment id {}. Retrieve this code's billing to ensure the data has been pushed through".format(segment_id)
+        try:
+            add_billing_outputs[code] = add_segment_billing_response["response"]["error"]
+        except:
+            add_billing_outputs[code] = add_segment_billing_response
 
-def edit_segment_billing(segment_billing_id, segment_id, state, data_category_id, is_public, data_segment_type_id):
+    # print("Segment ID: '{}' added segment billing".format(segment_id))
+
+def edit_segment_billing(segment_billing_id, segment_id, code, state, data_category_id, is_public, data_segment_type_id, edit_billing_outputs):
     state = str(state).lower() == "active"
     is_public = str(is_public).lower() == "true"
 
@@ -1263,14 +1603,14 @@ def edit_segment_billing(segment_billing_id, segment_id, state, data_category_id
         print("Edit Segment Billing Request: " + request_to_send.url)
         edit_segment_billing_response = request_to_send.json()
         # print(edit_segment_billing_response)
-        return edit_segment_billing_response["response"]["status"]
+        edit_billing_outputs[code] = edit_segment_billing_response["response"]["status"]
     except Exception:
         try:
-            return edit_segment_billing_response["response"]["error"]
+            edit_billing_outputs[code] = edit_segment_billing_response["response"]["error"]
         except:
-            return "Error editing billing for segment id {}. Retrieve this code's billing to ensure the data has been pushed through".format(segment_id)
+            edit_billing_outputs[code] =  "Error editing billing for segment id {}. Retrieve this code's billing to ensure the data has been pushed through".format(segment_id)
 
-def get_segment_billing(segment_id):
+def get_segment_billing(segment_id, segment_code, current_segment_billings, billing_output_messages):
     try:
         request_to_send = requests.get(url_segment_billing_category,
                                     headers={
@@ -1282,35 +1622,52 @@ def get_segment_billing(segment_id):
                                     })
         print("Get Segment Billing Request: " + request_to_send.url)
         get_segment_billing_response = request_to_send.json()
-        return get_segment_billing_response["response"]
-    except Exception:
-        print("Segment ID: {} cannot be found!".format(segment_id))
-        return "Segment ID: {} cannot be found!".format(segment_id)
+        # print(get_segment_billing_response)
+        segment_billing_category = get_segment_billing_response["response"]["segment-billing-categories"][0]
+        
+        bool_state = segment_billing_category["active"]
+        state = "active"
+        if not bool_state:
+            state = "inactive"
+        # print("State: {}".format(state))
 
-def get_all_segment_billing():
-    start_element = 0
-    total_elements = 1
-    to_get_total_elements = True
-    segment_billing_dict = {}
+        is_public = segment_billing_category["is_public"]
+        # print("Is Public: {}".format(is_public))
+        data_segment_type_id = segment_billing_category["data_segment_type_id"]
+        # print("Data Segment Type ID: {}".format(data_segment_type_id))
+        data_category_id = segment_billing_category["data_category_id"]
+        # print("Data Category ID: {}".format(data_category_id))
+        current_segment_billings[segment_code] = {
+                                                    "state":state,
+                                                    "is_public":is_public,
+                                                    "data_segment_type_id":data_segment_type_id,
+                                                    "data_category_id":data_category_id
+                                                }
+        billing_output_messages[segment_code] = get_segment_billing_response["response"]["status"]
+    except:
+        current_segment_billings[segment_code] = None
+        billing_output_messages[segment_code] = "Segment ID: {} cannot be found!".format(segment_id)
 
-    while start_element <= total_elements:
-        request_to_send = requests.get(url_segment_billing_category,
-                                    headers={
-                                        'Content-Type':'application/json',
-                                        'Authorization':auth_token
-                                    },
-                                    params={
-                                        "start_element":start_element,
-                                        "num_elements":RETRIEVE_SEGMENTS_NUM_ELEMENTS
-                                    })
-        print("Get All Segment Billing URL: {}".format(request_to_send.url))
+def get_segment_billing_range(start_element, element_num, segment_billing_dict, total_elements, to_get_total_elements):
+    request_to_send = requests.get(url_segment_billing_category,
+                                headers={
+                                    'Content-Type':'application/json',
+                                    'Authorization':auth_token
+                                },
+                                params={
+                                    "start_element":start_element,
+                                    "num_elements":RETRIEVE_SEGMENTS_NUM_ELEMENTS
+                                })
+    print("Get All Segment Billing URL: {}".format(request_to_send.url))
 
-        start_element += RETRIEVE_SEGMENTS_NUM_ELEMENTS
-        response_json = request_to_send.json()
-        response = response_json["response"]
-
+    start_element += element_num
+    response_json = request_to_send.json()
+    response = response_json["response"]
+    
+    try:
         if to_get_total_elements:
-            total_elements = response["count"]
+            total_elements[0] = response["count"]
+            # print("Total elements: {}".format(total_elements))
             to_get_total_elements = False
 
         segment_billing_categories = response["segment-billing-categories"]
@@ -1332,10 +1689,47 @@ def get_all_segment_billing():
                                                     "data_segment_type_id":data_segment_type_id,
                                                     "data_category_id":data_category_id
                                                 }
+    except:
+        print("ERROR: {}".format(response["error"]))
 
-        if start_element % 5000 == 0:
-            print("Sleep for 20 seconds to avoid call limit")
-            time.sleep(20)
+def get_all_segment_billing():
+    start_element = 0
+    total_elements = [1]
+    to_get_total_elements = True
+    segment_billing_dict = {}
+    threads = []
+
+    while start_element <= total_elements[0]:
+        thread_counter = 0
+        
+        # get_segment_billing_range(start_element, RETRIEVE_SEGMENTS_NUM_ELEMENTS, segment_billing_dict, total_elements, to_get_total_elements)
+
+        # if start_element > 5000 and start_element % 5000 == 0:
+        #     print("Sleep for 20 seconds to avoid call limit")
+        #     time.sleep(20)
+
+        while thread_counter < THREAD_LIMIT and start_element <= total_elements[0]:
+            process = Thread(target=get_segment_billing_range, args=[start_element, RETRIEVE_SEGMENTS_NUM_ELEMENTS, segment_billing_dict, total_elements, to_get_total_elements])
+            process.start()
+            threads.append(process)
+            start_element += RETRIEVE_SEGMENTS_NUM_ELEMENTS
+            thread_counter += 1
+
+        for process in threads:
+            process.join()
+
+        # batch_number += 1
+
+        # if batch_number % 4 == 0:
+            # print("Sleep for 40 seconds to avoid call limit")
+            # time.sleep(40)
+        print("Sleep for 20 seconds to avoid call limit")
+        time.sleep(20)
+
+        # print("total_elements: {}".format(total_elements))
+        # print(segment_billing_dict)
+
+    print("Total Segment Billing: {}".format(len(segment_billing_dict)))
     return segment_billing_dict
 
 # End of Segment Billing Functions

@@ -16,7 +16,8 @@ def get_data_usage_report(file_path):
 
     # AppNexus get data usage report
     appnexus.get_urls("AppNexus")
-    appnexus_file_names_output = appnexus.read_file_to_get_report(file_path, "data_usage", ALL_REPORT_PLATFORMS_SHEET_NAME)
+    appnexus_segment_dict = appnexus.retrieve_all_segments()
+    appnexus_file_names_output = appnexus.read_file_to_get_report(file_path, "data_usage", ALL_REPORT_PLATFORMS_SHEET_NAME, appnexus_segment_dict)
 
     # if "message" is in the output, it is an error message
     if "message" in adform_file_names_output:
