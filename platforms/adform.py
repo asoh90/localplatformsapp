@@ -60,11 +60,13 @@ def authenticate():
                 "username":username,
                 "password":password
             }
-    auth_json = requests.post(AUTH_URL,
+    auth_request = requests.post(AUTH_URL,
                             headers={
                                 'Content-Type':CONTENT_TYPE
                             },
-                            data=data).json()
+                            data=data)
+    print("Authenticate URL: {}".format(auth_request.url))
+    auth_json = auth_request.json()
     auth_token = auth_json["access_token"] 
     return auth_token
 
