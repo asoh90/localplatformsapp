@@ -1038,79 +1038,79 @@ def read_file_to_add_existing_segments_to_buyer_member(file_path):
 
     private_segment_dict = {}
 
-    try:
-        for row_num in range(len(segment_id_list)):
-            current_segment_id = int(segment_id_list[row_num])
-            current_code = code_list[row_num]
-            current_segment_name = segment_name_list[row_num]
-            current_segment_description = segment_description_list[row_num]
-            current_price = price_list[row_num]
-            current_duration = duration_list[row_num]
-            current_state = state_list[row_num]
-            current_is_public = is_public_list[row_num]
-            current_data_segment_type_id = data_segment_type_id_list[row_num]
-            current_data_category_id = data_category_id_list[row_num]
-            current_buyer_member_id = buyer_member_id_list[row_num]
+    # try:
+    for row_num in range(len(segment_id_list)):
+        current_segment_id = int(segment_id_list[row_num])
+        current_code = code_list[row_num]
+        current_segment_name = segment_name_list[row_num]
+        current_segment_description = segment_description_list[row_num]
+        current_price = price_list[row_num]
+        current_duration = duration_list[row_num]
+        current_state = state_list[row_num]
+        current_is_public = is_public_list[row_num]
+        current_data_segment_type_id = data_segment_type_id_list[row_num]
+        current_data_category_id = data_category_id_list[row_num]
+        current_buyer_member_id = buyer_member_id_list[row_num]
 
-            if not current_buyer_member_id in private_segment_dict:
-                private_segment_dict[current_buyer_member_id] = {}
+        if not current_buyer_member_id in private_segment_dict:
+            private_segment_dict[current_buyer_member_id] = {}
 
-            buyer_member_private_segment = private_segment_dict[current_buyer_member_id]
+        buyer_member_private_segment = private_segment_dict[current_buyer_member_id]
 
-            buyer_member_private_segment[current_segment_id] = {
-                                                        "segment_id":current_segment_id,
-                                                        "code":current_code,
-                                                        "segment_name":current_segment_name,
-                                                        "segment_description":current_segment_description,
-                                                        "price":current_price,
-                                                        "duration":current_duration,
-                                                        "state":current_state,
-                                                        "is_public":current_is_public,
-                                                        "data_segment_type_id":current_data_segment_type_id,
-                                                        "data_category_id":current_data_category_id,
-                                                        "response":None
-                                                    }
+        buyer_member_private_segment[current_segment_id] = {
+                                                    "segment_id":current_segment_id,
+                                                    "code":current_code,
+                                                    "segment_name":current_segment_name,
+                                                    "segment_description":current_segment_description,
+                                                    "price":current_price,
+                                                    "duration":current_duration,
+                                                    "state":current_state,
+                                                    "is_public":current_is_public,
+                                                    "data_segment_type_id":current_data_segment_type_id,
+                                                    "data_category_id":current_data_category_id,
+                                                    "response":None
+                                                }
 
-        private_segments_to_add = private_segment_dict.keys()
-        if len(private_segments_to_add) > 0:
-            for buyer_member_id in private_segments_to_add:
-                buyer_member_private_segment_list = private_segment_dict[buyer_member_id]
-                private_segment_response = refresh_segments(buyer_member_id, buyer_member_private_segment_list)
+    private_segments_to_add = private_segment_dict.keys()
+    if len(private_segments_to_add) > 0:
+        for buyer_member_id in private_segments_to_add:
+            buyer_member_private_segment_list = private_segment_dict[buyer_member_id]
+            private_segment_response = refresh_segments(buyer_member_id, buyer_member_private_segment_list)
 
-                for segment_id in private_segment_response:
-                    private_segment_details = private_segment_response[segment_id]
-                    write_segment_id_list.append(private_segment_details["segment_id"])
-                    write_code_list.append(private_segment_details["code"])
-                    write_segment_name_list.append(private_segment_details["segment_name"])
-                    write_segment_description_list(private_segment_details["segment_description"])
-                    write_price_list.append(private_segment_details["price"])
-                    write_duration_list.append(private_segment_details["duration"])
-                    write_member_id_list.append(MEMBER_ID)
-                    write_state_list.append(private_segment_details["state"])
-                    write_is_public_list.append(private_segment_details["is_public"])
-                    write_data_segment_type_id_list.append(private_segment_details["segment_id_type"])
-                    write_data_category_id_list.append(private_segment_details["data_category_id"])
-                    write_buyer_member_id_list.append(buyer_member_id)
-                    write_response.append(private_segment_details["response"])
+            for segment_id in private_segment_response:
+                private_segment_details = private_segment_response[segment_id]
+                write_segment_id_list.append(private_segment_details["segment_id"])
+                write_code_list.append(private_segment_details["code"])
+                write_segment_name_list.append(private_segment_details["segment_name"])
+                write_segment_description_list.append(private_segment_details["segment_description"])
+                write_price_list.append(private_segment_details["price"])
+                write_duration_list.append(private_segment_details["duration"])
+                write_member_id_list.append(MEMBER_ID)
+                write_state_list.append(private_segment_details["state"])
+                write_is_public_list.append(private_segment_details["is_public"])
+                write_data_segment_type_id_list.append(private_segment_details["data_segment_type_id"])
+                write_data_category_id_list.append(private_segment_details["data_category_id"])
+                write_buyer_member_id_list.append(buyer_member_id)
+                write_response.append(private_segment_details["response"])
 
-        # Print result of creating segments
-        write_df = pd.DataFrame({
-                        "Segment ID":write_segment_id_list,
-                        'code':write_code_list,
-                        'Segment Name':write_segment_name_list,
-                        'Segment Description':write_segment_description_list,
-                        'Price':write_price_list,
-                        'Duration':write_duration_list,
-                        'State':write_state_list,
-                        'Is Public':write_is_public_list,
-                        'Data Segment Type ID':write_data_segment_type_id_list,
-                        'Data Category ID':write_data_category_id_list,
-                        'Buyer Member ID':write_buyer_member_id_list,
-                        'Response':write_response
-                    })
-        return write_excel.write(write_df, "DONOTUPLOAD_" + file_name + "_add_to_buyer")
-    except:
-        return {"message":"ERROR in the data file. Check if Segment IDs are all present."}
+    # Print result of creating segments
+    write_df = pd.DataFrame({
+                    "Segment ID":write_segment_id_list,
+                    'code':write_code_list,
+                    'Segment Name':write_segment_name_list,
+                    'Segment Description':write_segment_description_list,
+                    'Price':write_price_list,
+                    'Duration':write_duration_list,
+                    'State':write_state_list,
+                    'Is Public':write_is_public_list,
+                    'Data Segment Type ID':write_data_segment_type_id_list,
+                    'Data Category ID':write_data_category_id_list,
+                    'Buyer Member ID':write_buyer_member_id_list,
+                    'Response':write_response
+                })
+    return write_excel.write(write_df, "DONOTUPLOAD_" + file_name + "_add_to_buyer")
+    # except:
+    #     return {"message":"ERROR in the data file. Check if Segment IDs are all present."}
 
 def read_file_to_retrieve_buyer_member_segments(file_path):
     read_df = None
