@@ -662,7 +662,7 @@ def edit_segment(code, segment_name, segment_description, price, duration, state
             output_messages[code] = response
 
 def read_file_to_edit_segments(file_path):
-    edit_start_time = time.time()
+    edit_segments_start_time = time.time()
     edit_segments_authenticate_count = 1
 
     read_df = None
@@ -704,17 +704,21 @@ def read_file_to_edit_segments(file_path):
 
     edit_segment_row_num = 0
     edit_billing_row_num = 0
+    get_billing_row_num = 0
 
     batch_num = 1
 
     while edit_segment_row_num < len(code_list):
         edit_segment_thread_counter = 0
         current_segments = {}
+        current_segment_billings = {}
         output_messages = {}
+        get_billing_outputs = {}
         edit_billing_outputs = {}
 
         edit_segment_threads = []
         edit_billing_threads = []
+        get_billing_threads = []
 
         while edit_segment_thread_counter < THREAD_LIMIT and edit_segment_row_num < len(code_list):
             current_code = code_list[edit_segment_row_num]
@@ -738,6 +742,26 @@ def read_file_to_edit_segments(file_path):
         for edit_segment_thread in edit_segment_threads:
             edit_segment_thread.join()
 
+        get_billing_thread_counter = 0
+
+        while get_billing_thread_counter < THREAD_LIMIT and get_billing_row_num < len(code_list):
+            get_billing_code = code_list[get_billing_row_num]
+
+            get_billing_segment_id = None
+            if get_billing_code in current_segments:
+                get_billing_segment_id = current_segments[get_billing_code]["segment_id"]
+
+            if not get_billing_segment_id == None:
+                get_billing_process = Thread(target=get_segment_billing,args=[get_billing_segment_id, get_billing_code, current_segment_billings, get_billing_outputs])
+                get_billing_process.start()
+                get_billing_threads.append(get_billing_process)
+
+                get_billing_thread_counter += 1
+                get_billing_row_num += 1
+
+        for get_billing_thread in get_billing_threads:
+            get_billing_thread.join()
+
         edit_billing_thread_counter = 0
 
         while edit_billing_thread_counter < THREAD_LIMIT and edit_billing_row_num < len(code_list):
@@ -746,18 +770,20 @@ def read_file_to_edit_segments(file_path):
             edit_billing_data_category_id = data_category_id_list[edit_billing_row_num]
             edit_billing_is_public = is_public_list[edit_billing_row_num]
             edit_billing_data_segment_type_id = data_segment_type_id_list[edit_billing_row_num]
-
+            
             edit_billing_segment_id = None
             if edit_billing_code in current_segments:
                 edit_billing_segment_id = current_segments[edit_billing_code]["segment_id"]
 
             edit_billing_segment_billing_id = None
-            if not edit_billing_segment_id == None:
-                segment_billing_response = get_segment_billing(edit_billing_segment_id)
-                edit_billing_segment_billing_id = segment_billing_response["segment-billing-categories"][0]["id"]
+            segment_billing = current_segment_billings[edit_billing_code]
+            if not segment_billing == None:
+                edit_billing_segment_billing_id = segment_billing["id"]
 
             if edit_billing_segment_id == None:
                 edit_billing_outputs[edit_billing_code] = "Unable to retrieve segment id"
+            elif segment_billing == None:
+                edit_billing_outputs[edit_billing_code] = get_billing_outputs[edit_billing_code]
             else:
                 # segment_billing_id, segment_id, code, state, data_category_id, is_public, data_segment_type_id, edit_billing_outputs
                 edit_billing_process = Thread(target=edit_segment_billing, args=[edit_billing_segment_billing_id, edit_billing_segment_id, edit_billing_code, edit_billing_state, edit_billing_data_category_id, edit_billing_is_public, edit_billing_data_segment_type_id, edit_billing_outputs])
@@ -784,7 +810,7 @@ def read_file_to_edit_segments(file_path):
             after_edit_billing_data_category_id = None
             after_edit_billing_buyer_member_id = None
             after_edit_billing_response = output_messages[after_edit_billing_code]
-            after_edit_billing_billing_response = add_billing_outputs[after_edit_billing_code]
+            after_edit_billing_billing_response = edit_billing_outputs[after_edit_billing_code]
 
             if not after_edit_billing_segment == None:
                 after_edit_billing_segment_id = after_edit_billing_segment["segment_id"]
@@ -1726,6 +1752,7 @@ def get_segment_billing(segment_id, segment_code, current_segment_billings, bill
         # print(get_segment_billing_response)
         segment_billing_category = get_segment_billing_response["response"]["segment-billing-categories"][0]
         
+        billing_id = segment_billing_category["id"]
         bool_state = segment_billing_category["active"]
         state = "active"
         if not bool_state:
@@ -1739,6 +1766,7 @@ def get_segment_billing(segment_id, segment_code, current_segment_billings, bill
         data_category_id = segment_billing_category["data_category_id"]
         # print("Data Category ID: {}".format(data_category_id))
         current_segment_billings[segment_code] = {
+                                                    "id":billing_id,
                                                     "state":state,
                                                     "is_public":is_public,
                                                     "data_segment_type_id":data_segment_type_id,
