@@ -496,7 +496,7 @@ def read_file_to_add_segments(file_path):
         private_segment_row_num = 0
         private_segment_thread_counter = 0
         private_segment_billing_outputs = {}
-        private_segment_threads = []
+        private_segment_billing_threads = []
         private_segments = {}
 
         # for buyer_member_id in private_segments_to_add:
@@ -506,6 +506,7 @@ def read_file_to_add_segments(file_path):
                 buyer_member_id = private_segments_to_add[private_segment_row_num]
                 buyer_member_private_segment_list = private_segment_list[buyer_member_id]
                 private_segment_response = refresh_segments(buyer_member_id, buyer_member_private_segment_list)
+                # print(private_segment_response)
 
                 for segment_id in private_segment_response:
                     private_segment_details = private_segment_response[segment_id]
@@ -519,13 +520,13 @@ def read_file_to_add_segments(file_path):
                                                                 "duration":private_segment_details["duration"],
                                                                 "state":private_segment_details["state"],
                                                                 "is_public":private_segment_details["is_public"],
-                                                                "data_segment_type_id":private_segment_details["data_segment_type_id"],
+                                                                "data_segment_type_id":private_segment_details["segment_id_type"],
                                                                 "data_category_id":private_segment_details["data_category_id"],
                                                                 "buyer_member_id":buyer_member_id,
                                                                 "response":private_segment_details["response"]
                                                             }
 
-                    private_segment_billing_process = Thread(target=add_segment_billing, args=[private_segment_details["segment_id"], private_segment_code, private_segment_details["state"], private_segment_details["data_category_id"], private_segment_details["is_public"], private_segment_details["data_segment_type_id"], private_segment_billing_outputs])
+                    private_segment_billing_process = Thread(target=add_segment_billing, args=[private_segment_details["segment_id"], private_segment_code, private_segment_details["state"], private_segment_details["data_category_id"], private_segment_details["is_public"], private_segment_details["segment_id_type"], private_segment_billing_outputs])
                     private_segment_billing_process.start()
                     private_segment_billing_threads.append(private_segment_billing_process)
 
@@ -543,7 +544,7 @@ def read_file_to_add_segments(file_path):
                 private_segment = private_segments[private_segment_code]
 
                 write_segment_id_list.append(private_segment["segment_id"])
-                write_code_list.append(private_segment["code"])
+                write_code_list.append(private_segment_code)
                 write_segment_name_list.append(private_segment["segment_name"])
                 write_segment_description_list.append(private_segment["segment_description"])
                 write_price_list.append(private_segment["price"])
@@ -1087,7 +1088,7 @@ def read_file_to_add_existing_segments_to_buyer_member(file_path):
                     write_member_id_list.append(MEMBER_ID)
                     write_state_list.append(private_segment_details["state"])
                     write_is_public_list.append(private_segment_details["is_public"])
-                    write_data_segment_type_id_list.append(private_segment_details["data_segment_type_id"])
+                    write_data_segment_type_id_list.append(private_segment_details["segment_id_type"])
                     write_data_category_id_list.append(private_segment_details["data_category_id"])
                     write_buyer_member_id_list.append(buyer_member_id)
                     write_response.append(private_segment_details["response"])
