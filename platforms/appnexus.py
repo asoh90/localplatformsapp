@@ -399,8 +399,9 @@ def read_file_to_add_segments(file_path):
             # Private segments will append to a list to be added to specific buyer member
             if not add_billing_is_public and not add_billing_segment_id == None:
                 # Buyer member does not already have a list
+                
                 if not add_billing_buyer_member_id in private_segment_list:
-                    private_segment_list[current_buyer_member_id] = {}
+                    private_segment_list[add_billing_buyer_member_id] = {}
 
                 buyer_member_private_segment = private_segment_list[add_billing_buyer_member_id]
                 buyer_member_private_segment[add_billing_segment_id] = {
@@ -412,7 +413,7 @@ def read_file_to_add_segments(file_path):
                                                             "duration":add_billing_duration,
                                                             "state":add_billing_state,
                                                             "is_public":add_billing_is_public,
-                                                            "segment_id_type":add_billing_segment_id_type,
+                                                            "segment_id_type":add_billing_data_segment_type_id,
                                                             "data_category_id":add_billing_data_category_id,
                                                             "response":None
                                                         }
@@ -490,7 +491,7 @@ def read_file_to_add_segments(file_path):
 
     private_batch_num = 1
     # Add private segments to specific buyer_member_id
-    private_segments_to_add = private_segment_list.keys()
+    private_segments_to_add = list(private_segment_list.keys())
     if len(private_segments_to_add) > 0:
         private_segment_row_num = 0
         private_segment_thread_counter = 0
