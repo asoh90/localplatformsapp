@@ -6,7 +6,7 @@ ALL_REPORT_PLATFORMS_SHEET_NAME = "All Report Platforms"
 
 def get_report(function, file_path):
     if function == "Data Usage Report":
-        return get_platform_report(file_path, "data_usage")
+        return get_platform_reports(file_path, "data_usage")
     elif function == "Volumes Report":
         return get_platform_reports(file_path, "volumes")
     else:
