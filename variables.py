@@ -8,12 +8,12 @@ platform_functions = {
                         "--Select Platform--":[],
                         "Adform":{"level":2,
                                     "functions":{
-                                        "Segment":["Add Segments", "Query All Segments"],
+                                        "Segment":["Add Segments", "Edit Segments", "Query All Segments"],
                                         "Report":["Audience Report","Data Usage Report"]
                                     }
                                  },
                         "Adobe AAM":{"level":1,
-                                    "functions":["Add Segments", "Query All Segments"]
+                                    "functions":["Add Segments", "Query All Segments","Query Subscriber Contacts"]
                                     },
                         "AppNexus Staging": {"level":2,
                                     "functions": {

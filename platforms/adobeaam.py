@@ -33,7 +33,7 @@ ADD_DATA_FEED_DATA_BRANDING_TYPE = "BRANDED"
 # Linda, Derek's account
 ADD_DATA_FEED_CONTACT_USER_IDS = [56139,74130]
 ADD_DATA_FEED_DESCRIPTION = ""
-ADD_DATA_FEED_DISTRIBUTION = "PUBLIC"
+# ADD_DATA_FEED_DISTRIBUTION = "PRIVATE"
 ADD_DATA_FEED_BILLING = "ADOBE"
 ADD_DATA_FEED_STATUS = "ACTIVE"  # ****TO CHANGE TO ACTIVE****
 
@@ -56,6 +56,10 @@ PID = 7784
 username = None
 password = None
 
+# Data Source ID to retrieve subscribers' contacts (currently using Eyeota Market - HK)
+ZERO_SUBSCRIBERS_DATA_SOURCE_ID = 401922
+GET_SUBSCRIBER_CONTACTS_URL = API_URL + "data-feeds/{}/potential-subscribers/".format(ZERO_SUBSCRIBERS_DATA_SOURCE_ID)
+
 def callAPI(platform, function, file_path):
     try:
         global username; username = variables.login_credentials['AdobeAAM']['Login']
@@ -69,6 +73,8 @@ def callAPI(platform, function, file_path):
         output = read_all_to_add_segments(file_path)
     elif function == "Query All Segments":
         output = query_all_segments()
+    elif function == "Query Subscriber Contacts":
+        output = get_all_subscriber_contacts()
     
     return output
 
@@ -85,6 +91,52 @@ def authenticate():
                             },
                             data=data).json()
     return auth_json["access_token"]
+
+def get_subscriber_contacts(access_token):
+    get_subscriber_contacts_request = requests.get(GET_SUBSCRIBER_CONTACTS_URL,
+                                        headers={
+                                            'Content-Type':"application/json",
+                                            'Authorization':"Bearer " + access_token
+                                        })
+
+    print("Get Subscriber Contacts URL: {}".format(get_subscriber_contacts_request.url))
+
+    return access_token, get_subscriber_contacts_request.json()
+
+def get_all_subscriber_contacts():
+    access_token = authenticate()
+
+    write_pid_list = []
+    write_name_list = []
+    write_contact_email_list = []
+    write_contact_first_name_list = []
+    write_contact_last_name_list = []
+
+    subscriber_contacts_json = get_subscriber_contacts(access_token)
+    # print(subscriber_contacts_json)
+
+    for subscriber_contact in subscriber_contacts_json[1]:
+        # print(subscriber_contact)
+        pid = subscriber_contact["pid"]
+        name = subscriber_contact["name"]
+        contact_email = subscriber_contact["contactEmail"]
+        contact_first_name = subscriber_contact["contactFirstName"]
+        contact_last_name = subscriber_contact["contactLastName"]
+
+        write_pid_list.append(pid)
+        write_name_list.append(name)
+        write_contact_email_list.append(contact_email)
+        write_contact_first_name_list.append(contact_first_name)
+        write_contact_last_name_list.append(contact_last_name)
+
+    write_df = pd.DataFrame({
+                    "Buyer PID":write_pid_list,
+                    "Buyer Name":write_name_list,
+                    "Buyer Email":write_contact_email_list,
+                    "Buyer First Name":write_contact_first_name_list,
+                    "Buyer Last Name":write_contact_last_name_list
+                })
+    return write_excel.write(write_df, "DONOTUPLOAD_AdobeAAM_query_subscriber_contacts")
 
 def get_data_feed_plan(access_token, data_source_id):
     if access_token == None:
@@ -362,9 +414,14 @@ def add_data_source(access_token, data_source_name):
 
     return access_token, data_source_id
 
-def add_data_feed(access_token, data_source_id, data_source_name, data_feed_description):
+def add_data_feed(access_token, data_source_id, data_source_name, data_feed_description, data_feed_distribution):
     if access_token == None:
         access_token = authenticate()
+
+    if data_feed_distribution.lower() == "private":
+        data_feed_distribution = "PRIVATE"
+    else:
+        data_feed_distribution = "PUBLIC"
 
     add_data_feed_request = requests.post(DATA_FEED_URL,
                                 headers={
@@ -376,7 +433,7 @@ def add_data_feed(access_token, data_source_id, data_source_name, data_feed_desc
                                     "dataSourceId":data_source_id,
                                     "name":data_source_name,
                                     "description":data_feed_description,
-                                    "distribution":ADD_DATA_FEED_DISTRIBUTION,
+                                    "distribution":data_feed_distribution,
                                     "contactUserIds":ADD_DATA_FEED_CONTACT_USER_IDS,
                                     "billing":ADD_DATA_FEED_BILLING,
                                     "status":ADD_DATA_FEED_STATUS
@@ -666,6 +723,7 @@ def read_all_to_add_segments(file_path):
     data_source_id_list = []
     data_source_name_list = read_df["Data Source Name"]
     data_feed_description_list = read_df["Data Feed Description"]
+    data_feed_distribution_list = read_df["Distribution"]
     segments_and_overlap_price_list = read_df["Segments and Overlap Price"]
     segments_and_overlap_uom_list = []
     modeling_price_list = read_df["Modeling Price"]
@@ -718,7 +776,8 @@ def read_all_to_add_segments(file_path):
 
                 data_source_name = data_source_name_list[row_counter]
                 data_feed_description = data_feed_description_list[row_counter]
-                access_token, add_data_feed_output = add_data_feed(access_token, data_source_id, data_source_name, data_feed_description)
+                data_feed_distribution = data_feed_distribution_list[row_counter]
+                access_token, add_data_feed_output = add_data_feed(access_token, data_source_id, data_source_name, data_feed_description, data_feed_distribution)
 
                 if not add_data_feed_output == "Created":
                     data_feed_result.append("Failed. " + add_data_feed_output)
@@ -850,6 +909,8 @@ def read_all_to_add_segments(file_path):
                     "Trait Folder Path":trait_folder_path_list,
                     "Data Source ID":data_source_id_list,
                     "Data Source Name":data_source_name_list,
+                    "Data Feed Description":data_feed_description_list,
+                    "Distribution":data_feed_distribution_list,
                     "Data Source Result":data_source_result,
                     "Data Feed Result":data_feed_result,
                     "Segments and Overlap Plan Result":segments_and_overlap_plan_result,

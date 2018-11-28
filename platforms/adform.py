@@ -38,6 +38,8 @@ def callAPI(function, file_path):
 
     if function == "Add Segments":
         output = read_file_to_add_segments(file_path)
+    elif function == "Edit Segments":
+        output = read_file_to_edit_segments(file_path)
     elif function == "Query All Segments":
         output = get_all_segments()
     elif function == "Data Usage Report":
@@ -132,7 +134,7 @@ def get_segments(access_token, offset):
 
 def get_all_segments():
     segment_id_list = []
-    segment_dataProviderId_list = []
+    segment_dataProviderName_list = []
     segment_status_list = []
     segment_categoryId_list = []
     segment_refId_list = []
@@ -142,6 +144,8 @@ def get_all_segments():
     segment_audience_list = []
     segment_clicks_list = []
     segment_impressions_list = []
+
+    data_provider_list = {}
 
     access_token = authenticate()
     if "message" in access_token:
@@ -163,6 +167,13 @@ def get_all_segments():
         for segment in segments_json:
             segment_id = segment["id"]
             segment_dataProviderId = segment["dataProviderId"]
+
+            data_provider_name = None
+            if segment_dataProviderId in data_provider_list:
+                data_provider_name = data_provider_list[segment_dataProviderId]
+            else:
+                data_provider_name = get_data_provider_name(access_token, int(segment_dataProviderId))
+
             segment_status = segment["status"]
             segment_categoryId = segment["categoryId"]
             segment_refId = segment["refId"]
@@ -187,7 +198,7 @@ def get_all_segments():
             segment_full_name = category_full_name + " - " + segment_name
 
             segment_id_list.append(segment_id)
-            segment_dataProviderId_list.append(segment_dataProviderId)
+            segment_dataProviderName_list.append(data_provider_name)
             segment_status_list.append(segment_status)
             segment_categoryId_list.append(segment_categoryId)
             segment_refId_list.append(segment_refId)
@@ -209,7 +220,7 @@ def get_all_segments():
         "Audience":segment_audience_list,
         "Clicks":segment_clicks_list,
         "Impressions":segment_impressions_list,
-        "Data Provider ID":segment_dataProviderId_list,
+        "Data Provider Name":data_provider_list,
         "Category ID":segment_categoryId_list,
         "Segment ID":segment_id_list
     })
@@ -250,7 +261,7 @@ def add_category(access_token, category_name, region, parent_category_id):
     else:
         return None
 
-def add_segment(access_token, region, category_id, ref_id, fee, ttl, name):
+def add_segment(access_token, region, category_id, ref_id, fee, ttl, name, status):
     data_provider_id = "67"
     if region.lower() == "apac":
         data_provider_id = "11399"
@@ -262,7 +273,7 @@ def add_segment(access_token, region, category_id, ref_id, fee, ttl, name):
                             },
                             json={
                                 "DataProviderId":data_provider_id,
-                                "Status":SEGMENT_STATUS,
+                                "Status":status,
                                 "CategoryId":category_id,
                                 "RefId":str(ref_id),
                                 "Fee":fee,
@@ -279,6 +290,36 @@ def add_segment(access_token, region, category_id, ref_id, fee, ttl, name):
         return 201, segment_id
     else:
         return None, add_segment_json["params"]
+
+def edit_segment(access_token, segment_id, region, category_id, ref_id, fee, ttl, name, status):
+    data_provider_id = "67"
+    if region.lower() == "apac":
+        data_provider_id = "11399"
+
+    edit_segment_request = requests.put(SEGMENTS_URL + "/" + str(segment_id),
+                            headers={
+                                "Content-Type":"application/json",
+                                "Authorization":"Bearer " + access_token
+                            },
+                            json={
+                                "DataProviderId":data_provider_id,
+                                "Status":SEGMENT_STATUS,
+                                "CategoryId":category_id,
+                                "RefId":str(ref_id),
+                                "Fee":fee,
+                                "Ttl":ttl,
+                                "Name":name,
+                                "Frequency":1
+                            })
+    print("Edit Segment URL: {}".format(edit_segment_request.url))
+
+    edit_segment_json = edit_segment_request.json()
+    # print(add_segment_json)
+    if edit_segment_request.status_code == 200:
+        segment_id = edit_segment_json["id"]
+        return 200, segment_id
+    else:
+        return None, edit_segment_json["params"]
 
 def store_category_in_dict_by_name(categories_json):
     child_category_dict = {}
@@ -334,6 +375,7 @@ def read_file_to_add_segments(file_path):
     region_list = read_df["Region"]
     fee_list = read_df["Fee"]
     ttl_list = read_df["TTL"]
+    status_list = read_df["Status"]
     segment_id_list = []
     write_category_result_list = []
     write_add_segment_result_list = []
@@ -341,6 +383,7 @@ def read_file_to_add_segments(file_path):
     row_counter = 0
     for segment_name in segment_name_list:
         region = region_list[row_counter]
+        status = status_list[row_counter]
         index_of_separator = segment_name.rfind(" - ")
 
         category_success = True
@@ -410,6 +453,12 @@ def read_file_to_add_segments(file_path):
                     segment_id_list.append(None)
                     write_add_segment_result_list.append("TTL and Fee have to be numeric")
 
+                if status.lower() == "active":
+                    status = "active"
+                else:
+                    status = "inactive"
+                status_list[row_counter] = status
+
                 if fee_and_ttl_is_numeric:
                     status_code, output = add_segment(access_token, region, category_id, ref_id, fee, ttl, child_segment_name)
                     if status_code == 201:
@@ -435,16 +484,160 @@ def read_file_to_add_segments(file_path):
     # print("Add Segment Result Length: {}".format(len(write_add_segment_result_list)))
 
     write_df = pd.DataFrame({
-                        "RefID":ref_id_list,
+                        "Segment ID":segment_id_list,
+                        "Ref ID":ref_id_list,
                         "Segment Name":segment_name_list,
                         "Region":region_list,
                         "Fee":fee_list,
                         "TTL":ttl_list,
-                        "Segment ID":segment_id_list,
                         "Category Result":write_category_result_list,
                         "Add Segment Result":write_add_segment_result_list
                 })
     return write_excel.write(write_df, file_name + "_output_add_segments")
+
+def read_file_to_edit_segments(file_path):
+    read_df = None
+    try:
+        # Skip row 2 ([1]) tha indicates if field is mandatory or not
+        read_df = pd.read_excel(file_path, sheet_name=SHEET_NAME, skiprows=[1])
+    except:
+        return {"message":"File Path '{}' is not found".format(file_path)}
+
+    access_token = authenticate()
+    if "message" in access_token:
+        return access_token
+
+    categories_json = get_categories(access_token)
+    categories_dict_by_name = store_category_in_dict_by_name(categories_json)
+
+    segment_id_list = read_df["Segment ID"]
+    ref_id_list = read_df["Ref ID"]
+    segment_name_list = read_df["Segment Name"]
+    region_list = read_df["Region"]
+    fee_list = read_df["Fee"]
+    ttl_list = read_df["TTL"]
+    status_list = read_df["Status"]
+    write_segment_id_list = []
+    write_status_list = []
+    write_category_result_list = []
+    write_edit_segment_result_list = []
+
+    row_counter = 0
+    for segment_name in segment_name_list:
+        segment_id = segment_id_list[row_counter]
+        region = region_list[row_counter]
+        status = status_list[row_counter]
+        index_of_separator = segment_name.rfind(" - ")
+
+        category_success = True
+
+        # Unable to find separator
+        if index_of_separator == -1:
+            segment_id_list.append(None)
+            write_category_result_list.append("No separator ' - ' is found in the Segment Name")
+            write_add_segment_result_list.append(None)
+            category_success = False
+        else:
+            child_segment_name = segment_name[index_of_separator + 3:]
+            category_name = segment_name[0:index_of_separator]
+
+            if category_name in categories_dict_by_name:
+                category_id = categories_dict_by_name[category_name]
+            else:
+                parent_category_id = None
+                category_name_list = category_name.split(" - ")
+
+                # if category does not exist, split the category name and check each and add if not available
+                is_parentmost = True
+                category_name_to_check = ""
+                temp_parent_category_id = None
+                for category_part_name in category_name_list:
+                    if is_parentmost:
+                        category_name_to_check = category_part_name
+                    else:
+                        category_name_to_check = category_name_to_check + " - " + category_part_name
+
+                    print("Category Name to Check: {}".format(category_name_to_check))
+
+                    if category_name_to_check in categories_dict_by_name:
+                        temp_parent_category_id = categories_dict_by_name[category_name_to_check]
+                    else:
+                        temp_parent_category_id = add_category(access_token, category_part_name, region, temp_parent_category_id)
+
+                        if temp_parent_category_id == None:
+                            segment_id_list.append(None)
+                            write_category_result_list.append("Error creating category: {}".format(category_part_name))
+                            write_add_segment_result_list.append(None)
+                            category_success = False
+                        # category creation success
+                        else:
+                            categories_dict_by_name[category_name_to_check] = temp_parent_category_id
+
+                    is_parentmost = False
+
+                # if childmost category creation is successful
+                if category_success:
+                    category_id = temp_parent_category_id
+
+            # category has been created/found, to create segment
+            if category_success:
+                write_category_result_list.append("OK")
+
+                ref_id = ref_id_list[row_counter]
+                fee = fee_list[row_counter]
+                ttl = ttl_list[row_counter]
+
+                fee_and_ttl_is_numeric = True
+                try:
+                    fee = int(fee)
+                    ttl = int(ttl)
+                except:
+                    fee_and_ttl_is_numeric = False
+                    segment_id_list.append(None)
+                    write_edit_segment_result_list.append("TTL and Fee have to be numeric")
+
+                if status.lower() == "active":
+                    status = "active"
+                else:
+                    status = "inactive"
+                write_status_list.append(status)
+
+                if fee_and_ttl_is_numeric:
+                    status_code, output = edit_segment(access_token, segment_id, region, category_id, ref_id, fee, ttl, child_segment_name, status)
+                    if status_code == 200:
+                        write_segment_id_list.append(output)
+                        write_edit_segment_result_list.append("OK")
+                    else:
+                        write_segment_id_list.append(None)
+                        write_edit_segment_result_list.append(output)
+
+        row_counter += 1
+
+    os.remove(file_path)
+    file_name_with_extension = file_path.split("/")[-1]
+    file_name = file_name_with_extension.split(".xlsx")[0]
+
+    # print("Ref ID Length: {}".format(len(ref_id_list)))
+    # print("Segment Name Length: {}".format(len(segment_name_list)))
+    # print("Region Length: {}".format(len(region_list)))
+    # print("Fee Length: {}".format(len(fee_list)))
+    # print("TTL Length: {}".format(len(ttl_list)))
+    # print("Segment ID Length: {}".format(len(segment_id_list)))
+    # print("Category Result Length: {}".format(len(write_category_result_list)))
+    # print("Add Segment Result Length: {}".format(len(write_add_segment_result_list)))
+
+    write_df = pd.DataFrame({
+                        "Segment ID":write_segment_id_list,
+                        "Ref ID":ref_id_list,
+                        "Segment Name":segment_name_list,
+                        "Region":region_list,
+                        "Fee":fee_list,
+                        "TTL":ttl_list,
+                        "Status":write_status_list,
+                        "Category Result":write_category_result_list,
+                        "Edit Segment Result":write_edit_segment_result_list
+                })
+    return write_excel.write(write_df, file_name + "_output_edit_segments")
 
 def get_data_usage_report(access_token, start_date, end_date, data_provider_id):
     data_usage_report_request = requests.get(DATA_USAGE_REPORT_URL,

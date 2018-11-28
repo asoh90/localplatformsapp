@@ -613,6 +613,10 @@ def read_file_to_add_segments(file_path):
 
 # # Many input fields due to multithreading. current_segments will then be called again so that all the data are aligned
 def edit_segment(code, segment_name, segment_description, price, duration, state, is_public, data_segment_type_id, data_category_id, buyer_member_id, current_segments, output_messages):
+    if len(segment_description) > 500:
+        segment_description = segment_description[0:500]
+        # print("Segment Description: {}".format(segment_description))
+
     segment_to_edit = {
                         "member_id":MEMBER_ID,
                         "code":str(code),
@@ -752,14 +756,17 @@ def read_file_to_edit_segments(file_path):
             get_billing_segment_id = None
             if not current_segments[get_billing_code] == None:
                 get_billing_segment_id = current_segments[get_billing_code]["segment_id"]
-
+            
             if not get_billing_segment_id == None:
                 get_billing_process = Thread(target=get_segment_billing,args=[get_billing_segment_id, get_billing_code, current_segment_billings, get_billing_outputs])
                 get_billing_process.start()
                 get_billing_threads.append(get_billing_process)
+            # else:
+            #     print("get_billing_code: {}".format(get_billing_code))
+            #     print("get_billing_segment_id: {}".format(get_billing_segment_id))
 
-                get_billing_thread_counter += 1
-                get_billing_row_num += 1
+            get_billing_thread_counter += 1
+            get_billing_row_num += 1
 
         for get_billing_thread in get_billing_threads:
             get_billing_thread.join()
@@ -1741,6 +1748,7 @@ def edit_segment_billing(segment_billing_id, segment_id, code, state, data_categ
 
 def get_segment_billing(segment_id, segment_code, current_segment_billings, billing_output_messages):
     try:
+    # print("Segment ID: {}".format(segment_id))
         request_to_send = requests.get(url_segment_billing_category,
                                     headers={
                                         'Content-Type':'application/json',
@@ -1777,6 +1785,8 @@ def get_segment_billing(segment_id, segment_code, current_segment_billings, bill
         billing_output_messages[segment_code] = get_segment_billing_response["response"]["status"]
     except:
         current_segment_billings[segment_code] = None
+        # print("No Segment Billing")
+        # print(get_segment_billing_response)
         try:
             billing_output_messages[segment_code] = get_segment_billing_response["response"]['error']
         except:
