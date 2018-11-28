@@ -750,7 +750,7 @@ def read_file_to_edit_segments(file_path):
             get_billing_code = code_list[get_billing_row_num]
 
             get_billing_segment_id = None
-            if get_billing_code in current_segments:
+            if not current_segments[get_billing_code] == None:
                 get_billing_segment_id = current_segments[get_billing_code]["segment_id"]
 
             if not get_billing_segment_id == None:

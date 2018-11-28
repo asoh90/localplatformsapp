@@ -446,7 +446,7 @@ def read_file_to_add_segments(file_path):
                 })
     return write_excel.write(write_df, file_name + "_output_add_segments")
 
-def get_data_usage_report(access_token, start_date, end_date):
+def get_data_usage_report(access_token, start_date, end_date, data_provider_id):
     data_usage_report_request = requests.get(DATA_USAGE_REPORT_URL,
                                             headers={
                                                 'Content-Type':'application/json',
@@ -455,6 +455,7 @@ def get_data_usage_report(access_token, start_date, end_date):
                                             params={
                                                 "from":start_date,
                                                 "to":end_date,
+                                                "dataProviderId":data_provider_id,
                                                 "groupBy":"segment,country,advertiser"
                                             })
     print("Get Data Usage Report URL: {}".format(data_usage_report_request.url))
@@ -519,6 +520,7 @@ def read_file_to_get_report(file_path, sheet, report_type):
 
         write_df = None
         if report_type == "data_usage":
+            write_data_provider_name_list = []
             write_advertiser_list = []
             write_advertiserId_list = []
             write_advertiserCurrency_list = []
@@ -546,9 +548,42 @@ def read_file_to_get_report(file_path, sheet, report_type):
             write_categoryId_list = []
             write_category_list = []
 
-            report_response = get_data_usage_report(access_token, start_date, end_date)
+            data_usage_report_response_67 = get_data_usage_report(access_token, start_date, end_date, '67')
+            data_usage_report_response_11399 = get_data_usage_report(access_token, start_date, end_date, '11399')
+            
+            data_provider_name = get_data_provider_name(access_token, 67)
+            for data_usage_report_row in data_usage_report_response_67:
+                write_data_provider_name_list.append(data_provider_name)
+                write_advertiser_list.append(data_usage_report_row["advertiser"])
+                write_advertiserId_list.append(data_usage_report_row["advertiserId"])
+                write_advertiserCurrency_list.append(data_usage_report_row["advertiserCurrency"])
+                write_partnerPlatformCurrency_list.append(data_usage_report_row["partnerPlatformCurrency"])
+                write_country_list.append(data_usage_report_row["country"])
+                write_countryId_list.append(data_usage_report_row["countryId"])
+                write_segmentsGroup_list.append(data_usage_report_row["segmentsGroup"])
+                write_segmentsGroupId_list.append(data_usage_report_row["segmentsGroupId"])
+                write_segmentIds_list.append(data_usage_report_row["segmentIds"])
+                write_segmentRefIds_list.append(data_usage_report_row["segmentRefIds"])
+                write_impressions_list.append(data_usage_report_row["impressions"])
+                write_revenue_list.append(data_usage_report_row["revenue"])
+                write_revenueInAdvertiserCurrency_list.append(data_usage_report_row["revenueInAdvertiserCurrency"])
+                write_revenueInPartnerPlatformCurrency_list.append(data_usage_report_row["revenueInPartnerPlatformCurrency"])
+                write_revenueInEuro_list.append(data_usage_report_row["revenueInEuro"])
+                write_dataProviderRevenue_list.append(data_usage_report_row["dataProviderRevenue"])
+                write_dataProviderRevenueInAdvertiserCurrency_list.append(data_usage_report_row["dataProviderRevenueInAdvertiserCurrency"])
+                write_dataProviderRevenueInPartnerPlatformCurrency_list.append(data_usage_report_row["dataProviderRevenueInPartnerPlatformCurrency"])
+                write_dataProviderRevenueInEuro_list.append(data_usage_report_row["dataProviderRevenueInEuro"])
+                write_adformRevenue_list.append(data_usage_report_row["adformRevenue"])
+                write_adformRevenueInAdvertiserCurrency_list.append(data_usage_report_row["adformRevenueInAdvertiserCurrency"])
+                write_adformRevenueInEuro_list.append(data_usage_report_row["adformRevenueInEuro"])
+                write_segmentId_list.append(data_usage_report_row["segmentId"])
+                write_segment_list.append(data_usage_report_row["segment"])
+                write_categoryId_list.append(data_usage_report_row["categoryId"])
+                write_category_list.append(data_usage_report_row["category"])
 
-            for data_usage_report_row in report_response:
+            data_provider_name = get_data_provider_name(access_token, 11399)
+            for data_usage_report_row in data_usage_report_response_11399:
+                write_data_provider_name_list.append(data_provider_name)
                 write_advertiser_list.append(data_usage_report_row["advertiser"])
                 write_advertiserId_list.append(data_usage_report_row["advertiserId"])
                 write_advertiserCurrency_list.append(data_usage_report_row["advertiserCurrency"])
@@ -577,6 +612,7 @@ def read_file_to_get_report(file_path, sheet, report_type):
                 write_category_list.append(data_usage_report_row["category"])
 
             write_df = pd.DataFrame({
+                        "dataProviderName":write_data_provider_name_list,
                         "advertiser":write_advertiser_list,
                         "advertiserId":write_advertiserId_list,
                         "advertiserCurency":write_advertiserCurrency_list,
