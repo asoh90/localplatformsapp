@@ -600,12 +600,12 @@ def read_file_to_add_segments(file_path):
                     'Segment Description':write_segment_description_list,
                     'Price':write_price_list,
                     'Duration':write_duration_list,
-                    'Member ID':write_member_id_list,
                     'State':write_state_list,
                     'Is Public':write_is_public_list,
                     'Data Segment Type ID':write_data_segment_type_id_list,
                     'Data Category ID':write_data_category_id_list,
                     'Buyer Member ID':write_buyer_member_id_list,
+                    'Member ID':write_member_id_list,
                     'Add Segment Response':write_response,
                     'Add Billing Response':write_billing_response
                 })
@@ -868,12 +868,12 @@ def read_file_to_edit_segments(file_path):
                 'Segment Description':segment_description_list,
                 'Price':price_list,
                 'Duration':duration_list,
-                'Member ID':write_member_id_list,
                 'State':state_list,
                 'Is Public':is_public_list,
                 'Data Segment Type ID':data_segment_type_id_list,
                 'Data Category ID':data_category_id_list,
                 'Buyer Member ID':buyer_member_id_list,
+                'Member ID':write_member_id_list,
                 'Edit Segment Response':write_response,
                 'Edit Billing Response':write_billing_response
             })

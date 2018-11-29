@@ -173,6 +173,7 @@ def get_all_segments():
                 data_provider_name = data_provider_list[segment_dataProviderId]
             else:
                 data_provider_name = get_data_provider_name(access_token, int(segment_dataProviderId))
+                data_provider_list[segment_dataProviderId] = data_provider_name
 
             segment_status = segment["status"]
             segment_categoryId = segment["categoryId"]
@@ -212,6 +213,7 @@ def get_all_segments():
         segment_offset += LIMIT
 
     write_df = pd.DataFrame({
+        "Segment ID":segment_id_list,
         "Ref ID":segment_refId_list,
         "Segment Name":segment_name_list,
         "Status":segment_status_list,
@@ -220,9 +222,8 @@ def get_all_segments():
         "Audience":segment_audience_list,
         "Clicks":segment_clicks_list,
         "Impressions":segment_impressions_list,
-        "Data Provider Name":data_provider_list,
-        "Category ID":segment_categoryId_list,
-        "Segment ID":segment_id_list
+        "Data Provider Name":segment_dataProviderName_list,
+        "Category ID":segment_categoryId_list
     })
     return write_excel.write(write_df, "DONOTUPLOAD_Adform_query_all")
 
