@@ -612,7 +612,7 @@ def read_file_to_add_segments(file_path):
     return write_excel.write(write_df, file_name + "_output_add_segments")
 
 # # Many input fields due to multithreading. current_segments will then be called again so that all the data are aligned
-def edit_segment(code, segment_name, segment_description, price, duration, state, is_public, data_segment_type_id, data_category_id, buyer_member_id, current_segments, output_messages):
+def edit_segment(segment_id, code, segment_name, segment_description, price, duration, state, is_public, data_segment_type_id, data_category_id, buyer_member_id, current_segments, output_messages):
     if len(segment_description) > 500:
         segment_description = segment_description[0:500]
         # print("Segment Description: {}".format(segment_description))
@@ -635,7 +635,7 @@ def edit_segment(code, segment_name, segment_description, price, duration, state
                                     },
                                     params={
                                         'member_id':MEMBER_ID,
-                                        'code':code
+                                        'id':segment_id
                                     },
                                     json={
                                         'segment':segment_to_edit
@@ -644,7 +644,6 @@ def edit_segment(code, segment_name, segment_description, price, duration, state
         edit_response = request_to_send.json()
         # print(edit_response)
         response = edit_response["response"]
-        segment_id = response["id"]
         current_segments[code] = {
                                     "segment_id":segment_id,
                                     "segment_name":segment_name,
@@ -678,6 +677,7 @@ def read_file_to_edit_segments(file_path):
     except:
         return {"message":"File Path '{}' is not found".format(file_path)}
     
+    segment_id_list = read_df["Segment ID"]
     code_list = read_df["code"]
     segment_name_list = read_df["Segment Name"]
     segment_description_list = read_df["Segment Description"]
@@ -727,6 +727,7 @@ def read_file_to_edit_segments(file_path):
         get_billing_threads = []
 
         while edit_segment_thread_counter < THREAD_LIMIT and edit_segment_row_num < len(code_list):
+            current_segment_id = segment_id_list[edit_segment_row_num]
             current_code = code_list[edit_segment_row_num]
             current_segment_name = segment_name_list[edit_segment_row_num]
             current_segment_description = segment_description_list[edit_segment_row_num]
@@ -738,7 +739,7 @@ def read_file_to_edit_segments(file_path):
             current_data_category_id = data_category_id_list[edit_segment_row_num]
             current_buyer_member_id = buyer_member_id_list[edit_segment_row_num]
 
-            edit_segment_process = Thread(target=edit_segment, args=[current_code, current_segment_name, current_segment_description, current_price, current_duration, current_state, current_is_public, current_data_segment_type_id, current_data_category_id, current_buyer_member_id, current_segments, output_messages])
+            edit_segment_process = Thread(target=edit_segment, args=[current_segment_id, current_code, current_segment_name, current_segment_description, current_price, current_duration, current_state, current_is_public, current_data_segment_type_id, current_data_category_id, current_buyer_member_id, current_segments, output_messages])
             edit_segment_process.start()
             edit_segment_threads.append(edit_segment_process)
 
