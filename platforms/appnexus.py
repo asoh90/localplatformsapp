@@ -1345,7 +1345,7 @@ def get_data_usage_report(start_date, end_date):
                                     "report_type":"data_usage_analytics_for_data_providers",
                                     "columns":["geo_country",
                                                 "day",
-                                                "buyer_member_id",
+                                                "buyer_member_name",
                                                 "campaign_id",
                                                 "campaign_name",
                                                 "targeted_segment_ids",
@@ -1466,9 +1466,10 @@ def get_report(start_date, end_date, report_type, row_counter, segment_dict):
 
         geo_country_list = []
         day_list = []
-        buyer_member_id_list = []
+        buyer_member_name_list = []
         campaign_id_list = []
         campaign_name_list = []
+        targeted_segment_id_list = []
         targeted_segment_name_list = []
         cpm_usd_list = []
         imps_list = []
@@ -1486,16 +1487,17 @@ def get_report(start_date, end_date, report_type, row_counter, segment_dict):
             if len(report_line_data) > 1:
                 geo_country_list.append(report_line_data[0])
                 day_list.append(report_line_data[1])
-                buyer_member_id_list.append(report_line_data[2])
+                buyer_member_name_list.append(report_line_data[2])
                 campaign_id_list.append(report_line_data[3])
                 campaign_name_list.append(report_line_data[4])
 
                 targeted_segment_ids = report_line_data[5]
-                targeted_segment_id_list = targeted_segment_ids.split(b",")
+                targeted_segment_id_list.append(targeted_segment_ids.decode('utf-8'))
+                targeted_segment_ids_split = targeted_segment_ids.split(b",")
                 formatted_targeted_segment_names = ""
 
                 is_first_segment = True
-                for targeted_segment_id in targeted_segment_id_list:
+                for targeted_segment_id in targeted_segment_ids_split:
                     targeted_segment_name = segment_dict[int(targeted_segment_id)]["short_name"]
 
                     if is_first_segment:
@@ -1514,9 +1516,10 @@ def get_report(start_date, end_date, report_type, row_counter, segment_dict):
         write_df = pd.DataFrame({
             "geo_country":geo_country_list,
             "day":day_list,
-            "buyer_member_id":buyer_member_id_list,
+            "buyer_member_name":buyer_member_name_list,
             "campaign_id":campaign_id_list,
             "campaign_name":campaign_name_list,
+            "targeted_segment_ids":targeted_segment_id_list,
             "targeted_segment_names":targeted_segment_name_list,
             "cpm_usd":cpm_usd_list,
             "imps":imps_list,
