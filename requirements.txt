@@ -6,7 +6,7 @@ click==6.7
 docutils==0.14
 et-xmlfile==1.0.1
 Flask==1.0.2
-Flask-OAuth==0.12
+Flask-OAuth==0.13
 Flask-WTF==0.14.2
 gunicorn==19.9.0
 httplib2==0.12.0
