@@ -6,7 +6,6 @@ import datetime
 from datetime import datetime, timedelta
 import json
 import os
-from jsonmerge import merge
 
 AUTH_URL = "https://dmp-api.adform.com/v1/token"
 API_URL = "https://api.adform.com/v1/dmp/"
