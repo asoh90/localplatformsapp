@@ -18,10 +18,14 @@ CLIENT_ID = "IBxiUniDVrRYSdSXUHJgoq6KdJ7F5oN0"
 CLIENT_SECRET = "NnU9qtfRtruQypo7e2QJh_as_HjlDjppZAhBP0wWeRkqdSzcVrZSln_8PdXrOn50"
 
 SHEET_NAME = "MediaMath"
+EYEOTA_TAXONOMY_ID = 100377
+VENDOR_ID = 16
 
 def callAPI(platform, function, file_path):
     if function == "Query All Segments":
         return get_all_segments()
+    elif function == "Refresh Segments":
+        return read_file_to_refresh_segments(file_path)
 
 def authenticate():
     username = variables.login_credentials['MediaMath']['Login']
@@ -64,28 +68,28 @@ def get_session(access_token):
 
     return adama_session
 
-def get_taxonomy_ids(access_token, session):
-    taxonomy_id_list = []
-    get_taxonomy_request = requests.get("https://api.mediamath.com/dmp/v2.0/audience_segments/",
-                            headers={
-                                'Authorization':"Bearer " + access_token,
-                                'Cookie': "adama_session=" + session,
-                                'Content-Type':"application/json"
-                            })
-    print("Get Taxonomy Request: {}".format(get_taxonomy_request.url))
+# def get_taxonomy_ids(access_token, session):
+#     taxonomy_id_list = []
+#     get_taxonomy_request = requests.get("https://api.mediamath.com/dmp/v2.0/audience_segments/",
+#                             headers={
+#                                 'Authorization':"Bearer " + access_token,
+#                                 'Cookie': "adama_session=" + session,
+#                                 'Content-Type':"application/json"
+#                             })
+#     print("Get Taxonomy Request: {}".format(get_taxonomy_request.url))
 
-    if get_taxonomy_request.status_code == 200:
-        get_taxonomy_response = get_taxonomy_request.json()
-        taxonomy_data = get_taxonomy_response["data"]
+#     if get_taxonomy_request.status_code == 200:
+#         get_taxonomy_response = get_taxonomy_request.json()
+#         taxonomy_data = get_taxonomy_response["data"]
 
-        for taxonomy in taxonomy_data:
-            taxonomy_name = taxonomy["taxonomy"]["name"].lower()
+#         for taxonomy in taxonomy_data:
+#             taxonomy_name = taxonomy["taxonomy"]["name"].lower()
 
-            if 'eyeota' in taxonomy_name:
-                taxonomy_id = taxonomy["taxonomy_id"]
-                taxonomy_id_list.append(taxonomy_id)
+#             if 'eyeota' in taxonomy_name:
+#                 taxonomy_id = taxonomy["taxonomy_id"]
+#                 taxonomy_id_list.append(taxonomy_id)
 
-    return taxonomy_id_list
+#     return taxonomy_id_list
 
 def get_segments(access_token, session, taxonomy_id, segment_dict):
     get_segment_request = requests.get("https://api.mediamath.com/dmp/v2.0/audience_segments/" + str(taxonomy_id),
@@ -216,12 +220,12 @@ def get_all_segments():
     access_token = authenticate()
     session = get_session(access_token)
 
-    taxonomy_id_list = get_taxonomy_ids(access_token, session)
     segment_dict = {}
-    for taxonomy_id in taxonomy_id_list:
-        segment_dict = get_segments(access_token, session, taxonomy_id, segment_dict)
-    # print(taxonomy_id_list)
+    # taxonomy_id_list = get_taxonomy_ids(access_token, session)
+    # for taxonomy_id in taxonomy_id_list:
+    #     segment_dict = get_segments(access_token, session, taxonomy_id, segment_dict)
 
+    segment_dict = get_segments(access_token, session, EYEOTA_TAXONOMY_ID, segment_dict)
     segment_key_list = segment_dict.keys()
 
     uniques_list = []
@@ -285,3 +289,87 @@ def get_all_segments():
     })
 
     return write_excel.write(write_df, "DONOTUPLOAD_MediaMath_query_all")
+
+def read_file_to_refresh_segments(file_path):
+    access_token = authenticate()
+    session = get_session(access_token)
+
+    read_df = None
+    try:
+        # Skip row 2 ([1]) tha indicates if field is mandatory or not
+        read_df = pd.read_excel(file_path, sheet_name=SHEET_NAME, skiprows=[1])
+    except:
+        return {"message":"File Path '{}' is not found".format(file_path)}
+
+    segment_name_list = read_df["Segment Name"]
+    segment_code_list = read_df["code"]
+    segment_uniques_list = read_df["uniques"]
+    segment_wholesale_cpm_list = read_df["Wholesale CPM"]
+    segment_retail_cpm_list = read_df["Retail CPM"]
+    segment_buyable_list = read_df["Buyable"]
+
+    refresh_segment_dict = {
+                                "permissions":{
+                                    "advertisers":[],
+                                    "agencies":[],
+                                    "organizations":[]
+                                },
+                                "taxonomy":{
+                                    "name":"Eyeota",
+                                    "children":[]
+                                },
+                                "vendor_id":VENDOR_ID
+                            }
+    
+    segment_raw_dict = {}
+    
+    for row_num in range(len(segment_name_list)):
+        segment_name = segment_name_list[row_num]
+        segment_code = segment_code_list[row_num]
+        segment_uniques = segment_uniques_list[row_num]
+        segment_wholesale_cpm = segment_wholesale_cpm_list[row_num]
+        segment_retail_cpm = segment_retail_cpm_list[row_num]
+        segment_buyable = segment_buyable_list[row_num]
+
+        # print("Segment Name: {}".format(segment_name))
+
+        segment_name_split = segment_name.split(" - ")
+        segment_raw_dict = format_segment_raw_dict(segment_raw_dict, segment_name_split, segment_code, segment_uniques, segment_wholesale_cpm, segment_retail_cpm, segment_buyable)
+
+    print(segment_raw_dict)
+
+def format_segment_raw_dict(segment_raw_dict, segment_name_split, segment_code, segment_uniques, segment_wholesale_cpm, segment_retail_cpm, segment_buyable):
+    segment_partial_name = segment_name_split.pop(0)
+
+    if len(segment_name_split) == 0:
+        if not segment_partial_name in segment_raw_dict:
+            temp_dict = {
+                "name":segment_partial_name,
+                "code":segment_code,
+                "children":{},
+                "buyable":segment_buyable,
+                "retail_cpm":segment_retail_cpm,
+                "wholesale_cpm":segment_wholesale_cpm,
+                "uniques":segment_uniques
+            }
+        else:
+            temp_dict = segment_raw_dict[segment_partial_name]
+            temp_dict["name"] = segment_partial_name
+            temp_dict["code"] = segment_code
+            temp_dict["buyable"] = segment_buyable
+            temp_dict["retail_cpm"] = segment_retail_cpm
+            temp_dict["wholesale_cpm"] = segment_wholesale_cpm
+            temp_dict["uniques"] = segment_uniques
+        segment_raw_dict[segment_partial_name] = temp_dict
+        return segment_raw_dict
+
+    # segment partial name does not exist in segment_raw_dict
+    if not segment_partial_name in segment_raw_dict:
+        temp_dict = format_segment_raw_dict({}, segment_name_split, segment_code, segment_uniques, segment_wholesale_cpm, segment_retail_cpm, segment_buyable)
+        segment_raw_dict[segment_partial_name] = {'children':temp_dict}
+    else:
+        partial_name_dict = segment_raw_dict[segment_partial_name]["children"]
+        temp_dict = format_segment_raw_dict(partial_name_dict, segment_name_split, segment_code, segment_uniques, segment_wholesale_cpm, segment_retail_cpm, segment_buyable)
+        segment_raw_dict[segment_partial_name] = {"children":temp_dict}
+
+    return segment_raw_dict

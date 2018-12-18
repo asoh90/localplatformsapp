@@ -2,6 +2,17 @@ SECRET_KEY = 'a1ac33ec538de1e200d5f537e717ae6b'
 UPLOAD_FOLDER = "upload"
 RETURN_FOLDER = "to_return"
 
+# S3 credentials
+S3_URL = 'http://localhost:8000'
+AWS_KEY = '123'
+AWS_SECRET = 'abc'
+
+# Postgresql credentials
+POSTGRES_DB = 'eyeota'
+POSTGRES_USER = 'eyeota'
+POSTGRES_PASSWORD = '3y3otaSG!!'
+POSTGRES_HOST = 'localhost'
+
 login_credentials = {}
 
 platform_functions = {
@@ -30,7 +41,7 @@ platform_functions = {
                                         }
                                     },
                         "MediaMath": {"level":1,
-                                    "functions":["Query All Segments"]
+                                    "functions":["Refresh Segments","Query All Segments"]
                                     },
                         "The Trade Desk": {"level":1,
                                             "functions":["Add Segments","Edit Segments","Query All Segments"]
