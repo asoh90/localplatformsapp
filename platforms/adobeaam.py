@@ -16,7 +16,7 @@ TRAIT_FOLDER_URL = API_URL + "folders/traits/"
 TRAIT_URL = API_URL + "traits/"
 
 SHEET_NAME = "Adobe AAM"
-AUTHENTICATION_LIMIT_SECS = 3599
+AUTHENTICATION_LIMIT_SECS = 3539
 
 CONTENT_TYPE = "application/x-www-form-urlencoded"
 AUTHORIZATION = "Basic ZXllb3RhLWJhYWFtOnJvZDZsOWluamRzZmwyN2E2cGUybjNsam50cmhndnRpM3A5NGN1YnUyMXVzdjZ2MXBicg=="
