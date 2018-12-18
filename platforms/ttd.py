@@ -185,50 +185,50 @@ def get_full_segment_name(parent_segment_id, child_segment_name, segment_diction
         
 # based on the output from TTD API, format them into json format to write to file
 def processJsonOutput(json_output, function):
-    try:
-        write_provider_id = []
-        write_provider_element_id = []
-        write_parent_element_id = []
-        write_display_name = []
-        write_buyable = []
-        write_description = []
-        write_audience_size = []
+    # try:
+    write_provider_id = []
+    write_provider_element_id = []
+    write_parent_element_id = []
+    write_display_name = []
+    write_buyable = []
+    write_description = []
+    write_audience_size = []
 
-        segment_dictionary = store_segment_in_dict(json_output)
+    segment_dictionary = store_segment_in_dict(json_output)
 
-        # Print results
-        for row in json_output['Result']:
-            provider_id = str(row['ProviderId'])
-            provider_element_id = str(row['ProviderElementId'])
-            parent_element_id = str(row['ParentElementId'])
-            display_name = str(row['DisplayName'])
-            buyable = row['Buyable']
-            description = str(row['Description'])
-            audience_size = str(row['AudienceSize'])
+    # Print results
+    for row in json_output['Result']:
+        provider_id = str(row['ProviderId'])
+        provider_element_id = str(row['ProviderElementId'])
+        parent_element_id = str(row['ParentElementId'])
+        display_name = str(row['DisplayName'])
+        buyable = row['Buyable']
+        description = str(row['Description'])
+        audience_size = str(row['AudienceSize'])
 
-            # loop to get full segment name
-            display_name = get_full_segment_name(parent_element_id, display_name, segment_dictionary)
+        # loop to get full segment name
+        display_name = get_full_segment_name(parent_element_id, display_name, segment_dictionary)
 
-            write_provider_id.append(provider_id)
-            write_provider_element_id.append(provider_element_id)
-            write_parent_element_id.append(parent_element_id)
-            write_display_name.append(display_name)
-            write_buyable.append(buyable)
-            write_description.append(description)
-            write_audience_size.append(audience_size)
+        write_provider_id.append(provider_id)
+        write_provider_element_id.append(provider_element_id)
+        write_parent_element_id.append(parent_element_id)
+        write_display_name.append(display_name)
+        write_buyable.append(buyable)
+        write_description.append(description)
+        write_audience_size.append(audience_size)
 
-        write_df = pd.DataFrame({
-                                    "Provider ID":write_provider_id,
-                                    "Segment ID":write_provider_element_id,
-                                    "Parent Segment ID":write_parent_element_id,
-                                    "Segment Name":write_display_name,
-                                    "Buyable":write_buyable,
-                                    "Description":write_description,
-                                    "Audience Size":write_audience_size
-                                })
-        return write_excel.write(write_df, "DONOTUPLOAD_The_Trade_Desk_" + function)
-    except:
-        return {"message":"ERROR Processing TTD Json File for Query All Segments"}
+    write_df = pd.DataFrame({
+                                "Provider ID":write_provider_id,
+                                "Segment ID":write_provider_element_id,
+                                "Parent Segment ID":write_parent_element_id,
+                                "Segment Name":write_display_name,
+                                "Buyable":write_buyable,
+                                "Description":write_description,
+                                "Audience Size":write_audience_size
+                            })
+    return write_excel.write(write_df, "DONOTUPLOAD_The_Trade_Desk_" + function)
+    # except:
+    #     return {"message":"ERROR Processing TTD Json File for Query All Segments"}
 
 def process_add_edit_output(output_list, function):
     # try:

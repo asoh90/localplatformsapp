@@ -27,7 +27,7 @@ output = None
 # Add Taxo Fixed Information
 EXTENSIONS = {"urnType":"testid"}
 METADATA = {"description":"Eyeota Taxonomy"}
-GDPR_MODE = "oath_is_processor"
+GDPR_MODE = "oath_is_controller"
 
 METADATA_FILE = "upload/metadata.json"
 DATA_FILE = "upload/data.json"
