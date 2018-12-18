@@ -670,7 +670,7 @@ def get_data_usage_report(access_token, start_date, end_date, data_provider_id, 
         data_usage_json = data_usage_report_request.json()
         result_json_list.append(data_usage_json)
     
-    # print("total count: {}".format(total_count))
+    print("total count: {}".format(total_count))
     # print(result_json)
     return result_json_list
 
@@ -738,17 +738,13 @@ def read_file_to_get_report(file_path, sheet, report_type):
         except:
             return {"message":"ERROR: Report Start Date '{}' should be in date format.".format(start_date)}
 
-        # try:
-        print("End Date 1: {}".format(end_date))
-        end_date_date_format = datetime.strptime(str(end_date), "%Y-%m-%d %H:%M:%S") #string to date
-        print("End Date 2: {}".format(end_date_date_format))
-        end_date_date_format = end_date_date_format - timedelta(days=1)
-        print("End Date 3: {}".format(end_date_date_format))
+        try:
+            end_date_date_format = datetime.strptime(str(end_date), "%Y-%m-%d %H:%M:%S") #string to date
+            end_date_date_format = end_date_date_format - timedelta(days=1)
 
-        end_date = end_date_date_format.strftime('%Y-%m-%d')
-        print("End Date 4: {}".format(end_date))
-        # except:
-        #     return {"message":"ERROR: Report End Date '{}' should be in date format.".format(end_date)}
+            end_date = end_date_date_format.strftime('%Y-%m-%d')
+        except:
+            return {"message":"ERROR: Report End Date '{}' should be in date format.".format(end_date)}
 
         write_df = None
         if report_type == "data_usage":
@@ -785,6 +781,7 @@ def read_file_to_get_report(file_path, sheet, report_type):
 
             data_provider_name = get_data_provider_name(access_token, 67)
             for data_usage_report_response_67 in data_usage_report_response_67_list:
+                # print("data usage report lines: {}".format(len(data_usage_report_response_67)))
                 for data_usage_report_row in data_usage_report_response_67:
                     write_data_provider_name_list.append(data_provider_name)
                     write_advertiser_list.append(data_usage_report_row["advertiser"])
@@ -816,6 +813,7 @@ def read_file_to_get_report(file_path, sheet, report_type):
 
             data_provider_name = get_data_provider_name(access_token, 11399)
             for data_usage_report_response_11399 in data_usage_report_response_11399_list:
+                # print("data usage report lines: {}".format(len(data_usage_report_response_11399)))
                 for data_usage_report_row in data_usage_report_response_11399:
                     write_data_provider_name_list.append(data_provider_name)
                     write_advertiser_list.append(data_usage_report_row["advertiser"])
