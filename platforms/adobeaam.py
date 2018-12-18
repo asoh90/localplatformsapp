@@ -4,6 +4,7 @@ import write_excel
 import pandas as pd
 import os
 import numpy
+import time
 
 URL = "https://api.demdex.com:443/"
 AUTH_URL = URL + "oauth/token"
@@ -15,6 +16,7 @@ TRAIT_FOLDER_URL = API_URL + "folders/traits/"
 TRAIT_URL = API_URL + "traits/"
 
 SHEET_NAME = "Adobe AAM"
+AUTHENTICATION_LIMIT_SECS = 3599
 
 CONTENT_TYPE = "application/x-www-form-urlencoded"
 AUTHORIZATION = "Basic ZXllb3RhLWJhYWFtOnJvZDZsOWluamRzZmwyN2E2cGUybjNsam50cmhndnRpM3A5NGN1YnUyMXVzdjZ2MXBicg=="
@@ -557,7 +559,7 @@ def add_trait_folder(access_token, parentFolderId, name):
     # print("name: {}".format(name))
     # print("pid: {}".format(PID))
     add_trait_folder_response = add_trait_folder_request.json()
-    print(add_trait_folder_response)
+    # print(add_trait_folder_response)
     return access_token, add_trait_folder_response["folderId"]
 
 def check_and_add_trait_folder(access_token, checked_path, trait_folder_path_list, trait_folder_name_dict, parent_folder_id):
@@ -707,6 +709,9 @@ def query_all_segments():
 # 4. Check if trait folder exists, if not, create trait folder
 # 5. create trait
 def read_all_to_add_segments(file_path):
+    add_segments_start_time = time.time()
+    add_segments_authenticate_count = 1
+
     read_df = None
     try:
         # Skip row 2 ([1]) tha indicates if field is mandatory or not
@@ -739,9 +744,6 @@ def read_all_to_add_segments(file_path):
     create_trait_result = []
 
     access_token, data_source_name_dict = get_data_source_name_dict()
-
-    access_token, trait_folder_json = get_trait_folders(access_token)
-    trait_folder_path_dict = get_trait_folder_path_dict(access_token, trait_folder_json)
 
     row_counter = 0
     for data_source_name in data_source_name_list:
@@ -843,6 +845,10 @@ def read_all_to_add_segments(file_path):
             
         folder_id = None
         # Create trait folder if data source exists
+
+        access_token, trait_folder_json = get_trait_folders(access_token)
+        trait_folder_path_dict = get_trait_folder_path_dict(access_token, trait_folder_json)
+
         if not data_source_id == None:
             trait_folder_path = trait_folder_path_list[row_counter]
 
@@ -896,6 +902,15 @@ def read_all_to_add_segments(file_path):
 
         row_counter += 1
         data_source_id_list.append(data_source_id)
+
+        # Get access token again if process > authenticate time limit
+        add_segments_current_time = time.time()
+        add_segments_elapsed_secs = add_segments_current_time - add_segments_start_time
+        add_segments_authentication_timeover = add_segments_elapsed_secs - AUTHENTICATION_LIMIT_SECS * add_segments_authenticate_count
+
+        if add_segments_authentication_timeover > 0:
+            print("Authenticating...")
+            access_token = authenticate()
 
     os.remove(file_path)
     file_name_with_extension = file_path.split("/")[-1]

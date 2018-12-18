@@ -1,12 +1,18 @@
 import requests
 import variables
+import json
+import write_excel
+import pandas as pd
+import os
+import numpy
+import time
 
 # Authenticate credentials
 AUTHENTICATE_URL = "https://auth.mediamath.com/oauth/token"
 URL = "https://api.mediamath.com/"
-API_URL = URL + "api/v2.0/"
-SESSION_URL = API_URL + "session"
-GET_SEGMENTS_URL = API_URL + "audience_segments"
+SESSION_URL = URL + "api/v2.0/session"
+API_URL = URL + "dmp/v2.0/"
+GET_SEGMENTS_URL = API_URL + "audience_segments/"
 
 CLIENT_ID = "IBxiUniDVrRYSdSXUHJgoq6KdJ7F5oN0"
 CLIENT_SECRET = "NnU9qtfRtruQypo7e2QJh_as_HjlDjppZAhBP0wWeRkqdSzcVrZSln_8PdXrOn50"
@@ -15,7 +21,7 @@ SHEET_NAME = "MediaMath"
 
 def callAPI(platform, function, file_path):
     if function == "Query All Segments":
-        get_all_segments()
+        return get_all_segments()
 
 def authenticate():
     username = variables.login_credentials['MediaMath']['Login']
@@ -31,7 +37,7 @@ def authenticate():
                               'username':username,
                               'password':password,
                               'audience':URL,
-                              'scope':"",
+                              'scope':'read',
                               'client_id':CLIENT_ID,
                               'client_secret':CLIENT_SECRET
                         })
@@ -48,6 +54,7 @@ def get_session(access_token):
                         headers={
                             'Authorization':'Bearer ' + access_token,
                         })
+
     print("Session URL: {}".format(session_request.url))
 
     if session_request.status_code == 200:
@@ -57,23 +64,224 @@ def get_session(access_token):
 
     return adama_session
 
-def get_segments(access_token, session):
-    get_segments_request = requests.get(GET_SEGMENTS_URL,
+def get_taxonomy_ids(access_token, session):
+    taxonomy_id_list = []
+    get_taxonomy_request = requests.get("https://api.mediamath.com/dmp/v2.0/audience_segments/",
                             headers={
                                 'Authorization':"Bearer " + access_token,
-                                'adama_session':session,
+                                'Cookie': "adama_session=" + session,
                                 'Content-Type':"application/json"
                             })
-    print("Get Segments URL: {}".format(get_segments_request.url))
+    print("Get Taxonomy Request: {}".format(get_taxonomy_request.url))
 
-    get_segments_response = None
-    if get_segments_request.status_code == 200:
-        get_segments_response = get_segments_request.content()
+    if get_taxonomy_request.status_code == 200:
+        get_taxonomy_response = get_taxonomy_request.json()
+        taxonomy_data = get_taxonomy_response["data"]
 
-    print(get_segments_response)
+        for taxonomy in taxonomy_data:
+            taxonomy_name = taxonomy["taxonomy"]["name"].lower()
+
+            if 'eyeota' in taxonomy_name:
+                taxonomy_id = taxonomy["taxonomy_id"]
+                taxonomy_id_list.append(taxonomy_id)
+
+    return taxonomy_id_list
+
+def get_segments(access_token, session, taxonomy_id, segment_dict):
+    get_segment_request = requests.get("https://api.mediamath.com/dmp/v2.0/audience_segments/" + str(taxonomy_id),
+                            headers={
+                                'Authorization':"Bearer " + access_token,
+                                'Cookie': "adama_session=" + session,
+                                'Content-Type':"application/json"
+                            })
+    print("Get Segment Request: {}".format(get_segment_request.url))
+
+    segment_raw_json = get_segment_request.json()
+    segment_json = segment_raw_json["data"]
+
+    parent_segment_name = ""
+    segment_dict = process_segment_json(segment_json, segment_dict, parent_segment_name, None)
+
+    return segment_dict
+
+def process_segment_json(segment_json, segment_dict, parent_segment_name, taxonomy_info_dict):
+    if "taxonomy" in segment_json:
+        if taxonomy_info_dict == None:
+            taxonomy_info_dict = {}
+
+        updated_on = segment_json["updated_on"]
+        segment_visibility = segment_json["visibility"]
+        segment_revenue_share_pct = segment_json["revenue_share_pct"]
+        segment_permissions_organizations = segment_json["permissions"]["organizations"]
+        segment_permissions_agencies = segment_json["permissions"]["agencies"]
+        segment_permissions_advertisers = segment_json["permissions"]["advertisers"]
+        segment_taxonomy_json = segment_json["taxonomy"]
+
+        taxonomy_info_dict = {
+                                "updated_on":updated_on,
+                                "visibility":segment_visibility,
+                                "revenue_share_pct":segment_revenue_share_pct,
+                                "organizations":segment_permissions_organizations,
+                                "agencies":segment_permissions_agencies,
+                                "advertisers":segment_permissions_advertisers
+                            }
+
+        segment_name = segment_taxonomy_json["name"]
+        segment_id = segment_taxonomy_json["id"]
+
+        segment_uniques = None
+        if "uniques" in segment_taxonomy_json:
+            segment_uniques = segment_taxonomy_json["uniques"]
+        segment_retail_cpm = None
+        if "retail_cpm" in segment_taxonomy_json:
+            segment_retail_cpm = segment_taxonomy_json["retail_cpm"]
+        segment_code = None
+        if "code" in segment_taxonomy_json:
+            segment_code = segment_taxonomy_json["code"]
+        segment_buyable = None
+        if "buyable" in segment_taxonomy_json:
+            segment_buyable = segment_taxonomy_json["buyable"]
+        segment_wholesale_cpm = None
+        if "wholesale_cpm" in segment_taxonomy_json:
+            segment_wholesale_cpm = segment_taxonomy_json["wholesale_cpm"]
+        segment_permissions_organizations = segment_json["permissions"]["organizations"]
+        segment_permissions_agencies = segment_json["permissions"]["agencies"]
+        segment_permissions_advertisers = segment_json["permissions"]["advertisers"]
+
+        segment_dict[segment_name] = {
+                                            "uniques":segment_uniques,
+                                            "id":segment_id,
+                                            "retail_cpm":segment_retail_cpm,
+                                            "code":segment_code,
+                                            "buyable":segment_buyable,
+                                            "wholesale_cpm":segment_wholesale_cpm,
+                                            "updated_on":updated_on,
+                                            "visibility": segment_visibility,
+                                            "revenue_share_pct":segment_revenue_share_pct,
+                                            "organization_permissions":segment_permissions_organizations,
+                                            "agencies_permissions":segment_permissions_agencies,
+                                            "advertisers_permissions":segment_permissions_advertisers
+                                        }
+        segment_dict = process_segment_json(segment_taxonomy_json["children"], segment_dict, segment_name, taxonomy_info_dict)
+
+    else:
+        for segment in segment_json:
+            if "children" in segment:
+                current_parent_segment_name = parent_segment_name + " - " + segment["name"]
+                segment_dict = process_segment_json(segment["children"], segment_dict, current_parent_segment_name, taxonomy_info_dict)
+
+            segment_uniques = None
+            if "uniques" in segment:
+                segment_uniques = segment["uniques"]
+            segment_name = parent_segment_name + " - " + segment["name"]
+            segment_id = segment["id"]
+
+            segment_retail_cpm = None
+            if "retail_cpm" in segment:
+                segment_retail_cpm = segment["retail_cpm"]
+            segment_code = None
+            if "code" in segment:
+                segment_code = segment["code"]
+            segment_buyable = segment["buyable"]
+            segment_wholesale_cpm = None
+            if "wholesale_cpm" in segment:
+                segment_wholesale_cpm = segment["wholesale_cpm"]
+            updated_on = taxonomy_info_dict["updated_on"]
+            visibility = taxonomy_info_dict["visibility"]
+            segment_revenue_share_pct = taxonomy_info_dict["revenue_share_pct"]
+            segment_visibility = taxonomy_info_dict["visibility"]
+            segment_permissions_organizations = taxonomy_info_dict["organizations"]
+            segment_permissions_agencies = taxonomy_info_dict["agencies"]
+            segment_permissions_advertisers = taxonomy_info_dict["advertisers"]
+
+
+            segment_dict[segment_name] = {
+                                            "uniques":segment_uniques,
+                                            "id":segment_id,
+                                            "retail_cpm":segment_retail_cpm,
+                                            "code":segment_code,
+                                            "buyable":segment_buyable,
+                                            "wholesale_cpm":segment_wholesale_cpm,
+                                            "updated_on":updated_on,
+                                            "visibility": segment_visibility,
+                                            "revenue_share_pct":segment_revenue_share_pct,
+                                            "organization_permissions":segment_permissions_organizations,
+                                            "agencies_permissions":segment_permissions_agencies,
+                                            "advertisers_permissions":segment_permissions_advertisers
+                                        }
+
+    return segment_dict
 
 def get_all_segments():
     access_token = authenticate()
     session = get_session(access_token)
 
-    get_segments(access_token, session)
+    taxonomy_id_list = get_taxonomy_ids(access_token, session)
+    segment_dict = {}
+    for taxonomy_id in taxonomy_id_list:
+        segment_dict = get_segments(access_token, session, taxonomy_id, segment_dict)
+    # print(taxonomy_id_list)
+
+    segment_key_list = segment_dict.keys()
+
+    uniques_list = []
+    segment_id_list = []
+    segment_name_list = []
+    segment_retail_cpm_list = []
+    segment_code_list = []
+    segment_buyable_list = []
+    segment_wholesale_cpm_list = []
+    segment_updated_on_list = []
+    segment_visibility_list = []
+    segment_revenue_share_pct_list = []
+    segment_organization_permission_list = []
+    segment_agencies_permissions_list = []
+    segmetn_advertisers_permissions_list = []
+
+    for segment_name in segment_key_list:
+        segment = segment_dict[segment_name]
+
+        segment_uniques = segment["uniques"]
+        segment_retail_cpm = segment["retail_cpm"]
+        segment_id = segment["id"]
+        segment_code = segment["code"]
+        segment_buyable = segment["buyable"]
+        segment_wholesale_cpm = segment["wholesale_cpm"]
+        segment_updated_on = segment["updated_on"]
+        segment_visibility = segment["visibility"]
+        segment_revenue_share_pct = segment["revenue_share_pct"]
+        segment_organization_permissions = segment["organization_permissions"]
+        segment_agencies_permissions = segment["agencies_permissions"]
+        segment_advertisers_permissions = segment["advertisers_permissions"]
+
+        uniques_list.append(segment_uniques)
+        segment_id_list.append(segment_id)
+        segment_name_list.append(segment_name)
+        segment_retail_cpm_list.append(segment_retail_cpm)
+        segment_code_list.append(segment_code)
+        segment_buyable_list.append(segment_buyable)
+        segment_wholesale_cpm_list.append(segment_wholesale_cpm)
+        segment_updated_on_list.append(segment_updated_on)
+        segment_visibility_list.append(segment_visibility)
+        segment_revenue_share_pct_list.append(segment_revenue_share_pct)
+        segment_organization_permission_list.append(segment_organization_permissions)
+        segment_agencies_permissions_list.append(segment_agencies_permissions)
+        segmetn_advertisers_permissions_list.append(segment_advertisers_permissions)
+
+    write_df = pd.DataFrame({
+        "mediamath_segment_id":segment_id_list,
+        "segment_name":segment_name_list,
+        "eyeota_segment_id":segment_code_list,
+        "buyable":segment_buyable_list,
+        "retail_cpm":segment_retail_cpm_list,
+        "wholesale_cpm":segment_wholesale_cpm_list,
+        "uniques":uniques_list,
+        "updated_on":segment_updated_on_list,
+        "visibility":segment_visibility_list,
+        "revenue_share_pct":segment_revenue_share_pct_list,
+        "organization_permissions":segment_organization_permission_list,
+        "agencies_permissions":segment_agencies_permissions_list,
+        "advertisers_permissions":segmetn_advertisers_permissions_list
+    })
+
+    return write_excel.write(write_df, "DONOTUPLOAD_MediaMath_query_all")
