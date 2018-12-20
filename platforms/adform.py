@@ -655,7 +655,7 @@ def get_data_usage_report(access_token, start_date, end_date, data_provider_id, 
                                                     "from":start_date,
                                                     "to":end_date,
                                                     "dataProviderId":data_provider_id,
-                                                    "groupBy":"segment,country,advertiser",
+                                                    "groupBy":"date,country,agency,advertiser,campaign,lineItem,order,dataProvider,segment,source",
                                                     "offset":last_count,
                                                     "limit":REPORT_LIMIT
                                                 })
@@ -733,7 +733,7 @@ def read_file_to_get_report(file_path, sheet, report_type):
         end_date = end_date_list[row_counter]
 
         try:
-            start_date = start_date.strftime('%Y-%m-%d')
+            start_date = start_date.strftime('%Y-%m-%d') + "Z"
         except:
             return {"message":"ERROR: Report Start Date '{}' should be in date format.".format(start_date)}
 
@@ -741,7 +741,7 @@ def read_file_to_get_report(file_path, sheet, report_type):
             end_date_date_format = datetime.strptime(str(end_date), "%Y-%m-%d %H:%M:%S") #string to date
             end_date_date_format = end_date_date_format - timedelta(days=1)
 
-            end_date = end_date_date_format.strftime('%Y-%m-%d')
+            end_date = end_date_date_format.strftime('%Y-%m-%d') + "Z"
         except:
             return {"message":"ERROR: Report End Date '{}' should be in date format.".format(end_date)}
 
