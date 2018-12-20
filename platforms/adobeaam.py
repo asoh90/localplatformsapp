@@ -266,17 +266,21 @@ def get_data_feed_dict(access_token):
         # name = data_feed["name"]
         description = data_feed["description"]
         # billing = data_feed["billing"]
-        # distribution = data_feed["distribution"]
+        distribution = data_feed["distribution"]
         # status = data_feed["status"]
         # crUID = data_feed["crUID"]
         # upUID = data_feed["upUID"]
         # createTime = data_feed["createTime"]
         # updateTime = data_feed["updateTime"]
         # pid = data_feed["pid"]
-        # contactUserIds = data_feed["contactUserIds"]
+        contactUserIds = data_feed["contactUserIds"]
         dataSourceId = data_feed["dataSourceId"]
 
-        data_feed_dict[dataSourceId] = description
+        data_feed_dict[dataSourceId] = {
+                                        "description":description,
+                                        "distribution":distribution,
+                                        "contactUserIds":contactUserIds
+                                    }
 
     return data_feed_dict
 
@@ -604,6 +608,8 @@ def query_all_segments():
     data_source_id_list = []
     data_source_name_list = []
     data_feed_description_list = []
+    data_feed_distribution_list = []
+    data_feed_contactUserIds_list = []
     segments_and_overlap_price_list = []
     segments_and_overlap_uom_list = []
     modeling_price_list = []
@@ -655,9 +661,14 @@ def query_all_segments():
         data_source_name = data_source["name"]
 
         # some data source might not have data feed
-        data_feed_description = ""
+        data_feed_description = None
+        data_feed_distribution = None
+        data_feed_contactUserIds = None
         if dataSourceId in data_feed_dict:
-            data_feed_description = data_feed_dict[dataSourceId]
+            data_feed = data_feed_dict[dataSourceId]
+            data_feed_description = data_feed["description"]
+            data_feed_distribution = data_feed["distribution"]
+            data_feed_contactUserIds = data_feed["contactUserIds"]
         
         segments_and_overlap_price = data_source["segments_and_overlap_price"]
         segments_and_overlap_uom = data_source["segments_and_overlap_uom"]
@@ -676,6 +687,8 @@ def query_all_segments():
         data_source_id_list.append(dataSourceId)
         data_source_name_list.append(data_source_name)
         data_feed_description_list.append(data_feed_description)
+        data_feed_distribution_list.append(data_feed_distribution)
+        data_feed_contactUserIds_list.append(data_feed_contactUserIds)
         segments_and_overlap_price_list.append(segments_and_overlap_price)
         segments_and_overlap_uom_list.append(segments_and_overlap_uom)
         modeling_price_list.append(modeling_price)
@@ -692,6 +705,8 @@ def query_all_segments():
                     "Data Source ID":data_source_id_list,
                     "Data Source Name":data_source_name_list,
                     "Data Feed Description":data_feed_description_list,
+                    "Distribution":data_feed_distribution_list,
+                    "Contact Users":data_feed_contactUserIds_list,
                     "Segments and Overlap Price":segments_and_overlap_price_list,
                     "Segments and Overlap UoM":segments_and_overlap_uom_list,
                     "Modeling Price":modeling_price_list,
