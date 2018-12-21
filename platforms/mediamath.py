@@ -18,8 +18,17 @@ CLIENT_ID = "IBxiUniDVrRYSdSXUHJgoq6KdJ7F5oN0"
 CLIENT_SECRET = "NnU9qtfRtruQypo7e2QJh_as_HjlDjppZAhBP0wWeRkqdSzcVrZSln_8PdXrOn50"
 
 SHEET_NAME = "MediaMath"
-EYEOTA_TAXONOMY_ID = 100377
-VENDOR_ID = 16
+VENDOR_ID = 687
+
+# EYEOTA_TAXONOMY_ID = 100377
+# EYEOTA_TAXONOMY_AUDIENCE_VENDOR_ID = 16
+# EYEOTA_TAXONOMY_NAME = "Eyeota"
+# EYEOTA_TAXONOMY_ORGANIZATION = []
+
+EYEOTA_TAXONOMY_ID = 101667
+EYEOTA_TAXONOMY_AUDIENCE_VENDOR_ID = 3000
+EYEOTA_TAXONOMY_NAME = "Eyeota - (Private) -"
+EYEOTA_TAXONOMY_ORGANIZATION = [100048]
 
 def callAPI(platform, function, file_path):
     if function == "Query All Segments":
@@ -307,19 +316,6 @@ def read_file_to_refresh_segments(file_path):
     segment_wholesale_cpm_list = read_df["Wholesale CPM"]
     segment_retail_cpm_list = read_df["Retail CPM"]
     segment_buyable_list = read_df["Buyable"]
-
-    refresh_segment_dict = {
-                                "permissions":{
-                                    "advertisers":[],
-                                    "agencies":[],
-                                    "organizations":[]
-                                },
-                                "taxonomy":{
-                                    "name":"Eyeota",
-                                    "children":[]
-                                },
-                                "vendor_id":VENDOR_ID
-                            }
     
     segment_raw_dict = {}
     
@@ -336,40 +332,139 @@ def read_file_to_refresh_segments(file_path):
         segment_name_split = segment_name.split(" - ")
         segment_raw_dict = format_segment_raw_dict(segment_raw_dict, segment_name_split, segment_code, segment_uniques, segment_wholesale_cpm, segment_retail_cpm, segment_buyable)
 
-    print(segment_raw_dict)
+    taxonomy_children_list = format_segment_dict(segment_raw_dict)
+    segment_to_refresh_dict = {
+                                "permissions":{
+                                    "advertisers":[],
+                                    "agencies":[],
+                                    "organizations":EYEOTA_TAXONOMY_ORGANIZATION
+                                },
+                                "taxonomy":{
+                                    "children":taxonomy_children_list,
+                                    "name":EYEOTA_TAXONOMY_NAME
+                                },
+                                "audience_vendor_id":EYEOTA_TAXONOMY_AUDIENCE_VENDOR_ID
+                            }
+    output = refresh_segments(access_token, session, segment_to_refresh_dict)
+    return output
 
 def format_segment_raw_dict(segment_raw_dict, segment_name_split, segment_code, segment_uniques, segment_wholesale_cpm, segment_retail_cpm, segment_buyable):
     segment_partial_name = segment_name_split.pop(0)
 
     if len(segment_name_split) == 0:
         if not segment_partial_name in segment_raw_dict:
-            temp_dict = {
-                "name":segment_partial_name,
-                "code":segment_code,
-                "children":{},
-                "buyable":segment_buyable,
-                "retail_cpm":segment_retail_cpm,
-                "wholesale_cpm":segment_wholesale_cpm,
-                "uniques":segment_uniques
-            }
+            if segment_buyable:
+                temp_dict = {
+                    "name":segment_partial_name,
+                    "code":segment_code,
+                    "children":{},
+                    "buyable":segment_buyable,
+                    "retail_cpm":segment_retail_cpm,
+                    "wholesale_cpm":segment_wholesale_cpm,
+                    "uniques":segment_uniques
+                }
+            else:
+                temp_dict = {
+                    "name":segment_partial_name,
+                    "children":{},
+                    "buyable":segment_buyable,
+                    "retail_cpm":0
+                }
         else:
             temp_dict = segment_raw_dict[segment_partial_name]
             temp_dict["name"] = segment_partial_name
-            temp_dict["code"] = segment_code
-            temp_dict["buyable"] = segment_buyable
-            temp_dict["retail_cpm"] = segment_retail_cpm
-            temp_dict["wholesale_cpm"] = segment_wholesale_cpm
-            temp_dict["uniques"] = segment_uniques
+            temp_dict["buyable"] = segment_buyable   
+            if segment_buyable:
+                temp_dict["code"] = segment_code                                           
+                temp_dict["retail_cpm"] = segment_retail_cpm
+                temp_dict["wholesale_cpm"] = segment_wholesale_cpm
+                temp_dict["uniques"] = segment_uniques
+            else:                                          
+                temp_dict["retail_cpm"] = 0
         segment_raw_dict[segment_partial_name] = temp_dict
         return segment_raw_dict
 
     # segment partial name does not exist in segment_raw_dict
     if not segment_partial_name in segment_raw_dict:
         temp_dict = format_segment_raw_dict({}, segment_name_split, segment_code, segment_uniques, segment_wholesale_cpm, segment_retail_cpm, segment_buyable)
-        segment_raw_dict[segment_partial_name] = {'children':temp_dict}
+        segment_raw_dict[segment_partial_name] = {
+                                                    "name":segment_partial_name,
+                                                    'children':temp_dict,
+                                                    'buyable':False,
+                                                    'retail_cpm':0
+                                                }
     else:
         partial_name_dict = segment_raw_dict[segment_partial_name]["children"]
         temp_dict = format_segment_raw_dict(partial_name_dict, segment_name_split, segment_code, segment_uniques, segment_wholesale_cpm, segment_retail_cpm, segment_buyable)
-        segment_raw_dict[segment_partial_name] = {"children":temp_dict}
+        segment_raw_dict[segment_partial_name]["children"] = temp_dict
 
     return segment_raw_dict
+
+def format_segment_dict(segment_raw_dict):
+    list_to_return = []
+    for segment_partial_name in segment_raw_dict:
+        current_segment = segment_raw_dict[segment_partial_name]
+
+        current_segment_name = current_segment["name"]
+        current_segment_code = None
+        if "code" in current_segment:
+            current_segment_code = str(current_segment["code"])
+            if len(current_segment_code) > 0:
+                current_segment_code = str(int(current_segment["code"]))
+        current_segment_children_raw = current_segment["children"]
+        current_segment_children = format_segment_dict(current_segment_children_raw)
+        current_segment_buyable = current_segment["buyable"]
+        if current_segment_buyable:
+            current_segment_buyable = True
+        else:
+            current_segment_buyable = False
+        current_segment_retail_cpm = int(current_segment["retail_cpm"])
+        current_segment_wholesale_cpm = None
+        if "wholesale_cpm" in current_segment:
+            current_segment_wholesale_cpm = int(current_segment["wholesale_cpm"])
+        current_segment_uniques = None
+        if "uniques" in current_segment:
+            current_segment_uniques = int(current_segment["uniques"])
+
+        current_segment_dict = None
+        if current_segment_buyable:
+            current_segment_dict = {
+                                        "name":current_segment_name,
+                                        "children":current_segment_children,
+                                        "buyable":current_segment_buyable,
+                                        "code":current_segment_code,
+                                        "retail_cpm":current_segment_retail_cpm,
+                                        "wholesale_cpm":current_segment_wholesale_cpm,
+                                        "uniques":current_segment_uniques
+                                    }
+        else:
+            current_segment_dict = {
+                                        "name":current_segment_name,
+                                        "children":current_segment_children,
+                                        "buyable":current_segment_buyable,
+                                        "retail_cpm":current_segment_retail_cpm
+                                    }
+        list_to_return.append(current_segment_dict)
+
+    return list_to_return
+
+def refresh_segments(access_token, session, segment_dict):
+    refresh_segment_request = requests.post("https://api.mediamath.com/dmp/v2.0/audience_segments/" + str(EYEOTA_TAXONOMY_ID),
+                            headers={
+                                'Authorization':"Bearer " + access_token,
+                                'Cookie': "adama_session=" + session,
+                                'Content-Type':"application/json"
+                            },
+                            data=json.dumps(segment_dict))
+    print("Refresh Segment Request: {}".format(refresh_segment_request.url))
+
+    # print(json.dumps(segment_dict))
+
+    response_status_code = refresh_segment_request.status_code
+    response_json = refresh_segment_request.json()
+    # print(response_json)
+
+    if response_status_code == 202:
+        return get_all_segments()
+    else:
+        return {"message": "Error: {}".format(response_json["errors"])}
