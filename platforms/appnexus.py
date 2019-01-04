@@ -1492,20 +1492,25 @@ def get_report(start_date, end_date, report_type, row_counter, segment_dict):
                 campaign_name_list.append(report_line_data[4])
 
                 targeted_segment_ids = report_line_data[5]
-                targeted_segment_id_list.append(targeted_segment_ids.decode('utf-8'))
+                # targeted_segment_id_list.append(targeted_segment_ids.decode('utf-8'))
                 targeted_segment_ids_split = targeted_segment_ids.split(b",")
                 formatted_targeted_segment_names = ""
+                formatted_targeted_segment_ids = ""
 
                 is_first_segment = True
                 for targeted_segment_id in targeted_segment_ids_split:
                     targeted_segment_name = segment_dict[int(targeted_segment_id)]["short_name"]
+                    targeted_segment_id = int(targeted_segment_id)
 
                     if is_first_segment:
                         formatted_targeted_segment_names = targeted_segment_name
+                        formatted_targeted_segment_ids = str(targeted_segment_id)
                         is_first_segment = False
                     else:
-                        formatted_targeted_segment_names = formatted_targeted_segment_names + "," + targeted_segment_name
+                        formatted_targeted_segment_names = formatted_targeted_segment_names + ";" + targeted_segment_name
+                        formatted_targeted_segment_ids = formatted_targeted_segment_ids + ";" + str(targeted_segment_id)
                 targeted_segment_name_list.append(formatted_targeted_segment_names)
+                targeted_segment_id_list.append(formatted_targeted_segment_ids)
 
                 cpm_usd_list.append(report_line_data[6])
                 imps_list.append(report_line_data[7])
