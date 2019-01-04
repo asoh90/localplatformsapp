@@ -37,7 +37,7 @@ ADD_DATA_FEED_CONTACT_USER_IDS = [56139,74130]
 ADD_DATA_FEED_DESCRIPTION = ""
 # ADD_DATA_FEED_DISTRIBUTION = "PRIVATE"
 ADD_DATA_FEED_BILLING = "ADOBE"
-ADD_DATA_FEED_STATUS = "ACTIVE"  # ****TO CHANGE TO ACTIVE****
+ADD_DATA_FEED_STATUS = "INACTIVE"  # ****TO CHANGE TO ACTIVE****
 
 # constants to add data feed plan
 ADD_DATA_FEED_PLAN_DESCRIPTION = ""
@@ -49,7 +49,7 @@ ADD_DATA_FEED_PLAN_SEGMENT_AND_OVERLAP_BILLING_UNIT = "FIXED"
 ADD_TRAIT_BACKFILL_STATUS = "NONE"
 ADD_TRAIT_TYPE = 0
 ADD_TRAIT_TRAIT_TYPE = "ON_BOARDED_TRAIT"
-ADD_TRAIT_STATUS = "ACTIVE"   # ****TO CHANGE TO ACTIVE****
+ADD_TRAIT_STATUS = "INACTIVE"   # ****TO CHANGE TO ACTIVE****
 
 # constant to add trait folder
 PID = 7784
@@ -477,7 +477,7 @@ def add_data_feed_plan(access_token, dataSourceId, useCase, billingUnit, price):
     add_data_feed_plan_response = add_data_feed_plan_request.json()
 
     if not add_data_feed_plan_request.status_code == 201:
-        return access_token, add_data_feed_plan_response["message"]
+        return access_token, add_data_feed_plan_response["message"] + " " + add_data_feed_plan_response["childMessages"]
     
     return access_token, "Created"
 
@@ -750,6 +750,7 @@ def read_all_to_add_segments(file_path):
     modeling_uom_list = read_df["Modeling UoM"]
     activation_price_list = read_df["Activation Price"]
     activation_uom_list = read_df["Activation UoM"]
+    eyeota_buyer_id_list = []
     data_source_result = []
     data_feed_result = []
     segments_and_overlap_plan_result = []
@@ -894,6 +895,7 @@ def read_all_to_add_segments(file_path):
             except:
                 segment_id_list.append(None)
                 create_trait_output = "Failed. Please enter a number for Segment Lifetime"
+                eyeota_buyer_id_list.append(None)
 
         # segment lifetime is numerical
         if create_trait_output == None:
@@ -903,6 +905,7 @@ def read_all_to_add_segments(file_path):
                 segment_id_list.append(None)
                 segment_status_list.append(None)
                 create_trait_output = output
+                eyeota_buyer_id_list.append(None)
             else:
                 segment_id_list.append(output)
                 segment_status_list.append(ADD_TRAIT_STATUS)
@@ -910,8 +913,10 @@ def read_all_to_add_segments(file_path):
 
                 if edit_trait_result == None:
                     create_trait_output = "Failed to edit Trait Expression"
+                    eyeota_buyer_id_list.append(None)
                 else:
                     create_trait_output = "Created"
+                    eyeota_buyer_id_list.append("{}:{}".format(data_source_id, output))
 
         create_trait_result.append(create_trait_output)
 
@@ -947,6 +952,7 @@ def read_all_to_add_segments(file_path):
                     "Modeling Plan Result":modeling_plan_result,
                     "Activation Plan Result":activation_plan_result,
                     "Trait Folder Result":create_trait_folder_result,
-                    "Create Segment Result": create_trait_result
+                    "Create Segment Result": create_trait_result,
+                    "Eyeota Buyer ID": eyeota_buyer_id_list
                 })
     return write_excel.write(write_df, file_name + "_output_add_segments")
