@@ -37,7 +37,7 @@ ADD_DATA_FEED_CONTACT_USER_IDS = [56139,74130]
 ADD_DATA_FEED_DESCRIPTION = ""
 # ADD_DATA_FEED_DISTRIBUTION = "PRIVATE"
 ADD_DATA_FEED_BILLING = "ADOBE"
-ADD_DATA_FEED_STATUS = "INACTIVE"  # ****TO CHANGE TO ACTIVE****
+ADD_DATA_FEED_STATUS = "ACTIVE"  # ****TO CHANGE TO ACTIVE****
 
 # constants to add data feed plan
 ADD_DATA_FEED_PLAN_DESCRIPTION = ""
@@ -49,7 +49,7 @@ ADD_DATA_FEED_PLAN_SEGMENT_AND_OVERLAP_BILLING_UNIT = "FIXED"
 ADD_TRAIT_BACKFILL_STATUS = "NONE"
 ADD_TRAIT_TYPE = 0
 ADD_TRAIT_TRAIT_TYPE = "ON_BOARDED_TRAIT"
-ADD_TRAIT_STATUS = "INACTIVE"   # ****TO CHANGE TO ACTIVE****
+ADD_TRAIT_STATUS = "ACTIVE"   # ****TO CHANGE TO ACTIVE****
 
 # constant to add trait folder
 PID = 7784
@@ -477,7 +477,7 @@ def add_data_feed_plan(access_token, dataSourceId, useCase, billingUnit, price):
     add_data_feed_plan_response = add_data_feed_plan_request.json()
 
     if not add_data_feed_plan_request.status_code == 201:
-        return access_token, add_data_feed_plan_response["message"] + " " + add_data_feed_plan_response["childMessages"]
+        return access_token, "{} {}".format(add_data_feed_plan_response["message"],add_data_feed_plan_response["childMessages"])
     
     return access_token, "Created"
 
