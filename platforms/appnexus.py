@@ -6,6 +6,7 @@ import os
 import numpy
 import time
 from threading import Thread
+from flask import session
 
 MEMBER_ID = 1706
 THREAD_LIMIT = 15
@@ -31,7 +32,7 @@ AUTHENTICATION_LIMIT_SECS = 235 * 60
 
 SHEET_NAME = "AppNexus"
 
-def callAPI(platform, function, file_path):
+def callAPI(platform, function, file_path, loop):
     get_urls_output = get_urls(platform)
     if "message" in get_urls_output:
         return get_urls_output
@@ -115,6 +116,7 @@ def authenticate():
 
 # Start Query Segments functions
 def query_all_segments():
+    # print("Query all segments now")
     write_segment_id_list = []
     write_code_list = []
     write_segment_name_list = []
@@ -168,6 +170,7 @@ def query_all_segments():
                     'Member ID':write_member_id_list,
                     'Last Modified':write_last_modified_list
                 })
+    # return write_excel.write_and_email(write_df, "DONOTUPLOAD_AppNexus_query_all")
     return write_excel.write(write_df, "DONOTUPLOAD_AppNexus_query_all")
 
 def retrieve_all_segments():
@@ -240,7 +243,10 @@ def retrieve_segments(start_element, num_elements, segment_dict, total_segments)
                                             "last_modified":last_modified                
             }
     except:
-        print(retrieve_response['response']['error'])
+        print("ERROR: {}".format(retrieve_response['response']['error']))
+        print("Error storing segment to segment_dict. Wait 20 seconds to run again.")
+        time.sleep(20)
+        retrieve_segments(start_element, num_elements, segment_dict, total_segments)
 # End Query Segments functions
 
 # Start Add Segments functions
@@ -1377,6 +1383,7 @@ def get_data_usage_report(start_date, end_date):
 
 def download_report(report_id):
     print("Sleep 5 seconds before retrieving report")
+    # print("REPORT ID: {}".format(report_id))
     time.sleep(5)
     request_report = requests.get(url_download_report,
                     params={
@@ -1387,6 +1394,7 @@ def download_report(report_id):
                     })
     request_report_string = request_report.content
     request_report_string_list = request_report_string.split(b"\r\n")
+    # print("Length of report: {}".format(len(request_report_string_list)))
     # print(request_report_string_list)
     return request_report_string_list
 
@@ -1457,7 +1465,7 @@ def get_report(start_date, end_date, report_type, row_counter, segment_dict):
             "avg_daily_uniques":avg_daily_uniques_list
         })
 
-        return write_excel.write_without_return(write_df, "AppNexus_segment_loads_report_" + str(row_counter))
+        return write_excel.write_without_return(write_df, "AppNexus_segment_loads_report_" + str(start_date)[:10] + "_to_" + str(end_date)[:10])
 
     elif report_type == "data_usage":
         report_status, report_response = get_data_usage_report(start_date, end_date)
@@ -1533,7 +1541,7 @@ def get_report(start_date, end_date, report_type, row_counter, segment_dict):
             "data_provider_payout_usd":data_provider_payout_usd_list
         })
 
-        return write_excel.write_without_return(write_df, "AppNexus_data_usage_report_" + str(row_counter))
+        return write_excel.write_without_return(write_df, "AppNexus_data_usage_report_" + str(start_date)[:10] + "_to_" + str(end_date)[:10])
 
 def read_file_to_retrieve_segments(file_path):
     get_segments_start_time = time.time()
@@ -1882,7 +1890,7 @@ def get_all_segment_billing():
         # print("total_elements: {}".format(total_elements))
         # print(segment_billing_dict)
 
-    print("Total Segment Billing: {}".format(len(segment_billing_dict)))
+    # print("Total Segment Billing: {}".format(len(segment_billing_dict)))
     return segment_billing_dict
 
 # End of Segment Billing Functions
