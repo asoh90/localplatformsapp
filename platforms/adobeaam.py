@@ -894,6 +894,7 @@ def read_all_to_add_segments(file_path):
                 segment_lifetime = int(segment_lifetime)
             except:
                 segment_id_list.append(None)
+                segment_status_list.append(None)
                 create_trait_output = "Failed. Please enter a number for Segment Lifetime"
                 eyeota_buyer_id_list.append(None)
 
