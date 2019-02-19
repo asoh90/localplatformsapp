@@ -32,7 +32,7 @@ AUTHENTICATION_LIMIT_SECS = 235 * 60
 
 SHEET_NAME = "AppNexus"
 
-def callAPI(platform, function, file_path, loop):
+def callAPI(platform, function, file_path):
     get_urls_output = get_urls(platform)
     if "message" in get_urls_output:
         return get_urls_output
