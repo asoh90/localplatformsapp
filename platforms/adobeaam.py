@@ -887,6 +887,8 @@ def read_all_to_add_segments(file_path):
         if not data_source_id == None and not folder_id == None:
             segment_name = segment_name_list[row_counter]
             segment_description = segment_description_list[row_counter]
+            if pd.isna(segment_description):
+                segment_description = ""
             segment_lifetime = segment_lifetime_list[row_counter]
 
             try:
