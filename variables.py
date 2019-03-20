@@ -26,6 +26,9 @@ platform_functions = {
                         "Adobe AAM":{"level":1,
                                     "functions":["Add Segments", "Query All Segments","Query Subscriber Contacts"]
                                     },
+                        "Adobe AdCloud":{"level":1,
+                                    "functions":["Add Custom Segments", "Edit Custom Segments"]
+                                    },
                         "AppNexus Staging": {"level":2,
                                     "functions": {
                                         "Segment":["Add Segments","Edit Segments","Query All Segments","Retrieve Segments"],
