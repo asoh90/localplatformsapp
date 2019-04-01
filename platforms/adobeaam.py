@@ -7,6 +7,7 @@ import numpy
 import time
 
 URL = "https://api.demdex.com:443/"
+# URL = "https://api-beta.demdex.com:443/"
 AUTH_URL = URL + "oauth/token"
 API_URL = URL + "v1/"
 DATA_SOURCE_URL = API_URL + "datasources/"

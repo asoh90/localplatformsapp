@@ -1507,7 +1507,11 @@ def get_report(start_date, end_date, report_type, row_counter, segment_dict):
 
                 is_first_segment = True
                 for targeted_segment_id in targeted_segment_ids_split:
-                    targeted_segment_name = segment_dict[int(targeted_segment_id)]["short_name"]
+                    targeted_segment_name = str(targeted_segment_id)
+                    try:
+                        targeted_segment_name = segment_dict[int(targeted_segment_id)]["short_name"]
+                    except:
+                        print("Segment ID {} is not found".format(targeted_segment_id))
                     targeted_segment_id = int(targeted_segment_id)
 
                     if is_first_segment:
@@ -1809,7 +1813,11 @@ def get_segment_billing(segment_id, segment_code, current_segment_billings, bill
         except:
             billing_output_messages[segment_code] = get_segment_billing_response
 
-def get_segment_billing_range(start_element, element_num, segment_billing_dict, total_elements, to_get_total_elements):
+def get_segment_billing_range(start_element, element_num, segment_billing_dict, total_elements, to_get_total_elements, counter_to_wait):
+    if counter_to_wait % 4 == 0:
+        print("Sleep for 25 seconds to avoid call limit")
+        time.sleep(25)
+
     request_to_send = requests.get(url_segment_billing_category,
                                 headers={
                                     'Content-Type':'application/json',
@@ -1859,7 +1867,8 @@ def get_all_segment_billing():
     to_get_total_elements = True
     segment_billing_dict = {}
     threads = []
-
+    counter_to_wait = 1
+    
     while start_element <= total_elements[0]:
         thread_counter = 0
         
@@ -1870,11 +1879,12 @@ def get_all_segment_billing():
         #     time.sleep(20)
 
         while thread_counter < THREAD_LIMIT and start_element <= total_elements[0]:
-            process = Thread(target=get_segment_billing_range, args=[start_element, RETRIEVE_SEGMENTS_NUM_ELEMENTS, segment_billing_dict, total_elements, to_get_total_elements])
+            process = Thread(target=get_segment_billing_range, args=[start_element, RETRIEVE_SEGMENTS_NUM_ELEMENTS, segment_billing_dict, total_elements, to_get_total_elements, counter_to_wait])
             process.start()
             threads.append(process)
             start_element += RETRIEVE_SEGMENTS_NUM_ELEMENTS
             thread_counter += 1
+            counter_to_wait += 1
 
         for process in threads:
             process.join()
