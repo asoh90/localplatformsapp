@@ -381,6 +381,9 @@ def read_file_to_add_segments(file_path):
         for add_segment_thread in add_segment_threads:
             add_segment_thread.join()
             # print("Length of current segments: {}".format(len(current_segments)))
+
+        print("Sleeping 60 seconds to avoid call limit")
+        time.sleep(60)
         
         add_billing_thread_counter = 0
 
