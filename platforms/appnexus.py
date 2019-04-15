@@ -736,7 +736,7 @@ def read_file_to_edit_segments(file_path):
         get_billing_threads = []
 
         while edit_segment_thread_counter < THREAD_LIMIT and edit_segment_row_num < len(code_list):
-            current_segment_id = segment_id_list[edit_segment_row_num]
+            current_segment_id = int(segment_id_list[edit_segment_row_num])
             current_code = code_list[edit_segment_row_num]
             current_segment_name = segment_name_list[edit_segment_row_num]
             current_segment_description = segment_description_list[edit_segment_row_num]
@@ -757,6 +757,9 @@ def read_file_to_edit_segments(file_path):
         
         for edit_segment_thread in edit_segment_threads:
             edit_segment_thread.join()
+
+        print("Sleep 100 seconds to avoid limit")
+        time.sleep(100)
 
         get_billing_thread_counter = 0
 
@@ -1262,6 +1265,9 @@ def read_file_to_add_segment_billings(file_path):
         for add_billing_thread in add_billing_threads:
             add_billing_thread.join()
 
+        print("Sleep 60 seconds to avoid limit")
+        time.sleep(60)
+
         for after_add_billing_code in current_segments:
             after_add_billing_segment = current_segments[after_add_billing_code]
 
@@ -1312,12 +1318,12 @@ def read_file_to_add_segment_billings(file_path):
                     'Segment Description':write_segment_description_list,
                     'Price':write_price_list,
                     'Duration':write_duration_list,
-                    'Member ID':write_member_id_list,
                     'State':write_state_list,
                     'Is Public':write_is_public_list,
                     "Data Segment Type":write_data_segment_type_id_list,
                     'Data Category ID':write_data_category_id_list,
                     'Buyer Member ID':write_buyer_member_id_list,
+                    'Member ID':write_member_id_list,
                     'Billing Response':write_billing_response
                 })
     return write_excel.write(write_df, "DONOTUPLOAD_" + file_name + "_add_billing")
