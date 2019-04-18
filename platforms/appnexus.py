@@ -189,13 +189,10 @@ def retrieve_all_segments():
             threads.append(process)
             thread_counter += 1
             start_element += RETRIEVE_SEGMENTS_NUM_ELEMENTS
+            time.sleep(1)
 
         for process in threads:
             process.join()
-
-        # print("Total Segments: {}".format(total_segments[0]))
-        print("Sleep for 20 seconds to avoid call limit")
-        time.sleep(20)
 
     return segment_dict
 
@@ -377,6 +374,7 @@ def read_file_to_add_segments(file_path):
 
             add_segment_thread_counter += 1
             add_segment_row_num += 1
+            time.sleep(1)
 
         for add_segment_thread in add_segment_threads:
             add_segment_thread.join()
@@ -437,6 +435,7 @@ def read_file_to_add_segments(file_path):
 
             add_billing_thread_counter += 1
             add_billing_row_num += 1
+            time.sleep(2)
 
         for add_billing_thread in add_billing_threads:
             add_billing_thread.join()
@@ -486,8 +485,8 @@ def read_file_to_add_segments(file_path):
             write_billing_response.append(after_add_billing_billing_response)
 
         if add_segment_row_num < len(code_list):
-            print("Sleep 60 seconds to avoid limit")
-            time.sleep(60)
+            print("Sleep 10 seconds to avoid limit")
+            time.sleep(10)
 
             add_segments_current_time = time.time()
             add_segments_elapsed_secs = add_segments_current_time - add_segments_start_time
@@ -542,6 +541,8 @@ def read_file_to_add_segments(file_path):
                 private_segment_thread_counter += 1
                 private_segment_row_num += 1
 
+                time.sleep(2)
+
             for private_segment_billing_thread in private_segment_billing_threads:
                 private_segment_billing_thread.join()
 
@@ -571,8 +572,8 @@ def read_file_to_add_segments(file_path):
 
             if private_segment_row_num < len(private_segments_to_add):
                 if private_batch_num % 2 == 0:
-                    print("Sleep 60 seconds to avoid limit")
-                    time.sleep(60)
+                    print("Sleep 10 seconds to avoid limit")
+                    time.sleep(10)
 
                 private_segments_current_time = time.time()
                 private_segments_elapsed_secs = private_segments_current_time - add_segments_start_time
@@ -754,12 +755,14 @@ def read_file_to_edit_segments(file_path):
 
             edit_segment_thread_counter += 1
             edit_segment_row_num += 1
+
+            time.sleep(1)
         
         for edit_segment_thread in edit_segment_threads:
             edit_segment_thread.join()
 
-        print("Sleep 100 seconds to avoid limit")
-        time.sleep(100)
+        print("Sleep 10 seconds to avoid limit")
+        time.sleep(10)
 
         get_billing_thread_counter = 0
 
@@ -780,6 +783,8 @@ def read_file_to_edit_segments(file_path):
 
             get_billing_thread_counter += 1
             get_billing_row_num += 1
+
+            time.sleep(1)
 
         for get_billing_thread in get_billing_threads:
             get_billing_thread.join()
@@ -814,6 +819,8 @@ def read_file_to_edit_segments(file_path):
 
             edit_billing_thread_counter += 1
             edit_billing_row_num += 1
+
+            time.sleep(2)
         
         for edit_billing_thread in edit_billing_threads:
             edit_billing_thread.join()
@@ -862,8 +869,8 @@ def read_file_to_edit_segments(file_path):
             write_billing_response.append(after_edit_billing_billing_response)
 
         if edit_segment_row_num < len(code_list):
-            print("Sleep 60 seconds to avoid limit")
-            time.sleep(60)
+            print("Sleep 10 seconds to avoid limit")
+            time.sleep(10)
 
             edit_segments_current_time = time.time()
             edit_segments_elapsed_secs = edit_segments_current_time - edit_segments_start_time
@@ -1262,11 +1269,13 @@ def read_file_to_add_segment_billings(file_path):
             add_billing_row_num += 1
             add_billing_thread_counter += 1
 
+            time.sleep(2)
+
         for add_billing_thread in add_billing_threads:
             add_billing_thread.join()
 
-        print("Sleep 60 seconds to avoid limit")
-        time.sleep(60)
+        print("Sleep 10 seconds to avoid limit")
+        time.sleep(10)
 
         for after_add_billing_code in current_segments:
             after_add_billing_segment = current_segments[after_add_billing_code]
@@ -1604,6 +1613,8 @@ def read_file_to_retrieve_segments(file_path):
 
             get_segment_thread_counter += 1
             get_segment_row_num += 1
+
+            time.sleep(1)
         
         for get_segment_thread in get_segment_threads:
             get_segment_thread.join()
@@ -1629,6 +1640,8 @@ def read_file_to_retrieve_segments(file_path):
 
             get_billing_thread_counter += 1
             get_billing_row_num += 1
+
+            time.sleep(1)
 
         for get_billing_thread in get_billing_threads:
             get_billing_thread.join()
@@ -1674,9 +1687,9 @@ def read_file_to_retrieve_segments(file_path):
         get_segments_authentication_timeover = get_segments_elapsed_secs - AUTHENTICATION_LIMIT_SECS * get_segments_authenticate_count
 
         if get_segment_row_num < len(code_list):
-            if batch_num % 2 == 0:
-                print("Sleep 60 seconds to avoid limit")
-                time.sleep(60)
+            # if batch_num % 2 == 0:
+            #     print("Sleep 60 seconds to avoid limit")
+            #     time.sleep(60)
 
             if get_segments_authentication_timeover > 0:
                 authenticate()
@@ -1894,6 +1907,7 @@ def get_all_segment_billing():
             start_element += RETRIEVE_SEGMENTS_NUM_ELEMENTS
             thread_counter += 1
             counter_to_wait += 1
+            time.sleep(1)
 
         for process in threads:
             process.join()
@@ -1903,8 +1917,8 @@ def get_all_segment_billing():
         # if batch_number % 4 == 0:
             # print("Sleep for 40 seconds to avoid call limit")
             # time.sleep(40)
-        print("Sleep for 20 seconds to avoid call limit")
-        time.sleep(20)
+        # print("Sleep for 20 seconds to avoid call limit")
+        # time.sleep(20)
 
         # print("total_elements: {}".format(total_elements))
         # print(segment_billing_dict)
