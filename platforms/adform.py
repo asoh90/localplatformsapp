@@ -448,7 +448,7 @@ def read_file_to_add_segments(file_path):
 
                 fee_and_ttl_is_numeric = True
                 try:
-                    fee = int(fee)
+                    fee = float(fee)
                     ttl = int(ttl)
                 except:
                     fee_and_ttl_is_numeric = False
@@ -591,7 +591,7 @@ def read_file_to_edit_segments(file_path):
 
                 fee_and_ttl_is_numeric = True
                 try:
-                    fee = int(fee)
+                    fee = float(fee)
                     ttl = int(ttl)
                 except:
                     fee_and_ttl_is_numeric = False
