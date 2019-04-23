@@ -305,7 +305,7 @@ def edit_segment(access_token, segment_id, region, category_id, ref_id, fee, ttl
                             },
                             json={
                                 "DataProviderId":data_provider_id,
-                                "Status":SEGMENT_STATUS,
+                                "Status":status,
                                 "CategoryId":category_id,
                                 "RefId":str(ref_id),
                                 "Fee":fee,
