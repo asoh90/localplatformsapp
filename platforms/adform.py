@@ -24,7 +24,7 @@ SEGMENTS_URL = API_URL + "segments"
 LIMIT = 5000
 
 # Add all constants
-SEGMENT_STATUS = "inactive"
+SEGMENT_STATUS = "active"
 
 # Data Provider Name
 DATA_PROVIDER_URL = API_URL + "dataproviders/"
