@@ -69,6 +69,8 @@ def authenticate():
 def read_child_segment(parent_segment, json_file):
     global output
     if "id" in json_file:
+        segment_id = json_file["id"]
+
         if "description" in json_file:
             # output.append(json_file['id'] + "|" + parent_segment + "|" + json_file['description'])
             output[segment_id] = {
@@ -103,11 +105,12 @@ def read_child_segment(parent_segment, json_file):
             read_child_segment(parent_segment + " - " + child_segment['name'], child_segment)
 
 def get_query_all():
-    global output; output = []
+    global output; output = {}
     global url
     write_name = []
     write_description = []
     write_id = []
+    write_private_client_id = []
 
     try:
         oauth = authenticate()
@@ -136,7 +139,8 @@ def get_query_all():
         write_df = pd.DataFrame({
             "Segment ID":write_id,
             "Segment Name":write_name,
-            "Segment Description":write_description
+            "Segment Description":write_description,
+            "Private Client ID": write_private_client_id
         })
 
         return write_excel.write(write_df, "DONOTUPLOAD_Yahoo_" + "Query")
