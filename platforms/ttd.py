@@ -178,7 +178,7 @@ def read_file_to_retrieve_batch_id_status(file_path):
                                 "Error": write_error_list
                             })
 
-    return write_excel.write(write_df, "DONOTUPLOAD_The_Trade_Desk_BatchId_Status", SHEET_NAME)
+    return write_excel.write(write_df, "DONOTUPLOAD_The_Trade_Desk_BatchId_Status")
 
 def read_file_to_add_or_edit_custom_segments(file_path, function):
     read_df = pd.read_excel(file_path, sheet_name=SHEET_NAME, skiprows=[1])
@@ -247,11 +247,10 @@ def read_file_to_add_or_edit_custom_segments(file_path, function):
                                 "Rates Output": rates_output_list
                             })
 
-    return write_excel.write(write_df, "DONOTUPLOAD_The_Trade_Desk_" + function, SHEET_NAME)
+    return write_excel.write(write_df, "DONOTUPLOAD_The_Trade_Desk_" + function)
 
 # Add function returns a json format for each call, to be appended to the results before processJsonOutput
 def add_or_edit(auth_code, provider_element_id, parent_element_id, display_name, buyable, description, function):
-    auth_code = authenticate()
     output_raw_data = None
 
     if not buyable:
@@ -298,7 +297,6 @@ def add_or_edit(auth_code, provider_element_id, parent_element_id, display_name,
         return {"api_error":"Unidentified error adding or editing segment"}
 
 def retrieve_partner_rates(auth_code, brand, partner_id):
-    auth_code = authenticate()
     output_raw_data = None
     
     if brand.lower() == "bombora":
@@ -427,10 +425,9 @@ def read_file_to_retrieve_partner_rates(file_path):
                                 "Output": write_output_list
                             })
 
-    return write_excel.write(write_df, "DONOTUPLOAD_The_Trade_Desk_Partner_Rates", SHEET_NAME)
+    return write_excel.write(write_df, "DONOTUPLOAD_The_Trade_Desk_Partner_Rates")
 
 def add_rate(auth_code, brand, provider_element_id, partner_id, price):
-    auth_code = authenticate()
     output_raw_data = None
     
     if brand.lower() == "bombora":
@@ -472,7 +469,7 @@ def add_rate(auth_code, brand, provider_element_id, partner_id, price):
 
     except:
         print("Unidentified error with Rates API")
-        return ("api_error":"Unidentified error with Rates API"}
+        return {"api_error":"Unidentified error with Rates API"}
 
 def read_file_to_edit_custom_segment_rates(file_path):
     read_df = pd.read_excel(file_path, sheet_name=SHEET_NAME, skiprows=[1])
@@ -505,7 +502,7 @@ def read_file_to_edit_custom_segment_rates(file_path):
                                 "Output": write_output_list
                             })
 
-    return write_excel.write(write_df, "DONOTUPLOAD_The_Trade_Desk_Edit_Rates", SHEET_NAME)
+    return write_excel.write(write_df, "DONOTUPLOAD_The_Trade_Desk_Edit_Rates")
 
 def store_segment_in_dict(json_output):
     segment_dictionary = {}
@@ -568,7 +565,7 @@ def processJsonOutput(json_output, function):
                                 "Description":write_description,
                                 "Audience Size":write_audience_size
                             })
-    return write_excel.write(write_df, "DONOTUPLOAD_The_Trade_Desk_" + function, SHEET_NAME)
+    return write_excel.write(write_df, "DONOTUPLOAD_The_Trade_Desk_" + function)
     # return write_excel.write(write_df, "DONOTUPLOAD_The_Trade_Desk_" + function, SHEET_NAME)
     # except:
     #     return {"message":"ERROR Processing TTD Json File for Query All Segments"}

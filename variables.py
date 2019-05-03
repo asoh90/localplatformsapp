@@ -51,7 +51,7 @@ platform_functions = {
                                                 "Custom Segment":["Add Custom Segments","Edit Custom Segments","Query All Segments", "Retrieve Batch Status"],
                                                 "Custom Segment Rates":["Edit Custom Segment Rates", "Retrieve Partner Rates"]
                                             }
-                                        }
+                                        },
                         "Yahoo Staging":{"level":1,
                                     "functions":["Refresh Segments","Query All Segments"]
                             },
