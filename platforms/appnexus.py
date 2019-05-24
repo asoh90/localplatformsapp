@@ -959,7 +959,7 @@ def add_segment_id_to_buyer(record_id, new_segment_id_list):
                                                     'Authorization':auth_token
                                                 },
                                                 params={
-                                                    'id':record_id
+                                                    'id':record_id,
                                                     'append':"true"
                                                 },
                                                 json={
