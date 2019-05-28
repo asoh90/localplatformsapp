@@ -41,6 +41,8 @@ def callAPI(function, file_path):
         output = read_file_to_add_segments(file_path)
     elif function == "Edit Segments":
         output = read_file_to_edit_segments(file_path)
+    elif function == "Delete Segments":
+        output = read_file_to_delete_segments(file_path)
     elif function == "Query All Segments":
         output = get_all_segments()
     elif function == "Data Usage Report":
@@ -285,6 +287,20 @@ def add_segment(access_token, data_provider_id, region, category_id, ref_id, fee
     else:
         return None, add_segment_json["params"]
 
+def delete_segment(access_token, segment_id):
+    delete_segment_request = requests.delete(SEGMENTS_URL + "/" + str(segment_id),
+                            headers={
+                                "Authorization":"Bearer " + access_token
+                            })
+    print("Delete Segment URL: {}".format(delete_segment_request.url))
+
+    # print(delete_segment_json)
+    if delete_segment_request.status_code == 204:
+        return "OK"
+    else:
+        delete_segment_json = delete_segment_request.json()
+        return delete_segment_json["message"]
+
 def edit_segment(access_token, segment_id, data_provider_id, region, category_id, ref_id, fee, ttl, name, status):
     edit_segment_request = requests.put(SEGMENTS_URL + "/" + str(segment_id),
                             headers={
@@ -497,6 +513,59 @@ def read_file_to_add_segments(file_path):
                         "Add Segment Result":write_add_segment_result_list
                 })
     return write_excel.write(write_df, file_name + "_output_add_segments")
+
+def read_file_to_delete_segments(file_path):
+    read_df = None
+    try:
+        # Skip row 2 ([1]) tha indicates if field is mandatory or not
+        read_df = pd.read_excel(file_path, sheet_name=SHEET_NAME, skiprows=[1])
+    except:
+        return {"message":"File Path '{}' is not found".format(file_path)}
+
+    access_token = authenticate()
+    if "message" in access_token:
+        return access_token
+
+    categories_json = get_categories(access_token)
+    categories_dict_by_name = store_category_in_dict_by_name(categories_json)
+    
+    segment_id_list = read_df["Segment ID"]
+    ref_id_list = read_df["Ref ID"]
+    segment_name_list = read_df["Segment Name"]
+    region_list = read_df["Region"]
+    fee_list = read_df["Fee"]
+    ttl_list = read_df["TTL"]
+    status_list = read_df["Status"]
+    write_delete_segment_result_list = []
+
+    for segment_id in segment_id_list:
+        delete_output = delete_segment(access_token, segment_id)
+        write_delete_segment_result_list.append(delete_output)
+
+    os.remove(file_path)
+    file_name_with_extension = file_path.split("/")[-1]
+    file_name = file_name_with_extension.split(".xlsx")[0]
+
+    # print("Ref ID Length: {}".format(len(ref_id_list)))
+    # print("Segment Name Length: {}".format(len(segment_name_list)))
+    # print("Region Length: {}".format(len(region_list)))
+    # print("Fee Length: {}".format(len(fee_list)))
+    # print("TTL Length: {}".format(len(ttl_list)))
+    # print("Segment ID Length: {}".format(len(segment_id_list)))
+    # print("Category Result Length: {}".format(len(write_category_result_list)))
+    # print("Add Segment Result Length: {}".format(len(write_add_segment_result_list)))
+
+    write_df = pd.DataFrame({
+                        "Segment ID":segment_id_list,
+                        "Ref ID":ref_id_list,
+                        "Segment Name":segment_name_list,
+                        "Region":region_list,
+                        "Fee":fee_list,
+                        "TTL":ttl_list,
+                        "Status":status_list,
+                        "Delete Segment Result":write_delete_segment_result_list
+                })
+    return write_excel.write(write_df, file_name + "_output_delete_segments")
 
 def read_file_to_edit_segments(file_path):
     read_df = None
