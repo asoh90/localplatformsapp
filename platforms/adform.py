@@ -818,9 +818,7 @@ def read_file_to_get_report(file_path, sheet, report_type):
             write_adformRevenue_list = []
             write_adformRevenueInAdvertiserCurrency_list = []
             write_adformRevenueInEuro_list = []
-            write_segmentId_list = []
             write_segment_list = []
-            write_categoryId_list = []
             write_category_list = []
 
             data_usage_report_response_67_json = get_data_usage_report(access_token, start_date, end_date, '67')
@@ -850,8 +848,6 @@ def read_file_to_get_report(file_path, sheet, report_type):
                 write_adformRevenue_list.append(data_usage_report_row["adformRevenue"])
                 write_adformRevenueInAdvertiserCurrency_list.append(data_usage_report_row["adformRevenueInAdvertiserCurrency"])
                 write_adformRevenueInEuro_list.append(data_usage_report_row["adformRevenueInEuro"])
-                write_segmentId_list.append(data_usage_report_row["segmentId"])
-                write_categoryId_list.append(data_usage_report_row["categoryId"])
 
             data_provider_name = get_data_provider_name(access_token, 11399)
             for data_usage_report_row in data_usage_report_response_11399_json:
@@ -877,8 +873,6 @@ def read_file_to_get_report(file_path, sheet, report_type):
                 write_adformRevenue_list.append(data_usage_report_row["adformRevenue"])
                 write_adformRevenueInAdvertiserCurrency_list.append(data_usage_report_row["adformRevenueInAdvertiserCurrency"])
                 write_adformRevenueInEuro_list.append(data_usage_report_row["adformRevenueInEuro"])
-                write_segmentId_list.append(data_usage_report_row["segmentId"])
-                write_categoryId_list.append(data_usage_report_row["categoryId"])
 
             write_df = pd.DataFrame({
                         "dataProviderName":write_data_provider_name_list,
