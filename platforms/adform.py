@@ -896,9 +896,7 @@ def read_file_to_get_report(file_path, sheet, report_type):
                         "dataProviderRevenueInEuro":write_dataProviderRevenueInEuro_list,
                         "adformRevenue":write_adformRevenue_list,
                         "adformRevenueInAdvertiserCurrency":write_adformRevenueInAdvertiserCurrency_list,
-                        "adformRevenueInEuro":write_adformRevenueInEuro_list,
-                        "segmentId":write_segmentId_list,
-                        "categoryId":write_categoryId_list,
+                        "adformRevenueInEuro":write_adformRevenueInEuro_list
                     })
 
             data_usage_file_name = write_excel.write_without_return(write_df, "Adform_data_usage_report_" + str(row_counter))
