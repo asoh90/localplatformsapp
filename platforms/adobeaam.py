@@ -1049,7 +1049,7 @@ def read_file_to_edit_segments(file_path):
         "Data Source Name":data_source_name_list,
         "Edit Output":edit_trait_result
     })
-    return write_excel.write(write_df, file_name + "_output_edit_segments", SHEET_NAME)
+    return write_excel.write(write_df, file_name + "_output_edit_segments")
 
 def get_trait_uniques(access_token, dataSourceId):
     if access_token == None:
@@ -1152,4 +1152,4 @@ def read_all_to_get_uniques_report(file_path):
         "Uniques 60 Day":uniques_60_day_list
         # "Uniques 90 Day":uniques_90_day_list
     })
-    return write_excel.write(write_df, file_name + "_output_get_uniques", SHEET_NAME)
+    return write_excel.write(write_df, file_name + "_output_get_uniques")
