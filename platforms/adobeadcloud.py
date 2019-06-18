@@ -130,7 +130,7 @@ def read_all_to_add_segments(file_path):
     file_name = file_name_with_extension.split(".xlsx")[0]
     os.remove(file_path)
 
-    return write_excel.write(write_df, file_name + "output_add_segments", SHEET_NAME)
+    return write_excel.write(write_df, file_name + "output_add_segments")
 
 def read_all_to_edit_segments(file_path):
     start_time = time.time()
@@ -216,4 +216,4 @@ def read_all_to_edit_segments(file_path):
     file_name = file_name_with_extension.split(".xlsx")[0]
     os.remove(file_path)
 
-    return write_excel.write(write_df, file_name + "output_edit_segments", SHEET_NAME)
+    return write_excel.write(write_df, file_name + "output_edit_segments")
