@@ -603,6 +603,10 @@ def read_file_to_edit_segments(file_path):
         status = status_list[row_counter]
         index_of_separator = segment_name.rfind(" - ")
 
+        data_provider_id = "67"
+        if region.lower() == "apac":
+            data_provider_id = "11399"
+
         category_success = True
 
         # Unable to find separator
