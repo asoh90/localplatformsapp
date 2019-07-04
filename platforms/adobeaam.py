@@ -718,7 +718,7 @@ def query_all_segments():
                     "Modeling UoM":modeling_uom_list,
                     "Activation Price":activation_price_list,
                     "Activation UoM":activation_uom_list,
-                    "Segment Status":segment_status_list,
+                    "Segment Status":segment_status_list
                 })
     return write_excel.write(write_df, "DONOTUPLOAD_AdobeAAM_query_all")
 
