@@ -88,7 +88,7 @@ if __name__ == "__main__":
     port = 5000
     url = "http://0.0.0.0:{0}".format(port)
     threading.Timer(1.25, lambda: webbrowser.open(url)).start()
-    app.run(threaded=True)
+    app.run(threaded=True, host='0.0.0.0')
 
 # Test function
 # @app.route("/function", methods=['GET','POST'])
