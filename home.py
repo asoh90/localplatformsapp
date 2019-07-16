@@ -1,3 +1,5 @@
+#!/usr/bin/python
+
 from flask import Flask, render_template, url_for, flash, redirect, request, send_file
 from forms import SelectPlatformForm, SelectFunctionForm
 from werkzeug.utils import secure_filename
