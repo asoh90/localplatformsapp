@@ -86,7 +86,7 @@ if __name__ == "__main__":
     print("System is running")
     app.config['credentials'] = sys.argv[1]
     port = 5000
-    url = "http://10.4.3.1:{0}".format(port)
+    url = "http://0.0.0.0:{0}".format(port)
     threading.Timer(1.25, lambda: webbrowser.open(url)).start()
     app.run(threaded=True)
 
