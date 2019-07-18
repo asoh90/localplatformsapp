@@ -1,0 +1,12 @@
+[Unit]
+Description=Platforms API Application
+
+[Install]
+WantedBy=multi-user.target
+
+[Service]
+User=eye-user
+PermissionsStartOnly=true
+ExecStart=home.py
+TimeoutSec=40
+Restart=on-failure
