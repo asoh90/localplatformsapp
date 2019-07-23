@@ -98,7 +98,7 @@ try:
         threading.Timer(1.25, lambda: webbrowser.open(url)).start()
         app.run(threaded=True, host='0.0.0.0')
 except Exception as ex:
-    variables.logger.warning("{} Add Category URL: {}".format(datetime.datetime.now().isoformat(), add_category_request.url))
+    variables.logger.warning("{} {}".format(datetime.datetime.now().isoformat(), ex))
 
 # Test function
 # @app.route("/function", methods=['GET','POST'])
