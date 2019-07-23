@@ -82,13 +82,16 @@ def delete_upload_and_to_return_files():
     for return_file in return_filelist:
         os.remove(os.path.join(RETURN_FOLDER, return_file))
 
-if __name__ == "__main__":
-    print("System is running")
-    app.config['credentials'] = sys.argv[1]
-    port = 5000
-    url = "http://127.0.0.1:{0}".format(port)
-    threading.Timer(1.25, lambda: webbrowser.open(url)).start()
-    app.run(threaded=True, host='0.0.0.0')
+try:
+    if __name__ == "__main__":
+        print("System is running")
+        app.config['credentials'] = sys.argv[1]
+        port = 5000
+        url = "http://127.0.0.1:{0}".format(port)
+        threading.Timer(1.25, lambda: webbrowser.open(url)).start()
+        app.run(threaded=True, host='0.0.0.0')
+except Exception as ex:
+    print(ex)
 
 # Test function
 # @app.route("/function", methods=['GET','POST'])
