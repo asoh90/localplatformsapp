@@ -87,9 +87,9 @@ def delete_upload_and_to_return_files():
 
 try:
     if __name__ == "__main__":
-        variables.logger = logging.getLogger('my_logger')
-        handler = RotatingFileHandler('logs/my_log.txt', maxBytes=10000000000, backupCount=9999)
-        variables.logger.addHandler(handler)
+        # variables.logger = logging.getLogger('my_logger')
+        # handler = RotatingFileHandler('logs/my_log.txt', maxBytes=10000000000, backupCount=9999)
+        # variables.logger.addHandler(handler)
 
         print("System is running")
         app.config['credentials'] = sys.argv[1]
@@ -98,7 +98,8 @@ try:
         threading.Timer(1.25, lambda: webbrowser.open(url)).start()
         app.run(threaded=True, host='0.0.0.0')
 except Exception as ex:
-    variables.logger.warning("{} {}".format(datetime.datetime.now().isoformat(), ex))
+    # variables.logger.warning("{} {}".format(datetime.datetime.now().isoformat(), ex))
+    print(ex)
 
 # Test function
 # @app.route("/function", methods=['GET','POST'])
