@@ -15,6 +15,9 @@ POSTGRES_HOST = 'localhost'
 
 login_credentials = {}
 
+# Logger for console messages
+logger = None
+
 platform_functions = {
                         "--Select Platform--":[],
                         "Adform":{"level":2,
