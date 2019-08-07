@@ -128,9 +128,9 @@ def home():
 
 
 # Test page
-@app.route("/testhome", methods=['GET','POST'])
-def testhome():
-    return render_template('testhome.html')
+# @app.route("/testhome", methods=['GET','POST'])
+# def testhome():
+#     return render_template('testhome.html')
 
 # when file gets dropped into the dropzone, or "Query" function is selected, run this
 @app.route("/process", methods=['GET','POST'])
@@ -184,7 +184,7 @@ try:
         print("System is running")
         app.config['credentials'] = sys.argv[1]
         port = 5000
-        url = "http://127.0.0.1:{0}".format(port)
+        url = "http://10.4.1.3:{0}".format(port)
         threading.Timer(1.25, lambda: webbrowser.open(url)).start()
         app.run(threaded=True, host='0.0.0.0')
 except Exception as ex:
