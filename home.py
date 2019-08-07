@@ -67,12 +67,12 @@ def index():
     # login_dict = json.loads(login_response)
     # session["email"] = login_dict["email"]
 
-    check_output = check_login()
-    if check_output == None:
-        return redirect(url_for('home'))
-    else:
-        return check_output
-    # return redirect(url_for('home'))
+    # check_output = check_login()
+    # if check_output == None:
+    #     return redirect(url_for('home'))
+    # else:
+    #     return check_output
+    return redirect(url_for('home'))
 
 def check_login():
     access_token = session.get('access_token')
