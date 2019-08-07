@@ -72,7 +72,7 @@ def index():
     #     return redirect(url_for('home'))
     # else:
     #     return check_output
-    redirect(url_for('home'))
+    return redirect(url_for('home'))
 
 def check_login():
     access_token = session.get('access_token')
