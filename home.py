@@ -14,6 +14,7 @@ import logging
 from logging.handlers import RotatingFileHandler
 from urllib.request import Request, urlopen, URLError
 import json
+from functools import wraps
 
 # Google SSO Credentials
 GOOGLE_CLIENT_ID = '696774976262-rg17k58uiani498vqkjdekfdunh7c6j3.apps.googleusercontent.com'
@@ -44,39 +45,48 @@ google = oauth.remote_app('google',
 
 platform_functions = variables.platform_functions
 
+def authenticate(f):
+    @wraps(f)
+    def wrap(*args, **kwargs):
+        # access_token = session.get('access_token')
+        # # print("ACCESS TOKEN: {}".format(access_token))
+        # if access_token is None:
+        #     return redirect(url_for('login'))
+        # access_token = access_token[0]
+        
+        # headers = {'Authorization': 'OAuth '+ access_token}
+        # req = Request('https://www.googleapis.com/oauth2/v1/userinfo',
+        #             None, headers)
+        # try:
+        #     res = urlopen(req)
+        # except URLError as e:
+        #     if e.code == 401:
+        #         # Unauthorized - bad token
+        #         session.pop('access_token', None)
+        #         return redirect(url_for('login'))
+
+        # login_response = res.read().decode('utf-8')
+        # login_dict = json.loads(login_response)
+        # session["email"] = login_dict["email"]
+
+        check_output = check_login()
+        # if check_output == None:
+        #     return redirect(url_for('home'))
+        # else:
+        #     return check_output
+        if not check_output is None:
+            return check_output
+        else:
+            return f(*args, **kwargs)
+    return wrap
+
 @app.route("/")
 def index():
-    # access_token = session.get('access_token')
-    # # print("ACCESS TOKEN: {}".format(access_token))
-    # if access_token is None:
-    #     return redirect(url_for('login'))
-    # access_token = access_token[0]
-    
-    # headers = {'Authorization': 'OAuth '+ access_token}
-    # req = Request('https://www.googleapis.com/oauth2/v1/userinfo',
-    #               None, headers)
-    # try:
-    #     res = urlopen(req)
-    # except URLError as e:
-    #     if e.code == 401:
-    #         # Unauthorized - bad token
-    #         session.pop('access_token', None)
-    #         return redirect(url_for('login'))
-
-    # login_response = res.read().decode('utf-8')
-    # login_dict = json.loads(login_response)
-    # session["email"] = login_dict["email"]
-
-    # check_output = check_login()
-    # if check_output == None:
-    #     return redirect(url_for('home'))
-    # else:
-    #     return check_output
     return redirect(url_for('home'))
 
 def check_login():
     access_token = session.get('access_token')
-    # print("ACCESS TOKEN: {}".format(access_token))
+    # print("check_login ACCESS TOKEN: {}".format(access_token))
     if access_token is None:
         return redirect(url_for('login'))
     access_token = access_token[0]
@@ -114,6 +124,7 @@ def get_access_token():
     return session.get('access_token')
 
 @app.route("/home", methods=['GET','POST'])
+@authenticate
 def home():
     # delete all files in upload and to_return folders
     delete_upload_and_to_return_files()
@@ -136,6 +147,7 @@ def home():
 
 # when file gets dropped into the dropzone, or "Query" function is selected, run this
 @app.route("/process", methods=['GET','POST'])
+@authenticate
 def process():
     # get fields
     platform = request.form['platform']
@@ -163,6 +175,7 @@ def process():
         return output["message"]
 
 @app.route("/downloaduploadtemplate", methods=['GET','POST'])
+@authenticate
 def download_upload_template():
     return send_file("UploadTemplate.xlsx", as_attachment=True, attachment_filename="UploadTemplate.xlsx")
 
