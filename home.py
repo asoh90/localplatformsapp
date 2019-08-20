@@ -104,7 +104,6 @@ def check_login():
             return redirect(url_for('login'))
 
     login_response = res.read().decode('utf-8')
-    print(login_response)
     login_dict = json.loads(login_response)
     session["email"] = login_dict["email"]
     return None
