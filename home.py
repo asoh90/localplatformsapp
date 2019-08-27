@@ -43,7 +43,6 @@ google = oauth.remote_app('google',
                           access_token_params={'grant_type': 'authorization_code'},
                           consumer_key=GOOGLE_CLIENT_ID,
                           consumer_secret=GOOGLE_CLIENT_SECRET)
-platform_functions = variables.platform_functions
 
 def authenticate(f):
     @wraps(f)
@@ -137,6 +136,7 @@ def home():
     form = SelectPlatformForm()
     # if form.validate_on_submit():
     #     return redirect(url_for("function", platform=form.platform.data))
+    platform_functions = variables.get_platform_functions(session["email"])
     return render_template('home.html', form=form, platform_functions=platform_functions)
 
 
