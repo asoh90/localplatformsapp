@@ -6,6 +6,7 @@ import pandas as pd
 import os
 import sys
 import codecs
+import numpy
 
 topdir = os.path.join(os.path.dirname(__file__),".")
 sys.path.append(topdir)
