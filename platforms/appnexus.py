@@ -376,7 +376,7 @@ def read_file_to_add_segments(file_path):
 
             add_segment_thread_counter += 1
             add_segment_row_num += 1
-            time.sleep(1)
+            time.sleep(3)
 
         for add_segment_thread in add_segment_threads:
             add_segment_thread.join()
@@ -437,7 +437,7 @@ def read_file_to_add_segments(file_path):
 
             add_billing_thread_counter += 1
             add_billing_row_num += 1
-            time.sleep(2)
+            time.sleep(3)
 
         for add_billing_thread in add_billing_threads:
             add_billing_thread.join()
