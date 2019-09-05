@@ -120,8 +120,7 @@ def refresh(refresh_token):
                 'grant_type':'refresh_token',
                 'client_id':GOOGLE_CLIENT_ID,
                 'client_secret':GOOGLE_CLIENT_SECRET,
-                'refresh_token':refresh_token,
-                'expires_in':86500
+                'refresh_token':refresh_token
             }
     
     authorization_url = 'https://www.googleapis.com/oauth2/v4/token'
