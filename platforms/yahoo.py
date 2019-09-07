@@ -185,6 +185,7 @@ def split_segments_to_add(segment_dict, segment_name_list, segment_id, segment_d
 
 # Returns a json file to be sent to Yahoo API
 def format_segment_json(segment_dict):
+    # print(segment_dict)
     # {"name": "AU CoreLogic RP Data", "type": "SEGMENT", "targetable": "false", "subTaxonomy": [
         # {"name": "Real Estate Indicator", "type": "SEGMENT", "targetable": "false", "subTaxonomy": [
     # print(segment_dict)
@@ -196,12 +197,7 @@ def format_segment_json(segment_dict):
         if "id" in segment_dict[segment_name]:
             new_dict["name"] = segment_name
             new_dict["id"] = segment_dict[segment_name]["id"]
-            segment_description = None
-            try:
-                segment_description = segment_dict[segment_name]["description"]
-            except:
-                return None, {"message":"ERROR: Please sort Yahoo Taxonomy by Segment Name!"}
-            new_dict["description"] = segment_description
+            new_dict["description"] = segment_dict[segment_name]["description"]
             new_dict["gdpr_mode"] = GDPR_MODE
             new_dict["type"] = "SEGMENT"
             new_dict["targetable"] = True
@@ -219,9 +215,10 @@ def format_segment_json(segment_dict):
         if "subTaxonomy" in segment_dict[segment_name]:
             new_dict["subTaxonomy"] = format_segment_json(segment_dict[segment_name]["subTaxonomy"])
 
+        print("NEW DICT: {}".format(new_dict))
         data.append(new_dict)
 
-    return data, None
+    return data
 
 def read_file_to_add_segments(file_path):
     able_to_upload = True
@@ -253,14 +250,17 @@ def read_file_to_add_segments(file_path):
 
         segment_dict = split_segments_to_add(segment_dict, segment_name_split, segment_id, segment_description, private_client_id)
     
-    data, error = format_segment_json(segment_dict)
-    if not error is None:
-        return error
+    data = None
+    try:
+        data = format_segment_json(segment_dict)
+    except:
+        return {"message": "ERROR: Please sort Yahoo taxonomy by Segment Name in desc order before uploading"}
 
     with open (METADATA_FILE, 'w') as fp:
         json.dump(METADATA, fp)
 
     with open (DATA_FILE, 'w') as fp:
+        # print(data)
         json.dump(data, fp)
 
     files = {'metadata':open(METADATA_FILE), 'data':open(DATA_FILE)}
