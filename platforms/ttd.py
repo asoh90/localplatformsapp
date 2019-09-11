@@ -30,7 +30,6 @@ EYEOTA_BRAND_ID = "fz867ve"
 # Parent Provider ID to ignore (i.e. not append to child name)
 TEMP_PROVIDER_ID_TO_IGNORE = ['', '1', 'ROOT', 'None']
 
-
 # callAPI function will decide what function in ttd to call. platform_manager.py will call this function 
 # if platform selected is "The Trade Desk"
 def callAPI(function, file_path):
@@ -263,6 +262,7 @@ def read_file_to_retrieve_batch_id_status(file_path):
 
 def read_file_to_add_or_edit_custom_segments(file_path, function):
     read_df = pd.read_excel(file_path, sheet_name=SHEET_NAME, skiprows=[1])
+    print(file_path)
 
     rates_created_list = {}
 
@@ -275,12 +275,19 @@ def read_file_to_add_or_edit_custom_segments(file_path, function):
     seat_id_list = read_df['Seat ID']
     price_list = read_df['Price']
     price_type_list = read_df['Price Type']
+    data_provider_list = []
+    segment_full_path_list = []
+    partner_name_list = []
+    ttd_account_manager_list = []
+    date_list = []
     output_list = []
     rates_output_list = []
 
     rates_output_dict = {}
     number_of_segments = len(segment_id_list)
     rates_to_push_list = []
+
+    full_path_dict = {"bumcust":"Bombora > Custom", "eyecustomseg":"Custom Segment"}
 
     auth_code = authenticate()
     if (auth_code == None):
@@ -296,6 +303,24 @@ def read_file_to_add_or_edit_custom_segments(file_path, function):
         seat_id = seat_id_list[row_num]
         price = price_list[row_num]
         price_type = price_type_list[row_num]
+
+        full_path_keys = full_path_dict.keys()
+        
+        # Gets segment full path
+        if parent_segment_id in full_path_keys:
+            parent_segment_path = full_path_dict[parent_segment_id]
+            segment_full_path = "{} > {}".format(parent_segment_path, segment_name)
+            # Adds the current segment to the full path dict
+            full_path_dict[segment_id] = segment_full_path
+            print("Segment Full Path: {}".format(segment_full_path))
+            segment_full_path_list.append(segment_full_path)
+        else:
+            segment_full_path_list.append("Error!!! Parent Segment ID Not Found!!")
+
+        data_provider_list.append("eyeota")
+        partner_name_list.append(None)
+        ttd_account_manager_list.append(None)
+        date_list.append(None)
 
         output = add_or_edit(auth_code, segment_id, parent_segment_id, segment_name, buyable, segment_description, function)
         if "api_error" in output:
@@ -337,15 +362,20 @@ def read_file_to_add_or_edit_custom_segments(file_path, function):
         loop_counter += 1
 
     write_df = pd.DataFrame({
-                                "Segment ID":segment_id_list,
+                                "Data Provider ID": data_provider_list,
+                                "Segment ID": segment_id_list,
                                 "Parent Segment ID": parent_segment_id_list,
                                 "Segment Name": segment_name_list,
+                                "Segment Description": segment_description_list,
                                 "Buyable": buyable_list,
-                                "Description": segment_description_list,
-                                "Brand": brand_list,
-                                "Seat ID": seat_id_list,
-                                "Price": price_list,
+                                "Segment Full Path": segment_full_path_list,
+                                "CPM": price_list,
+                                "Partner ID": seat_id_list,
+                                "Partner Name": partner_name_list,
+                                "TTD Account Manager": ttd_account_manager_list,
+                                "Campaign Live Date": date_list,
                                 "Price Type": price_type_list,
+                                "Brand": brand_list,
                                 "Output": output_list,
                                 "Rates Output": rates_output_list
                             })
