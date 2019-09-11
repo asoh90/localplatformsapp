@@ -261,8 +261,8 @@ def read_file_to_retrieve_batch_id_status(file_path):
     return write_excel.write(write_df, "DONOTUPLOAD_The_Trade_Desk_BatchId_Status")
 
 def read_file_to_add_or_edit_custom_segments(file_path, function):
+    file_name = file_path[7:len(file_path)-5]
     read_df = pd.read_excel(file_path, sheet_name=SHEET_NAME, skiprows=[1])
-    print(file_path)
 
     rates_created_list = {}
 
@@ -380,7 +380,7 @@ def read_file_to_add_or_edit_custom_segments(file_path, function):
                                 "Rates Output": rates_output_list
                             })
 
-    return write_excel.write(write_df, "DONOTUPLOAD_The_Trade_Desk_" + function)
+    return write_excel.write(write_df, "DONOTUPLOAD_The_Trade_Desk_{}_{}".format(function, file_name))
 
 # Add function returns a json format for each call, to be appended to the results before processJsonOutput
 def add_or_edit(auth_code, provider_element_id, parent_element_id, display_name, buyable, description, function):
@@ -460,7 +460,6 @@ def retrieve_partner_rates(auth_code, brand, partner_id):
     except:
         print("Unidentified error retrieving partner data rates")
         return {"api_error": "Unidentified error retrieving partner data rates"}
-
 
 def read_file_to_retrieve_partner_rates(file_path):
     read_df = pd.read_excel(file_path, sheet_name=SHEET_NAME, skiprows=[1])
@@ -583,7 +582,6 @@ def add_rate(auth_code, rates_to_push_list):
             return output_json_data["BatchId"]
         else:
             return output_json_data
-
     except:
         print("Unidentified error with Rates API")
         return {"api_error":"Unidentified error with Rates API"}
