@@ -52,18 +52,25 @@ def callAPI(function, file_path):
             return query_output
         
         output = processJsonOutput(query_output, "query")
-    elif function == "Edit Custom Segment Rates":
-        output = read_file_to_edit_custom_segment_rates(file_path)
-    elif function == "Retrieve Partner Rates":
-        output = read_file_to_retrieve_partner_rates(file_path)
-    elif function == "Retrieve Batch Status":
-        output = read_file_to_retrieve_batch_id_status(file_path)
     else:
-        if function == "Add Custom Segments":
-            function = 'Add'
-        elif function == "Edit Custom Segments":
-            function = 'Edit'
-        output = read_file_to_add_or_edit_custom_segments(file_path, function)
+        # Check if SHEET_NAME exists in uploaded file
+        try:
+            read_df = pd.read_excel(file_path, sheet_name=SHEET_NAME, skiprows=[1])
+        except:
+            return{'message':"ERROR: Unable to find sheet name: {}".format(SHEET_NAME)}
+
+        if function == "Edit Custom Segment Rates":
+            output = read_file_to_edit_custom_segment_rates(file_path)
+        elif function == "Retrieve Partner Rates":
+            output = read_file_to_retrieve_partner_rates(file_path)
+        elif function == "Retrieve Batch Status":
+            output = read_file_to_retrieve_batch_id_status(file_path)
+        else:
+            if function == "Add Custom Segments":
+                function = 'Add'
+            elif function == "Edit Custom Segments":
+                function = 'Edit'
+            output = read_file_to_add_or_edit_custom_segments(file_path, function)
 
     return output
 
