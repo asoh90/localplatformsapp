@@ -75,6 +75,8 @@ def callAPI(platform, function, file_path):
 
     if function == "Query All Segments":
         output = query_all_segments()
+    elif function == "Query Subscriber Contacts":
+        output = get_all_subscriber_contacts()
     else:
         # Check if SHEET_NAME exists in uploaded file
         try:
@@ -86,8 +88,6 @@ def callAPI(platform, function, file_path):
             output = read_all_to_add_segments(file_path)
         elif function == "Edit Segments":
             output = read_file_to_edit_segments(file_path)
-        elif function == "Query Subscriber Contacts":
-            output = get_all_subscriber_contacts()
         elif function == "Get Data Source Uniques":
             output = read_all_to_get_uniques_report(file_path)
     
