@@ -221,7 +221,7 @@ def format_segment_json(segment_dict):
         if "subTaxonomy" in segment_dict[segment_name]:
             new_dict["subTaxonomy"] = format_segment_json(segment_dict[segment_name]["subTaxonomy"])
 
-        print("NEW DICT: {}".format(new_dict))
+        # print("NEW DICT: {}".format(new_dict))
         data.append(new_dict)
 
     return data
