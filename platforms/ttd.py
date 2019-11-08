@@ -60,7 +60,7 @@ def callAPI(function, file_path):
             return{'message':"ERROR: Unable to find sheet name: {}".format(SHEET_NAME)}
 
         if function == "Edit Segment Rates":
-            output = read_file_to_edit_custom_segment_rates(file_path)
+            output = read_file_to_edit_segment_rates(file_path)
         elif function == "Retrieve Partner Rates":
             output = read_file_to_retrieve_partner_rates(file_path)
         elif function == "Retrieve Batch Status":
@@ -70,7 +70,7 @@ def callAPI(function, file_path):
                 function = 'Add'
             elif function == "Edit Segments":
                 function = 'Edit'
-            output = read_file_to_add_or_edit_custom_segments(file_path, function)
+            output = read_file_to_add_or_edit_segments(file_path, function)
 
     return output
 
@@ -267,7 +267,7 @@ def read_file_to_retrieve_batch_id_status(file_path):
 
     return write_excel.write(write_df, "DONOTUPLOAD_The_Trade_Desk_BatchId_Status")
 
-def read_file_to_add_or_edit_custom_segments(file_path, function):
+def read_file_to_add_or_edit_segments(file_path, function):
     file_name = file_path[7:len(file_path)-5]
     read_df = pd.read_excel(file_path, sheet_name=SHEET_NAME, skiprows=[1])
 
@@ -599,7 +599,7 @@ def add_rate(auth_code, rates_to_push_list):
         print("Unidentified error with Rates API")
         return {"api_error":"Unidentified error with Rates API"}
 
-def read_file_to_edit_custom_segment_rates(file_path):
+def read_file_to_edit_segment_rates(file_path):
     read_df = pd.read_excel(file_path, sheet_name=SHEET_NAME, skiprows=[1])
 
     segment_id_list = read_df["Segment ID"]
