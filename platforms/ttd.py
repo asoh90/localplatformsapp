@@ -59,16 +59,16 @@ def callAPI(function, file_path):
         except:
             return{'message':"ERROR: Unable to find sheet name: {}".format(SHEET_NAME)}
 
-        if function == "Edit Custom Segment Rates":
+        if function == "Edit Segment Rates":
             output = read_file_to_edit_custom_segment_rates(file_path)
         elif function == "Retrieve Partner Rates":
             output = read_file_to_retrieve_partner_rates(file_path)
         elif function == "Retrieve Batch Status":
             output = read_file_to_retrieve_batch_id_status(file_path)
         else:
-            if function == "Add Custom Segments":
+            if function == "Add Segments":
                 function = 'Add'
-            elif function == "Edit Custom Segments":
+            elif function == "Edit Segments":
                 function = 'Edit'
             output = read_file_to_add_or_edit_custom_segments(file_path, function)
 
