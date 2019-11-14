@@ -18,10 +18,10 @@ import requests
 from functools import wraps
 
 # Google SSO Credentials
-# GOOGLE_CLIENT_ID = '696774976262-rg17k58uiani498vqkjdekfdunh7c6j3.apps.googleusercontent.com'
-# GOOGLE_CLIENT_SECRET = 'ceM7QWDLzwA-7xJ0qalIPweP'
-# REDIRECT_URI = "/oauth2callback"
-# DEBUG = True
+GOOGLE_CLIENT_ID = '696774976262-rg17k58uiani498vqkjdekfdunh7c6j3.apps.googleusercontent.com'
+GOOGLE_CLIENT_SECRET = 'ceM7QWDLzwA-7xJ0qalIPweP'
+REDIRECT_URI = "/oauth2callback"
+DEBUG = True
 
 app = Flask(__name__)
 # app.debug = DEBUG
@@ -136,14 +136,14 @@ def index():
 #     else:
 #         return None
 
-# @app.route(REDIRECT_URI)
+@app.route(REDIRECT_URI)
 # @google.authorized_handler
-# def authorized(resp):
-#     # print("authorized: {}".format(resp))
-#     refresh_token = resp['refresh_token']
-#     access_token = refresh(refresh_token)
-#     session['access_token'] = access_token, ''
-#     return redirect(url_for('index'))
+def authorized(resp):
+    # print("authorized: {}".format(resp))
+    refresh_token = resp['refresh_token']
+    access_token = refresh(refresh_token)
+    session['access_token'] = access_token, ''
+    return redirect(url_for('index'))
 
 # @google.tokengetter
 # def get_access_token():
@@ -154,17 +154,17 @@ def index():
 def home():
     # delete all files in upload and to_return folders
     delete_upload_and_to_return_files()
-    # credentials = app.config.get('credentials')
-    # if credentials == None:
-    #     render_template('error.html')
+    credentials = app.config.get('credentials')
+    if credentials == None:
+        render_template('error.html')
     
-    # variables.read_credentials(credentials)
+    variables.read_credentials(credentials)
 
     form = SelectPlatformForm()
     # if form.validate_on_submit():
     #     return redirect(url_for("function", platform=form.platform.data))
     # platform_functions = variables.get_platform_functions(session["email"])
-    platform_functions = variables.get_platform_functions("asoh@eyeota.com")
+    platform_functions = variables.get_platform_functions("data@eyeota.com")
     return render_template('home.html', form=form, platform_functions=platform_functions)
 
 
