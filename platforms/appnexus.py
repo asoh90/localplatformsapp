@@ -1177,7 +1177,7 @@ def read_file_to_retrieve_buyer_member_segments(file_path):
 
     for buyer_member_id in unique_buyer_id_list:
         try:
-            buyer_member_segments = retrieve_segments_for_member(buyer_member_id)["segment_list"]+
+            buyer_member_segments = retrieve_segments_for_member(buyer_member_id)["segment_list"]
         
             for buyer_member_segment in buyer_member_segments:
                 write_buyer_member_id_list.append(buyer_member_id)
