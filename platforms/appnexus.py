@@ -936,8 +936,8 @@ def add_private_segments(buyer_member_id, buyer_member_private_segment_list):
     return buyer_member_private_segment_list
 
 def retrieve_segments_for_member(buyer_member_id):
-    buyer_member_id = int(buyer_member_id)
     try:
+        buyer_member_id = int(buyer_member_id)
         request_to_send = requests.get(url_buyer_member_data_sharing,
                                             headers={
                                                 'Content-Type':'application/json',
@@ -956,7 +956,10 @@ def retrieve_segments_for_member(buyer_member_id):
         print("Record ID: {}".format(record_id))
         return {"record_id":record_id,"segment_list":segment_list}
     except Exception:
-        print(retrieve_response["response"]["error"])
+        try:
+            print(retrieve_response["response"]["error"])
+        except:
+            pass
 
 # overwrite segment ids for specific record_id
 def add_segment_id_to_buyer(record_id, new_segment_id_list):
@@ -1174,7 +1177,7 @@ def read_file_to_retrieve_buyer_member_segments(file_path):
 
     for buyer_member_id in unique_buyer_id_list:
         try:
-            buyer_member_segments = retrieve_segments_for_member(buyer_member_id)["segment_list"]
+            buyer_member_segments = retrieve_segments_for_member(buyer_member_id)["segment_list"]+
         
             for buyer_member_segment in buyer_member_segments:
                 write_buyer_member_id_list.append(buyer_member_id)
