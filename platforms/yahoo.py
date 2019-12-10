@@ -246,9 +246,10 @@ def read_file_to_add_segments(file_path):
         segment_id = segment_id_list[row_num]
         segment_name = segment_name_list[row_num]
         segment_name_split = segment_name.split(" - ")
-
+        
+        # ensure each segment layer is within 64 characters
         for segment_name_split_each_layer in segment_name_split:
-            if len(segment_name_split_each_layer) > 64:
+            if len(segment_name_split_each_layer) > 6:
                 return {"message":"ERROR: Please ensure each segment layer is within 64 characters long"}
 
         segment_description = segment_description_list[row_num]
