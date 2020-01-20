@@ -6,6 +6,7 @@ import datetime
 from datetime import datetime, timedelta
 import json
 import os
+import time
 
 AUTH_URL = "https://dmp-api.adform.com/v1/token"
 API_URL = "https://api.adform.com/v1/dmp/"
@@ -294,7 +295,6 @@ def add_segment(access_token, data_provider_id, region, category_id, ref_id, fee
     print("Add Segment URL: {}".format(add_segment_request.url))
 
     add_segment_json = add_segment_request.json()
-    # print(add_segment_json)
     if add_segment_request.status_code == 201:
         segment_id = add_segment_json["id"]
         return 201, segment_id
@@ -414,7 +414,13 @@ def read_file_to_add_segments(file_path):
     write_add_segment_result_list = []
 
     row_counter = 0
+    sleep_counter = 0
     for segment_name in segment_name_list:
+        if sleep_counter == 41:
+            print("Sleep 60 seconds to avoid limit")
+            time.sleep(60)
+            sleep_counter = 0
+
         region = region_list[row_counter]
         data_provider_id = "67"
         if region.lower() == "apac":
@@ -506,6 +512,7 @@ def read_file_to_add_segments(file_path):
                         segment_id_list.append(None)
                         write_add_segment_result_list.append(output)
 
+        sleep_counter += 1
         row_counter += 1
 
     os.remove(file_path)
