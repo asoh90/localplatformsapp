@@ -287,9 +287,9 @@ def read_file_to_add_segments(file_path):
     query_response = requests_to_send.json()
     refresh_segments_status_code = requests_to_send.status_code
 
-    # os.remove(file_path)
-    # os.remove(METADATA_FILE)
-    # os.remove(DATA_FILE)
+    os.remove(file_path)
+    os.remove(METADATA_FILE)
+    os.remove(DATA_FILE)
 
     if refresh_segments_status_code == 202:
         return {"message": "File has been uploaded. Please wait 1 hour to retrieve the updated segments."}
