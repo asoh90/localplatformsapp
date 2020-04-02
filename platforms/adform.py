@@ -11,7 +11,7 @@ import time
 AUTH_URL = "https://dmp-api.adform.com/v1/token"
 API_URL = "https://api.adform.com/v1/dmp/"
 
-SHEET_NAME = "Adform2"
+SHEET_NAME = "Adform"
 
 # Login credentials
 username = None
