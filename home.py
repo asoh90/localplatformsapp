@@ -25,7 +25,7 @@ DEBUG = True
 
 app = Flask(__name__)
 # app.debug = DEBUG
-oauth = OAuth()
+# oauth = OAuth()
 
 app.config['SECRET_KEY'] = variables.SECRET_KEY
 app.config["UPLOAD_FOLDER"] = variables.UPLOAD_FOLDER
@@ -33,111 +33,111 @@ RETURN_FOLDER = variables.RETURN_FOLDER
 UPLOAD_FOLDER = variables.UPLOAD_FOLDER
 
 # access token by default expires in 1 hour: https://stackoverflow.com/questions/13851157/oauth2-and-google-api-access-token-expiration-time
-google = oauth.remote_app('google',
-                          base_url='https://www.google.com/accounts/',
-                          authorize_url='https://accounts.google.com/o/oauth2/auth',
-                          request_token_url=None,
-                          request_token_params={'scope': 'https://www.googleapis.com/auth/userinfo.email',
-                                                'response_type': 'code',
-                                                'prompt':'consent',  # this field allows refresh_token to be generated every time
-                                                'access_type':'offline'},
-                          access_token_url='https://accounts.google.com/o/oauth2/token',
-                          access_token_method='POST',
-                          access_token_params={'grant_type': 'authorization_code'},
-                          consumer_key=GOOGLE_CLIENT_ID,
-                          consumer_secret=GOOGLE_CLIENT_SECRET)
+# google = oauth.remote_app('google',
+#                           base_url='https://www.google.com/accounts/',
+#                           authorize_url='https://accounts.google.com/o/oauth2/auth',
+#                           request_token_url=None,
+#                           request_token_params={'scope': 'https://www.googleapis.com/auth/userinfo.email',
+#                                                 'response_type': 'code',
+#                                                 'prompt':'consent',  # this field allows refresh_token to be generated every time
+#                                                 'access_type':'offline'},
+#                           access_token_url='https://accounts.google.com/o/oauth2/token',
+#                           access_token_method='POST',
+#                           access_token_params={'grant_type': 'authorization_code'},
+#                           consumer_key=GOOGLE_CLIENT_ID,
+#                           consumer_secret=GOOGLE_CLIENT_SECRET)
 
 # This wrapper is to check for authentication every page wrapped
-def authenticate(f):
-    @wraps(f)
-    def wrap(*args, **kwargs):
-        # access_token = session.get('access_token')
-        # # print("ACCESS TOKEN: {}".format(access_token))
-        # if access_token is None:
-        #     return redirect(url_for('login'))
-        # access_token = access_token[0]
+# def authenticate(f):
+#     @wraps(f)
+#     def wrap(*args, **kwargs):
+#         # access_token = session.get('access_token')
+#         # # print("ACCESS TOKEN: {}".format(access_token))
+#         # if access_token is None:
+#         #     return redirect(url_for('login'))
+#         # access_token = access_token[0]
         
-        # headers = {'Authorization': 'OAuth '+ access_token}
-        # req = Request('https://www.googleapis.com/oauth2/v1/userinfo',
-        #             None, headers)
-        # try:
-        #     res = urlopen(req)
-        # except URLError as e:
-        #     if e.code == 401:
-        #         # Unauthorized - bad token
-        #         session.pop('access_token', None)
-        #         return redirect(url_for('login'))
+#         # headers = {'Authorization': 'OAuth '+ access_token}
+#         # req = Request('https://www.googleapis.com/oauth2/v1/userinfo',
+#         #             None, headers)
+#         # try:
+#         #     res = urlopen(req)
+#         # except URLError as e:
+#         #     if e.code == 401:
+#         #         # Unauthorized - bad token
+#         #         session.pop('access_token', None)
+#         #         return redirect(url_for('login'))
 
-        # login_response = res.read().decode('utf-8')
-        # login_dict = json.loads(login_response)
-        # session["email"] = login_dict["email"]
+#         # login_response = res.read().decode('utf-8')
+#         # login_dict = json.loads(login_response)
+#         # session["email"] = login_dict["email"]
 
-        check_output = check_login()
-        # if check_output == None:
-        #     return redirect(url_for('home'))
-        # else:
-        #     return check_output
-        if not check_output is None:
-            return check_output
-        else:
-            return f(*args, **kwargs)
-    return wrap
+#         check_output = check_login()
+#         # if check_output == None:
+#         #     return redirect(url_for('home'))
+#         # else:
+#         #     return check_output
+#         if not check_output is None:
+#             return check_output
+#         else:
+#             return f(*args, **kwargs)
+#     return wrap
 
 @app.route("/")
 def index():
     return redirect(url_for('home'))
 
-def check_login():
-    access_token = session.get('access_token')
-    if access_token is None:
-        return redirect(url_for('login'))
-    access_token = access_token[0]
+# def check_login():
+#     access_token = session.get('access_token')
+#     if access_token is None:
+#         return redirect(url_for('login'))
+#     access_token = access_token[0]
     
-    headers = {'Authorization': 'OAuth '+ access_token}
-    req = Request('https://www.googleapis.com/oauth2/v1/userinfo',
-                  None, headers)
-    try:
-        res = urlopen(req)
-    except URLError as e:
-        if e.code == 401:
-            # Unauthorized - bad token
-            session.pop('access_token', None)
-            return redirect(url_for('login'))
+#     headers = {'Authorization': 'OAuth '+ access_token}
+#     req = Request('https://www.googleapis.com/oauth2/v1/userinfo',
+#                   None, headers)
+#     try:
+#         res = urlopen(req)
+#     except URLError as e:
+#         if e.code == 401:
+#             # Unauthorized - bad token
+#             session.pop('access_token', None)
+#             return redirect(url_for('login'))
 
-    login_response = res.read().decode('utf-8')
-    login_dict = json.loads(login_response)
-    session["email"] = login_dict["email"]
-    return None
+#     login_response = res.read().decode('utf-8')
+#     login_dict = json.loads(login_response)
+#     session["email"] = login_dict["email"]
+#     return None
  
-@app.route('/login')
-def login():
-    callback=url_for('authorized', _external=True)
-    return google.authorize(callback=callback)
+# @app.route('/login')
+# def login():
+#     callback=url_for('authorized', _external=True)
+#     return google.authorize(callback=callback)
 
 # get access token with refresh_token
-def refresh(refresh_token):
-    params = {
-                'grant_type':'refresh_token',
-                'client_id':GOOGLE_CLIENT_ID,
-                'client_secret':GOOGLE_CLIENT_SECRET,
-                'refresh_token':refresh_token
-            }
+# def refresh(refresh_token):
+#     params = {
+#                 'grant_type':'refresh_token',
+#                 'client_id':GOOGLE_CLIENT_ID,
+#                 'client_secret':GOOGLE_CLIENT_SECRET,
+#                 'refresh_token':refresh_token
+#             }
     
-    authorization_url = 'https://www.googleapis.com/oauth2/v4/token'
+#     authorization_url = 'https://www.googleapis.com/oauth2/v4/token'
 
-    refresh_request = requests.post(authorization_url, data=params)
+#     refresh_request = requests.post(authorization_url, data=params)
 
-    # print(refresh_request.json())
+#     # print(refresh_request.json())
 
-    if refresh_request.ok:
-        access_token = refresh_request.json()['access_token']
-        # print("refresh access_token: {}".format(access_token))
-        return access_token
-    else:
-        return None
+#     if refresh_request.ok:
+#         access_token = refresh_request.json()['access_token']
+#         # print("refresh access_token: {}".format(access_token))
+#         return access_token
+#     else:
+#         return None
 
 @app.route(REDIRECT_URI)
-@google.authorized_handler
+# @google.authorized_handler
 def authorized(resp):
     # print("authorized: {}".format(resp))
     refresh_token = resp['refresh_token']
@@ -145,12 +145,12 @@ def authorized(resp):
     session['access_token'] = access_token, ''
     return redirect(url_for('index'))
 
-@google.tokengetter
-def get_access_token():
-    return session.get('access_token')
+# @google.tokengetter
+# def get_access_token():
+#     return session.get('access_token')
 
 @app.route("/home", methods=['GET','POST'])
-@authenticate
+# @authenticate
 def home():
     # delete all files in upload and to_return folders
     delete_upload_and_to_return_files()
@@ -163,8 +163,8 @@ def home():
     form = SelectPlatformForm()
     # if form.validate_on_submit():
     #     return redirect(url_for("function", platform=form.platform.data))
-    platform_functions = variables.get_platform_functions(session["email"])
-    # platform_functions = variables.get_platform_functions("data@eyeota.com")
+    # platform_functions = variables.get_platform_functions(session["email"])
+    platform_functions = variables.get_platform_functions("data@eyeota.com")
     return render_template('home.html', form=form, platform_functions=platform_functions)
 
 
@@ -175,7 +175,7 @@ def home():
 
 # when file gets dropped into the dropzone, or "Query" function is selected, run this
 @app.route("/process", methods=['GET','POST'])
-@authenticate
+# @authenticate
 def process():
     # get fields
     platform = request.form['platform']
@@ -203,7 +203,7 @@ def process():
         return output["message"]
 
 @app.route("/downloaduploadtemplate", methods=['GET','POST'])
-@authenticate
+# @authenticate
 def download_upload_template():
     return send_file("UploadTemplate.xlsx", as_attachment=True, attachment_filename="UploadTemplate.xlsx")
 
@@ -242,3 +242,4 @@ except Exception as ex:
 
 #     form = SelectFunctionForm()
 #     return render_template('function.html', title="Select Function", platform=platform_selected)
+# End Server
