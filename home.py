@@ -21,7 +21,7 @@ from functools import wraps
 GOOGLE_CLIENT_ID = '696774976262-rg17k58uiani498vqkjdekfdunh7c6j3.apps.googleusercontent.com'
 GOOGLE_CLIENT_SECRET = 'ceM7QWDLzwA-7xJ0qalIPweP'
 REDIRECT_URI = "/oauth2callback"
-DEBUG = False
+DEBUG = True
 
 app = Flask(__name__)
 # app.debug = DEBUG
