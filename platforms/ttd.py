@@ -536,10 +536,10 @@ def read_file_to_retrieve_custom_segments(file_path):
 
     segment_id_list = read_df["Segment ID"]
     partner_id_list = read_df["Partner ID"]
+    brand_id_list = read_df["Brand"]
     advertiser_id_list = read_df["Advertiser ID"]
 
     write_provider_id_list = []
-    write_brand_list = []
     write_parent_id_list = []
     write_segment_name_list = []
     write_segment_description_list = []
@@ -589,11 +589,12 @@ def read_file_to_retrieve_custom_segments(file_path):
             pass
         partner_id = partner_id_list[row_num]
         advertiser_id = advertiser_id_list[row_num]
+        brand_id = brand_id_list[row_num]
         str_segment_id = str(segment_id)
 
         # indicate if there is already an error for output
         retrieve_output = False
-        rates_dict = get_segments_rates(auth_code, partner_id, advertiser_id, segment_id, rates_dict)
+        rates_dict = get_segments_rates(auth_code, brand_id, partner_id, advertiser_id, segment_id, rates_dict)
         
         # check if segment details can be found
         try:
@@ -621,7 +622,6 @@ def read_file_to_retrieve_custom_segments(file_path):
         while not rate_found:
             try:
                 segment_rates = rates_dict[str_segment_id]
-                write_brand_list.append(segment_rates["Brand"])
                 write_cpm_list.append(segment_rates["CPM_Price"])
                 write_currency_list.append(segment_rates["CPM_CurrencyCode"])
                 write_percent_of_media_list.append(segment_rates["PercentOfMediaCost"])
@@ -635,10 +635,9 @@ def read_file_to_retrieve_custom_segments(file_path):
                 try:
                     str_segment_id = segment_dict[str_segment_id]["parent_element_id"]
                     if not str_segment_id in rates_dict:
-                        rates_dict = get_segments_rates(auth_code, partner_id, advertiser_id, str_segment_id, rates_dict)
+                        rates_dict = get_segments_rates(auth_code, brand_id, partner_id, advertiser_id, str_segment_id, rates_dict)
                 # no more parent_id
                 except:
-                    write_brand_list.append(None)
                     write_cpm_list.append(None)
                     write_currency_list.append(None)
                     write_percent_of_media_list.append(None)
@@ -656,7 +655,7 @@ def read_file_to_retrieve_custom_segments(file_path):
                                 "Segment Name": write_segment_name_list,
                                 "Segment Description": write_segment_description_list,
                                 "Buyable": write_buyable_list,
-                                "Brand":write_brand_list,
+                                "Brand":brand_id_list,
                                 "Segment Full Name": write_segment_full_name_list,
                                 "Partner ID": partner_id_list,
                                 "Advertiser ID": advertiser_id_list,
@@ -769,23 +768,37 @@ def get_full_segment_name(parent_segment_id, child_segment_name, segment_diction
         parent_segment_id = segment_dictionary[parent_segment_id]["parent_element_id"]
     return child_segment_name
 
-def get_segments_rates(auth_code, partner_id, advertiser_id, segment_id, rates_dict):
+def get_segments_rates(auth_code, brand_id, partner_id, advertiser_id, segment_id, rates_dict):
     if rates_dict is None:
         rates_dict = {}
 
+    if brand_id is None:
     # get all Eyeota public taxonomy rates
-    result_count = 1
-    page_start_index = 0
-    while result_count > 0:
-        result_count, rates_dict = get_rates(auth_code, EYEOTA_BRAND_ID, page_start_index, partner_id, advertiser_id, rates_dict, segment_id)
-        page_start_index += 1
+        result_count = 1
+        page_start_index = 0
+        while result_count > 0:
+            result_count, rates_dict = get_rates(auth_code, EYEOTA_BRAND_ID, page_start_index, partner_id, advertiser_id, rates_dict, segment_id)
+            page_start_index += 1
 
-    # get all Bombora public taxonomy rates
-    result_count = 1
-    page_start_index = 0
-    while result_count > 0:
-        result_count, rates_dict = get_rates(auth_code, BOMBORA_BRAND_ID, page_start_index, partner_id, advertiser_id, rates_dict, segment_id)
-        page_start_index += 1
+        # get all Bombora public taxonomy rates
+        result_count = 1
+        page_start_index = 0
+        while result_count > 0:
+            result_count, rates_dict = get_rates(auth_code, BOMBORA_BRAND_ID, page_start_index, partner_id, advertiser_id, rates_dict, segment_id)
+            page_start_index += 1
+    else:
+        # get all Eyeota public taxonomy rates
+        result_count = 1
+        page_start_index = 0
+
+        if brand_id.lower() == "eyeota":
+            brand_id = EYEOTA_BRAND_ID
+        elif brand_id.lower() == "bombora":
+            brand_id = BOMBORA_BRAND_ID
+
+        while result_count > 0:
+            result_count, rates_dict = get_rates(auth_code, brand_id, page_start_index, partner_id, advertiser_id, rates_dict, segment_id)
+            page_start_index += 1
 
     return rates_dict
 
@@ -910,7 +923,7 @@ def processJsonOutput(auth_code, json_output, function):
     write_percent_of_media_rate = []
 
     segment_dictionary = store_segment_in_dict(json_output)
-    rates_dict = get_segments_rates(auth_code, None, None, None, None)
+    rates_dict = get_segments_rates(auth_code, None, None, None, None, None)
 
     # Print results
     for row in json_output['Result']:
