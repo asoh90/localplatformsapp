@@ -88,7 +88,7 @@ def get_platform_functions(email):
                                             },
                                 "The Trade Desk": {"level":2,
                                                     "functions":{
-                                                        "Segment":["Add Segments","Edit Segments","Query All Segments", "Retrieve Batch Status", "Retrieve Custom Segments"],
+                                                        "Segment":["Add Segments","Edit Segments","Query All Segments","Query All Segments Names Only", "Retrieve Batch Status", "Retrieve Custom Segments"],
                                                         "Segment Rates":["Edit Segment Rates"]
                                                     }
                                                 },
@@ -127,7 +127,7 @@ def get_platform_functions(email):
                                             "functions":["Query All Segments"]
                                             },
                                 "The Trade Desk": {"level":1,
-                                                    "functions":["Query All Segments"],
+                                                    "functions":["Query All Segments","Query All Segments Names Only"],
                                                 },
                                 "Yahoo":{"level":1,
                                             "functions":["Query All Segments"]

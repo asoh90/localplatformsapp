@@ -60,6 +60,13 @@ def callAPI(function, file_path):
             return query_output
         
         output = processJsonOutput(auth_code, query_output, "query")
+    elif function == "Query All Segments Names Only":
+        auth_code = authenticate()
+        if (auth_code == None):
+            return{'message':"ERROR: getting TTD Auth Code. Please check .sh file if credentials are correct."}
+        return query_all_fullname(auth_code)
+
+
     else:
         # Check if SHEET_NAME exists in uploaded file
         try:
@@ -451,6 +458,46 @@ def read_file_to_add_or_edit_segments(file_path, function):
                             })
 
     return write_excel.write(write_df, "DONOTUPLOAD_The_Trade_Desk_{}_{}".format(function, file_name))
+
+#Query all segments with fullnames only
+def query_all_fullname(auth_code):
+    query_data = get_query_all(auth_code)
+    segment_dict = store_segment_in_dict(query_data)
+
+    provider_id_list = []
+    provider_elementid_list = []
+    parent_elementid_list = []
+    display_name_list = []
+    buyable_list = []
+    description_list = []
+    full_name_list = []
+
+    for row in query_data["Result"]:
+        provider_id_list.append(row["ProviderId"])
+        provider_elementid_list.append(row["ProviderElementId"])
+        parent_elementid_list.append(row["ParentElementId"])
+        display_name_list.append(row["DisplayName"])
+        buyable_list.append(row["Buyable"])
+        description_list.append(row["Description"])
+        
+    for provider_id_counter in range(len(provider_id_list)):
+        parent_element_id = parent_elementid_list[provider_id_counter]
+        display_name = display_name_list[provider_id_counter]
+        full_name = get_full_segment_name(parent_element_id, display_name, segment_dict)
+        full_name_list.append(full_name)
+
+    write_df = pd.DataFrame({
+        "Data Provider Id":provider_id_list,
+        "Segment ID":provider_elementid_list,
+        "Parent Segment ID":parent_elementid_list,
+        "Segment Name":display_name_list,
+        "Segment Description":description_list,
+        "Buyable":buyable_list,
+        "Full Segment Name":full_name_list,
+    })
+
+    return write_excel.write(write_df, "DONOTUPLOAD_The_Trade_Desk_Query_All_Segments_Full_Names_Only")
+
 
 # Add function returns a json format for each call, to be appended to the results before processJsonOutput
 def add_or_edit(auth_code, provider_element_id, parent_element_id, display_name, buyable, description, function):
