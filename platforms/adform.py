@@ -246,20 +246,20 @@ def get_all_segments():
     return write_excel.write(write_df, "DONOTUPLOAD_Adform_query_all")
 
 # Add segment functions
-def add_category(access_token, category_name, data_provider_id, region, parent_category_id):
+def add_category(access_token, category_name, data_provider_id, account, parent_category_id):
     add_category_json = None
     if parent_category_id == None:
         add_category_json = {
                                 "Name": category_name,
                                 "DataProviderId": data_provider_id,
-                                "Regions": []
+                                "Accounts": []
                             }
     else:
         add_category_json = {
                                 "Name": category_name,
                                 "DataProviderId": data_provider_id,
                                 "ParentId": parent_category_id,
-                                "Regions": []
+                                "Accounts": []
                             }
 
     add_category_request = requests.post(CATEGORIES_URL,
@@ -276,7 +276,7 @@ def add_category(access_token, category_name, data_provider_id, region, parent_c
     else:
         return None
 
-def add_segment(access_token, data_provider_id, region, category_id, ref_id, fee, ttl, name, status):
+def add_segment(access_token, data_provider_id, account, category_id, ref_id, fee, ttl, name, status):
     add_segment_request = requests.post(SEGMENTS_URL,
                             headers={
                                 "Content-Type":"application/json",
@@ -318,7 +318,7 @@ def delete_segment(access_token, segment_id):
         except:
             return "Error {}".format(delete_segment_request.status_code)
 
-def edit_segment(access_token, segment_id, data_provider_id, region, category_id, ref_id, fee, ttl, name, status):
+def edit_segment(access_token, segment_id, data_provider_id, account, category_id, ref_id, fee, ttl, name, status):
     edit_segment_request = requests.put(SEGMENTS_URL + "/" + str(segment_id),
                             headers={
                                 "Content-Type":"application/json",
@@ -405,7 +405,7 @@ def read_file_to_add_segments(file_path):
 
     ref_id_list = read_df["Ref ID"]
     segment_name_list = read_df["Segment Name"]
-    region_list = read_df["Region"]
+    account_list = read_df["Account"]
     fee_list = read_df["Fee"]
     ttl_list = read_df["TTL"]
     status_list = read_df["Status"]
@@ -421,9 +421,9 @@ def read_file_to_add_segments(file_path):
             time.sleep(60)
             sleep_counter = 0
 
-        region = region_list[row_counter]
+        account = account_list[row_counter]
         data_provider_id = "67"
-        if region.lower() == "apac":
+        if account.lower() == "apac":
             data_provider_id = "11399"
 
         status = status_list[row_counter]
@@ -463,7 +463,7 @@ def read_file_to_add_segments(file_path):
                     if category_name_to_check in selected_categories_dict_by_name:
                         temp_parent_category_id = selected_categories_dict_by_name[category_name_to_check]
                     else:
-                        temp_parent_category_id = add_category(access_token, category_part_name, data_provider_id, region, temp_parent_category_id)
+                        temp_parent_category_id = add_category(access_token, category_part_name, data_provider_id, account, temp_parent_category_id)
 
                         if temp_parent_category_id == None:
                             segment_id_list.append(None)
@@ -504,7 +504,7 @@ def read_file_to_add_segments(file_path):
                 status_list[row_counter] = status
 
                 if fee_and_ttl_is_numeric:
-                    status_code, output = add_segment(access_token, data_provider_id, region, category_id, ref_id, fee, ttl, child_segment_name, status)
+                    status_code, output = add_segment(access_token, data_provider_id, account, category_id, ref_id, fee, ttl, child_segment_name, status)
                     if status_code == 201:
                         segment_id_list.append(output)
                         write_add_segment_result_list.append("OK")
@@ -521,7 +521,7 @@ def read_file_to_add_segments(file_path):
 
     # print("Ref ID Length: {}".format(len(ref_id_list)))
     # print("Segment Name Length: {}".format(len(segment_name_list)))
-    # print("Region Length: {}".format(len(region_list)))
+    # print("Account Length: {}".format(len(account_list)))
     # print("Fee Length: {}".format(len(fee_list)))
     # print("TTL Length: {}".format(len(ttl_list)))
     # print("Segment ID Length: {}".format(len(segment_id_list)))
@@ -532,7 +532,7 @@ def read_file_to_add_segments(file_path):
                         "Segment ID":segment_id_list,
                         "Ref ID":ref_id_list,
                         "Segment Name":segment_name_list,
-                        "Region":region_list,
+                        "Account":account_list,
                         "Fee":fee_list,
                         "TTL":ttl_list,
                         "Category Result":write_category_result_list,
@@ -558,7 +558,7 @@ def read_file_to_delete_segments(file_path):
     segment_id_list = read_df["Segment ID"]
     ref_id_list = read_df["Ref ID"]
     segment_name_list = read_df["Segment Name"]
-    region_list = read_df["Region"]
+    account_list = read_df["Account"]
     fee_list = read_df["Fee"]
     ttl_list = read_df["TTL"]
     status_list = read_df["Status"]
@@ -574,7 +574,7 @@ def read_file_to_delete_segments(file_path):
 
     # print("Ref ID Length: {}".format(len(ref_id_list)))
     # print("Segment Name Length: {}".format(len(segment_name_list)))
-    # print("Region Length: {}".format(len(region_list)))
+    # print("Account Length: {}".format(len(account_list)))
     # print("Fee Length: {}".format(len(fee_list)))
     # print("TTL Length: {}".format(len(ttl_list)))
     # print("Segment ID Length: {}".format(len(segment_id_list)))
@@ -585,7 +585,7 @@ def read_file_to_delete_segments(file_path):
                         "Segment ID":segment_id_list,
                         "Ref ID":ref_id_list,
                         "Segment Name":segment_name_list,
-                        "Region":region_list,
+                        "Account":account_list,
                         "Fee":fee_list,
                         "TTL":ttl_list,
                         "Status":status_list,
@@ -611,7 +611,7 @@ def read_file_to_edit_segments(file_path):
     segment_id_list = read_df["Segment ID"]
     ref_id_list = read_df["Ref ID"]
     segment_name_list = read_df["Segment Name"]
-    region_list = read_df["Region"]
+    account_list = read_df["Account"]
     fee_list = read_df["Fee"]
     ttl_list = read_df["TTL"]
     status_list = read_df["Status"]
@@ -623,12 +623,12 @@ def read_file_to_edit_segments(file_path):
     row_counter = 0
     for segment_name in segment_name_list:
         segment_id = segment_id_list[row_counter]
-        region = region_list[row_counter]
+        account = account_list[row_counter]
         status = status_list[row_counter]
         index_of_separator = segment_name.rfind(" - ")
 
         data_provider_id = "67"
-        if region.lower() == "apac":
+        if account.lower() == "apac":
             data_provider_id = "11399"
 
         category_success = True
@@ -665,7 +665,7 @@ def read_file_to_edit_segments(file_path):
                     if category_name_to_check in selected_categories_dict_by_name:
                         temp_parent_category_id = selected_categories_dict_by_name[category_name_to_check]
                     else:
-                        temp_parent_category_id = add_category(access_token, category_part_name, data_provider_id, region, temp_parent_category_id)
+                        temp_parent_category_id = add_category(access_token, category_part_name, data_provider_id, account, temp_parent_category_id)
 
                         if temp_parent_category_id == None:
                             segment_id_list.append(None)
@@ -706,7 +706,7 @@ def read_file_to_edit_segments(file_path):
                 write_status_list.append(status)
 
                 if fee_and_ttl_is_numeric:
-                    status_code, output = edit_segment(access_token, segment_id, data_provider_id, region, category_id, ref_id, fee, ttl, child_segment_name, status)
+                    status_code, output = edit_segment(access_token, segment_id, data_provider_id, account, category_id, ref_id, fee, ttl, child_segment_name, status)
                     if status_code == 200:
                         write_segment_id_list.append(output)
                         write_edit_segment_result_list.append("OK")
@@ -722,7 +722,7 @@ def read_file_to_edit_segments(file_path):
 
     # print("Ref ID Length: {}".format(len(ref_id_list)))
     # print("Segment Name Length: {}".format(len(segment_name_list)))
-    # print("Region Length: {}".format(len(region_list)))
+    # print("Account Length: {}".format(len(account_list)))
     # print("Fee Length: {}".format(len(fee_list)))
     # print("TTL Length: {}".format(len(ttl_list)))
     # print("Segment ID Length: {}".format(len(segment_id_list)))
@@ -733,7 +733,7 @@ def read_file_to_edit_segments(file_path):
                         "Segment ID":write_segment_id_list,
                         "Ref ID":ref_id_list,
                         "Segment Name":segment_name_list,
-                        "Region":region_list,
+                        "Account":account_list,
                         "Fee":fee_list,
                         "TTL":ttl_list,
                         "Status":write_status_list,
@@ -851,89 +851,75 @@ def read_file_to_get_report(file_path, sheet, report_type):
             write_segment_list = []
             write_category_list = []
 
-            data_usage_report_response_67_json = get_data_usage_report(access_token, start_date, end_date, '67')
-            data_usage_report_response_11399_json = get_data_usage_report(access_token, start_date, end_date, '11399')
+            # dictionary to pass the list easily to a function
+            data_usage_dict = {
+                "data_provider_name":write_data_provider_name_list,
+                "advertiser":write_advertiser_list,
+                "advertiserId":write_advertiserId_list,
+                "advertiserCurrency":write_advertiserCurrency_list,
+                "partnerPlatformCurrency":write_partnerPlatformCurrency_list,
+                "country":write_country_list,
+                "countryId":write_countryId_list,
+                "segmentsGroup":write_segmentsGroup_list,
+                "segmentsGroupId":write_segmentsGroupId_list,
+                "segmentIds":write_segmentIds_list,
+                "segmentRefIds":write_segmentRefIds_list,
+                "impressions":write_impressions_list,
+                "revenue":write_revenue_list,
+                "revenueInAdvertiserCurrency":write_revenueInAdvertiserCurrency_list,
+                "revenueInPartnerPlatformCurrency":write_revenueInPartnerPlatformCurrency_list,
+                "revenueInEuro":write_revenueInEuro_list,
+                "dataProviderRevenue":write_dataProviderRevenue_list,
+                "dataProviderRevenueInAdvertiserCurrency":write_dataProviderRevenueInAdvertiserCurrency_list,
+                "dataProviderRevenueInPartnerPlatformCurrency":write_dataProviderRevenueInPartnerPlatformCurrency_list,
+                "dataProviderRevenueInEuro":write_dataProviderRevenueInEuro_list,
+                "adformRevenue":write_adformRevenue_list,
+                "adformRevenueInAdvertiserCurrency":write_adformRevenueInAdvertiserCurrency_list,
+                "adformRevenueInEuro":write_adformRevenueInEuro_list,
+                "segment":write_segment_list,
+                "category":write_category_list
+            }
 
+            # get dat usage report for global
             data_provider_name = get_data_provider_name(access_token, 67)
-            for data_usage_report_row in data_usage_report_response_67_json:
-                write_data_provider_name_list.append(data_provider_name)
-                write_advertiser_list.append(data_usage_report_row["advertiser"])
-                write_advertiserId_list.append(data_usage_report_row["advertiserId"])
-                write_advertiserCurrency_list.append(data_usage_report_row["advertiserCurrency"])
-                write_partnerPlatformCurrency_list.append(data_usage_report_row["partnerPlatformCurrency"])
-                write_country_list.append(data_usage_report_row["country"])
-                write_countryId_list.append(data_usage_report_row["countryId"])
-                write_segmentsGroup_list.append(data_usage_report_row["segmentsGroup"])
-                write_segmentIds_list.append(data_usage_report_row["segmentIds"])
-                write_segmentRefIds_list.append(data_usage_report_row["segmentRefIds"])
-                write_impressions_list.append(data_usage_report_row["impressions"])
-                write_revenue_list.append(data_usage_report_row["revenue"])
-                write_revenueInAdvertiserCurrency_list.append(data_usage_report_row["revenueInAdvertiserCurrency"])
-                write_revenueInPartnerPlatformCurrency_list.append(data_usage_report_row["revenueInPartnerPlatformCurrency"])
-                write_revenueInEuro_list.append(data_usage_report_row["revenueInEuro"])
-                write_dataProviderRevenue_list.append(data_usage_report_row["dataProviderRevenue"])
-                write_dataProviderRevenueInAdvertiserCurrency_list.append(data_usage_report_row["dataProviderRevenueInAdvertiserCurrency"])
-                write_dataProviderRevenueInPartnerPlatformCurrency_list.append(data_usage_report_row["dataProviderRevenueInPartnerPlatformCurrency"])
-                write_dataProviderRevenueInEuro_list.append(data_usage_report_row["dataProviderRevenueInEuro"])
-                write_adformRevenue_list.append(data_usage_report_row["adformRevenue"])
-                write_adformRevenueInAdvertiserCurrency_list.append(data_usage_report_row["adformRevenueInAdvertiserCurrency"])
-                write_adformRevenueInEuro_list.append(data_usage_report_row["adformRevenueInEuro"])
+            data_usage_report_response_67_json = get_data_usage_report(access_token, start_date, end_date, '67')
+            data_usage_dict = format_data_usage_report(data_provider_name, data_usage_dict, data_usage_report_response_67_json)
 
+            # get data usage report for apac
             data_provider_name = get_data_provider_name(access_token, 11399)
-            for data_usage_report_row in data_usage_report_response_11399_json:
-                write_data_provider_name_list.append(data_provider_name)
-                write_advertiser_list.append(data_usage_report_row["advertiser"])
-                write_advertiserId_list.append(data_usage_report_row["advertiserId"])
-                write_advertiserCurrency_list.append(data_usage_report_row["advertiserCurrency"])
-                write_partnerPlatformCurrency_list.append(data_usage_report_row["partnerPlatformCurrency"])
-                write_country_list.append(data_usage_report_row["country"])
-                write_countryId_list.append(data_usage_report_row["countryId"])
-                write_segmentsGroup_list.append(data_usage_report_row["segmentsGroup"])
-                write_segmentIds_list.append(data_usage_report_row["segmentIds"])
-                write_segmentRefIds_list.append(data_usage_report_row["segmentRefIds"])
-                write_impressions_list.append(data_usage_report_row["impressions"])
-                write_revenue_list.append(data_usage_report_row["revenue"])
-                write_revenueInAdvertiserCurrency_list.append(data_usage_report_row["revenueInAdvertiserCurrency"])
-                write_revenueInPartnerPlatformCurrency_list.append(data_usage_report_row["revenueInPartnerPlatformCurrency"])
-                write_revenueInEuro_list.append(data_usage_report_row["revenueInEuro"])
-                write_dataProviderRevenue_list.append(data_usage_report_row["dataProviderRevenue"])
-                write_dataProviderRevenueInAdvertiserCurrency_list.append(data_usage_report_row["dataProviderRevenueInAdvertiserCurrency"])
-                write_dataProviderRevenueInPartnerPlatformCurrency_list.append(data_usage_report_row["dataProviderRevenueInPartnerPlatformCurrency"])
-                write_dataProviderRevenueInEuro_list.append(data_usage_report_row["dataProviderRevenueInEuro"])
-                write_adformRevenue_list.append(data_usage_report_row["adformRevenue"])
-                write_adformRevenueInAdvertiserCurrency_list.append(data_usage_report_row["adformRevenueInAdvertiserCurrency"])
-                write_adformRevenueInEuro_list.append(data_usage_report_row["adformRevenueInEuro"])
+            data_usage_report_response_11399_json = get_data_usage_report(access_token, start_date, end_date, '11399')
+            data_usage_dict = format_data_usage_report(data_provider_name, data_usage_dict, data_usage_report_response_11399_json)
 
             write_df = pd.DataFrame({
-                        "dataProviderName":write_data_provider_name_list,
-                        "advertiser":write_advertiser_list,
-                        "advertiserId":write_advertiserId_list,
-                        "advertiserCurency":write_advertiserCurrency_list,
-                        "partnerPlatformCurrency":write_partnerPlatformCurrency_list,
-                        "country":write_country_list,
-                        "countryId":write_countryId_list,
-                        "segmentsGroup":write_segmentsGroup_list,
-                        "segmentsIds":write_segmentIds_list,
-                        "segmentRefIds":write_segmentRefIds_list,
-                        "impressions":write_impressions_list,
-                        "revenue":write_revenue_list,
-                        "revenueInAdvertiserCurrency":write_revenueInAdvertiserCurrency_list,
-                        "revenueInPartnerPlatformCurrency":write_revenueInPartnerPlatformCurrency_list,
-                        "revenueInEuro":write_revenueInEuro_list,
-                        "dataProviderRevenue":write_dataProviderRevenue_list,
-                        "dataProviderRevenueInAdvertiserCurrency":write_dataProviderRevenueInAdvertiserCurrency_list,
-                        "dataProviderRevenueInPartnerPlatformCurrency":write_dataProviderRevenueInPartnerPlatformCurrency_list,
-                        "dataProviderRevenueInEuro":write_dataProviderRevenueInEuro_list,
-                        "adformRevenue":write_adformRevenue_list,
-                        "adformRevenueInAdvertiserCurrency":write_adformRevenueInAdvertiserCurrency_list,
-                        "adformRevenueInEuro":write_adformRevenueInEuro_list
+                        "dataProviderName":data_usage_dict["data_provider_name"],
+                        "advertiser":data_usage_dict["advertiser"],
+                        "advertiserId":data_usage_dict["advertiserId"],
+                        "advertiserCurency":data_usage_dict["advertiserCurrency"],
+                        "partnerPlatformCurrency":data_usage_dict["partnerPlatformCurrency"],
+                        "country":data_usage_dict["country"],
+                        "countryId":data_usage_dict["countryId"],
+                        "segmentsGroup":data_usage_dict["segmentsGroup"],
+                        "segmentsIds":data_usage_dict["segmentIds"],
+                        "segmentRefIds":data_usage_dict["segmentRefIds"],
+                        "impressions":data_usage_dict["impressions"],
+                        "revenue":data_usage_dict["revenue"],
+                        "revenueInAdvertiserCurrency":data_usage_dict["revenueInAdvertiserCurrency"],
+                        "revenueInPartnerPlatformCurrency":data_usage_dict["revenueInPartnerPlatformCurrency"],
+                        "revenueInEuro":data_usage_dict["revenueInEuro"],
+                        "dataProviderRevenue":data_usage_dict["dataProviderRevenue"],
+                        "dataProviderRevenueInAdvertiserCurrency":data_usage_dict["dataProviderRevenueInAdvertiserCurrency"],
+                        "dataProviderRevenueInPartnerPlatformCurrency":data_usage_dict["dataProviderRevenueInPartnerPlatformCurrency"],
+                        "dataProviderRevenueInEuro":data_usage_dict["dataProviderRevenueInEuro"],
+                        "adformRevenue":data_usage_dict["adformRevenue"],
+                        "adformRevenueInAdvertiserCurrency":data_usage_dict["adformRevenueInAdvertiserCurrency"],
+                        "adformRevenueInEuro":data_usage_dict["adformRevenueInEuro"],
                     })
 
             data_usage_file_name = write_excel.write_without_return(write_df, "Adform_data_usage_report_" + str(row_counter))
             file_names.append(data_usage_file_name)
 
         elif report_type == "audience":
-            write_data_provider_name = []
+            write_data_provider_name_list= []
             write_date_list = []
             write_segment_id_list = []
             write_category_list = []
@@ -941,37 +927,34 @@ def read_file_to_get_report(file_path, sheet, report_type):
             write_total_list = []
             write_uniques_list = []
 
+            audience_dict = {
+                "data_provider_name":write_data_provider_name_list,
+                "date":write_date_list,
+                "segment_id":write_segment_id_list,
+                "category":write_category_list,
+                "segment":write_segment_list,
+                "total":write_total_list,
+                "uniques":write_uniques_list
+            }
+
+            # get audience report for global account
             audience_report_response_67_json = get_audience_report(access_token, start_date, end_date, '67')
-            audience_report_response_11399_json = get_audience_report(access_token, start_date, end_date, '11399')
-
             data_provider_name = get_data_provider_name(access_token, 67)
-            for audience_report_row in audience_report_response_67_json:
-                write_data_provider_name.append(data_provider_name)
-                write_date_list.append(audience_report_row["date"])
-                write_segment_id_list.append(audience_report_row["segmentId"])
-                write_category_list.append(audience_report_row["category"])
-                write_segment_list.append(audience_report_row["segment"])
-                write_total_list.append(audience_report_row["total"])
-                write_uniques_list.append(audience_report_row["uniques"])
+            audience_dict = format_audience_report(data_provider_name, audience_dict, audience_report_response_67_json)
 
+            # get audience report for apac account
+            audience_report_response_11399_json = get_audience_report(access_token, start_date, end_date, '11399')
             data_provider_name = get_data_provider_name(access_token, 11399)
-            for audience_report_row in audience_report_response_11399_json:
-                write_data_provider_name.append(data_provider_name)
-                write_date_list.append(audience_report_row["date"])
-                write_segment_id_list.append(audience_report_row["segmentId"])
-                write_category_list.append(audience_report_row["category"])
-                write_segment_list.append(audience_report_row["segment"])
-                write_total_list.append(audience_report_row["total"])
-                write_uniques_list.append(audience_report_row["uniques"])
+            audience_dict = format_audience_report(data_provider_name, audience_dict, audience_report_response_11399_json)
 
             write_df = pd.DataFrame({
-                        "data_provider":write_data_provider_name,
-                        "date":write_date_list,
-                        "segment_id":write_segment_id_list,
-                        "category":write_category_list,
-                        "segment":write_segment_list,
-                        "total":write_total_list,
-                        "uniques":write_uniques_list
+                        "data_provider":audience_dict["data_provider_name"],
+                        "date":audience_dict["date"],
+                        "segment_id":audience_dict["segment_id"],
+                        "category":audience_dict["category"],
+                        "segment":audience_dict["segment"],
+                        "total":audience_dict["total"],
+                        "uniques":audience_dict["uniques"]
                     })
 
             audience_file_name = write_excel.write_without_return(write_df, "Adform_audience_report_" + str(row_counter))
@@ -980,3 +963,42 @@ def read_file_to_get_report(file_path, sheet, report_type):
         row_counter += 1
 
     return file_names
+
+def format_data_usage_report(data_provider_name, data_usage_dict, data_usage_report_response_json):
+    for data_usage_report_row in data_usage_report_response_json:
+        data_usage_dict["data_provider_name"].append(data_provider_name)
+        data_usage_dict["advertiser"].append(data_usage_report_row["advertiser"])
+        data_usage_dict["advertiserId"].append(data_usage_report_row["advertiserId"])
+        data_usage_dict["advertiserCurrency"].append(data_usage_report_row["advertiserCurrency"])
+        data_usage_dict["partnerPlatformCurrency"].append(data_usage_report_row["partnerPlatformCurrency"])
+        data_usage_dict["country"].append(data_usage_report_row["country"])
+        data_usage_dict["countryId"].append(data_usage_report_row["countryId"])
+        data_usage_dict["segmentsGroup"].append(data_usage_report_row["segmentsGroup"])
+        data_usage_dict["segmentIds"].append(data_usage_report_row["segmentIds"])
+        data_usage_dict["segmentRefIds"].append(data_usage_report_row["segmentRefIds"])
+        data_usage_dict["impressions"].append(data_usage_report_row["impressions"])
+        data_usage_dict["revenue"].append(data_usage_report_row["revenue"])
+        data_usage_dict["revenueInAdvertiserCurrency"].append(data_usage_report_row["revenueInAdvertiserCurrency"])
+        data_usage_dict["revenueInPartnerPlatformCurrency"].append(data_usage_report_row["revenueInPartnerPlatformCurrency"])
+        data_usage_dict["revenueInEuro"].append(data_usage_report_row["revenueInEuro"])
+        data_usage_dict["dataProviderRevenue"].append(data_usage_report_row["dataProviderRevenue"])
+        data_usage_dict["dataProviderRevenueInAdvertiserCurrency"].append(data_usage_report_row["dataProviderRevenueInAdvertiserCurrency"])
+        data_usage_dict["dataProviderRevenueInPartnerPlatformCurrency"].append(data_usage_report_row["dataProviderRevenueInPartnerPlatformCurrency"])
+        data_usage_dict["dataProviderRevenueInEuro"].append(data_usage_report_row["dataProviderRevenueInEuro"])
+        data_usage_dict["adformRevenue"].append(data_usage_report_row["adformRevenue"])
+        data_usage_dict["adformRevenueInAdvertiserCurrency"].append(data_usage_report_row["adformRevenueInAdvertiserCurrency"])
+        data_usage_dict["adformRevenueInEuro"].append(data_usage_report_row["adformRevenueInEuro"])
+
+    return data_usage_dict
+
+def format_audience_report(data_provider_name, audience_dict, audience_report_response_json):
+    for audience_report_row in audience_report_response_json:
+        audience_dict["data_provider_name"].append(data_provider_name)
+        audience_dict["date"].append(audience_report_row["date"])
+        audience_dict["segment_id"].append(audience_report_row["segmentId"])
+        audience_dict["category"].append(audience_report_row["category"])
+        audience_dict["segment"].append(audience_report_row["segment"])
+        audience_dict["total"].append(audience_report_row["total"])
+        audience_dict["uniques"].append(audience_report_row["uniques"])
+
+    return audience_dict
