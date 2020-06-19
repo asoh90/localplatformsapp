@@ -11,6 +11,12 @@ import time
 AUTH_URL = "https://dmp-api.adform.com/v1/token"
 API_URL = "https://api.adform.com/v1/dmp/"
 
+# Accounts
+EYEOTA_GLOBAL = 67
+EYEOTA_APAC = 11399
+EYEOTA_EXPERIAN = 12149
+EYEOTA_MASTERCARD = 12150
+
 SHEET_NAME = "Adform"
 
 # Login credentials
@@ -299,7 +305,10 @@ def add_segment(access_token, data_provider_id, account, category_id, ref_id, fe
         segment_id = add_segment_json["id"]
         return 201, segment_id
     else:
-        return None, add_segment_json["params"]
+        try:
+            return None, add_segment_json["params"]
+        except:
+            return None, add_segment_json
 
 def delete_segment(access_token, segment_id):
     delete_segment_request = requests.delete(SEGMENTS_URL + "/" + str(segment_id),
@@ -364,10 +373,12 @@ def store_category_in_dict_by_name(categories_json):
                                         "updatedAt":category_updatedAt,
                                         "createdAt":category_createdAt}
 
-    # Segments could hav esame name but from different data provider id (67 or 11399), hence have to keep them in separate dict
+    # Segments could hav esame name but from different data provider id (global, apac, experian, or mastercard), hence have to keep them in separate dict
     categories_dict_by_name = {}
-    categories_dict_by_name_67 = {}
-    categories_dict_by_name_11399 = {}
+    categories_dict_by_name_global = {}
+    categories_dict_by_name_apac = {}
+    categories_dict_by_name_experian = {}
+    categories_dict_by_name_mastercard = {}
 
     for category in categories_json:
         category_id = category["id"]
@@ -378,13 +389,19 @@ def store_category_in_dict_by_name(categories_json):
             category_parent_id = category["parentId"]
         category_full_name = get_full_category_name(category_parent_id, category_name, child_category_dict)
 
-        if category_dataProviderId == "67":
-            categories_dict_by_name_67[category_full_name] = category_id
-        elif category_dataProviderId == "11399":
-            categories_dict_by_name_11399[category_full_name] = category_id
+        if category_dataProviderId == str(EYEOTA_GLOBAL):
+            categories_dict_by_name_global[category_full_name] = category_id
+        elif category_dataProviderId == str(EYEOTA_APAC):
+            categories_dict_by_name_apac[category_full_name] = category_id
+        elif category_dataProviderId == str(EYEOTA_EXPERIAN):
+            categories_dict_by_name_experian[category_full_name] = category_id
+        elif category_dataProviderId == str(EYEOTA_MASTERCARD):
+            categories_dict_by_name_mastercard[category_full_name] = category_id
     
-    categories_dict_by_name["67"] = categories_dict_by_name_67
-    categories_dict_by_name["11399"] = categories_dict_by_name_11399
+    categories_dict_by_name[str(EYEOTA_GLOBAL)] = categories_dict_by_name_global
+    categories_dict_by_name[str(EYEOTA_APAC)] = categories_dict_by_name_apac
+    categories_dict_by_name[str(EYEOTA_EXPERIAN)] = categories_dict_by_name_experian
+    categories_dict_by_name[str(EYEOTA_MASTERCARD)] = categories_dict_by_name_mastercard
 
     return categories_dict_by_name
 
@@ -408,7 +425,7 @@ def read_file_to_add_segments(file_path):
     account_list = read_df["Account"]
     fee_list = read_df["Fee"]
     ttl_list = read_df["TTL"]
-    status_list = read_df["Status"]
+    status_list = read_df["Status"].tolist()
     segment_id_list = []
     write_category_result_list = []
     write_add_segment_result_list = []
@@ -422,9 +439,13 @@ def read_file_to_add_segments(file_path):
             sleep_counter = 0
 
         account = account_list[row_counter]
-        data_provider_id = "67"
+        data_provider_id = str(EYEOTA_GLOBAL)
         if account.lower() == "apac":
-            data_provider_id = "11399"
+            data_provider_id = str(EYEOTA_APAC)
+        elif account.lower() == "experian":
+            data_provider_id = str(EYEOTA_EXPERIAN)
+        elif account.lower() == "mastercard":
+            data_provider_id = str(EYEOTA_MASTERCARD)
 
         status = status_list[row_counter]
         index_of_separator = segment_name.rfind(" - ")
@@ -535,6 +556,7 @@ def read_file_to_add_segments(file_path):
                         "Account":account_list,
                         "Fee":fee_list,
                         "TTL":ttl_list,
+                        "Status":status_list,
                         "Category Result":write_category_result_list,
                         "Add Segment Result":write_add_segment_result_list
                 })
@@ -627,9 +649,13 @@ def read_file_to_edit_segments(file_path):
         status = status_list[row_counter]
         index_of_separator = segment_name.rfind(" - ")
 
-        data_provider_id = "67"
+        data_provider_id = str(EYEOTA_GLOBAL)
         if account.lower() == "apac":
-            data_provider_id = "11399"
+            data_provider_id = str(EYEOTA_APAC)
+        elif account.lower() == "experian":
+            data_provider_id = str(EYEOTA_EXPERIAN)
+        elif account.lower() == "mastercard":
+            data_provider_id = str(EYEOTA_MASTERCARD)
 
         category_success = True
 
@@ -881,14 +907,24 @@ def read_file_to_get_report(file_path, sheet, report_type):
             }
 
             # get dat usage report for global
-            data_provider_name = get_data_provider_name(access_token, 67)
-            data_usage_report_response_67_json = get_data_usage_report(access_token, start_date, end_date, '67')
-            data_usage_dict = format_data_usage_report(data_provider_name, data_usage_dict, data_usage_report_response_67_json)
+            data_provider_name = get_data_provider_name(access_token, EYEOTA_GLOBAL)
+            data_usage_report_response_global_json = get_data_usage_report(access_token, start_date, end_date, str(EYEOTA_GLOBAL))
+            data_usage_dict = format_data_usage_report(data_provider_name, data_usage_dict, data_usage_report_response_global_json)
 
             # get data usage report for apac
-            data_provider_name = get_data_provider_name(access_token, 11399)
-            data_usage_report_response_11399_json = get_data_usage_report(access_token, start_date, end_date, '11399')
-            data_usage_dict = format_data_usage_report(data_provider_name, data_usage_dict, data_usage_report_response_11399_json)
+            data_provider_name = get_data_provider_name(access_token, EYEOTA_APAC)
+            data_usage_report_response_apac_json = get_data_usage_report(access_token, start_date, end_date, str(EYEOTA_APAC))
+            data_usage_dict = format_data_usage_report(data_provider_name, data_usage_dict, data_usage_report_response_apac_json)
+
+            # get data usage report for experian
+            data_provider_name = get_data_provider_name(access_token, EYEOTA_EXPERIAN)
+            data_usage_report_response_experian_json = get_data_usage_report(access_token, start_date, end_date, str(EYEOTA_EXPERIAN))
+            data_usage_dict = format_data_usage_report(data_provider_name, data_usage_dict, data_usage_report_response_experian_json)
+
+            # get data usage report for mastercard
+            data_provider_name = get_data_provider_name(access_token, EYEOTA_MASTERCARD)
+            data_usage_report_response_mastercard_json = get_data_usage_report(access_token, start_date, end_date, str(EYEOTA_MASTERCARD))
+            data_usage_dict = format_data_usage_report(data_provider_name, data_usage_dict, data_usage_report_response_mastercard_json)
 
             write_df = pd.DataFrame({
                         "dataProviderName":data_usage_dict["data_provider_name"],
@@ -938,14 +974,24 @@ def read_file_to_get_report(file_path, sheet, report_type):
             }
 
             # get audience report for global account
-            audience_report_response_67_json = get_audience_report(access_token, start_date, end_date, '67')
-            data_provider_name = get_data_provider_name(access_token, 67)
-            audience_dict = format_audience_report(data_provider_name, audience_dict, audience_report_response_67_json)
+            audience_report_response_global_json = get_audience_report(access_token, start_date, end_date, str(EYEOTA_GLOBAL))
+            data_provider_name = get_data_provider_name(access_token, EYEOTA_GLOBAL)
+            audience_dict = format_audience_report(data_provider_name, audience_dict, audience_report_response_global_json)
 
             # get audience report for apac account
-            audience_report_response_11399_json = get_audience_report(access_token, start_date, end_date, '11399')
-            data_provider_name = get_data_provider_name(access_token, 11399)
-            audience_dict = format_audience_report(data_provider_name, audience_dict, audience_report_response_11399_json)
+            audience_report_response_apac_json = get_audience_report(access_token, start_date, end_date, str(EYEOTA_APAC))
+            data_provider_name = get_data_provider_name(access_token, EYEOTA_APAC)
+            audience_dict = format_audience_report(data_provider_name, audience_dict, audience_report_response_apac_json)
+
+            # get audience report for experian account
+            audience_report_response_experian_json = get_audience_report(access_token, start_date, end_date, str(EYEOTA_EXPERIAN))
+            data_provider_name = get_data_provider_name(access_token, EYEOTA_EXPERIAN)
+            audience_dict = format_audience_report(data_provider_name, audience_dict, audience_report_response_experian_json)
+
+            # get audience report for mastercard account
+            audience_report_response_mastercard_json = get_audience_report(access_token, start_date, end_date, str(EYEOTA_MASTERCARD))
+            data_provider_name = get_data_provider_name(access_token, EYEOTA_MASTERCARD)
+            audience_dict = format_audience_report(data_provider_name, audience_dict, audience_report_response_mastercard_json)
 
             write_df = pd.DataFrame({
                         "data_provider":audience_dict["data_provider_name"],
