@@ -89,20 +89,27 @@ def authenticate():
     auth_token = auth_json["access_token"] 
     return auth_token
 
-def get_categories(access_token):
+def get_categories(access_token, offset):
     get_categories_request = requests.get(CATEGORIES_URL,
                                         headers={
                                             'Content-Type':'application/json',
                                             'Authorization':'Bearer ' + access_token
+                                        },
+                                        params={
+                                            'offset':offset,
+                                            'limit':LIMIT
                                         })
     print("Get Categories URL: {}".format(get_categories_request.url))
     if not get_categories_request.status_code == 200:
         return None
 
-    return get_categories_request.json()
+    headers_dict = dict(get_categories_request.headers)
+    total_count = int(headers_dict["Total-Count"])
+    return total_count, get_categories_request.json()
 
-def store_category_in_dict(categories_json):
-    categories_dict = {}
+def store_category_in_dict(categories_json, categories_dict):
+    if categories_dict is None:
+        categories_dict = {}
 
     for category in categories_json:
         category_id = category["id"]
@@ -168,12 +175,15 @@ def get_all_segments():
     if "message" in access_token:
         return access_token
 
-    categories_json = get_categories(access_token)
+    categories_dict = None
+    categories_offset = 0
+    categories_total = LIMIT
 
-    if categories_json == None:
-        return {"message":"ERROR: unable to retrieve categories"}
-    
-    categories_dict = store_category_in_dict(categories_json)
+    while categories_offset < categories_total:
+        categories_total, categories_json = get_categories(access_token, categories_offset)
+        categories_dict = store_category_in_dict(categories_json, categories_dict)
+
+        categories_offset += LIMIT
 
     segment_offset = 0
     segment_total = LIMIT
@@ -213,14 +223,15 @@ def get_all_segments():
             category_name = None
             category_full_name = None
             segment_fullname = None
-            try:
-                category_parentId = categories_dict[segment_categoryId]["parentId"]
-                category_name = categories_dict[segment_categoryId]["name"]
-                category_full_name = get_full_category_name(category_parentId, category_name, categories_dict)
 
-                segment_full_name = category_full_name + " - " + segment_name
-            except:
-                pass
+            # try:
+            category_parentId = categories_dict[segment_categoryId]["parentId"]
+            category_name = categories_dict[segment_categoryId]["name"]
+            category_full_name = get_full_category_name(category_parentId, category_name, categories_dict)
+
+            segment_full_name = category_full_name + " - " + segment_name
+            # except:
+            #     pass
 
             segment_id_list.append(segment_id)
             segment_dataProviderName_list.append(data_provider_name)
@@ -353,7 +364,7 @@ def edit_segment(access_token, segment_id, data_provider_id, account, category_i
     else:
         return None, edit_segment_json["params"]
 
-def store_category_in_dict_by_name(categories_json):
+def store_category_in_dict_by_name(categories_json, categories_dict_by_name):
     child_category_dict = {}
     for category in categories_json:
         category_id = category["id"]
@@ -374,11 +385,12 @@ def store_category_in_dict_by_name(categories_json):
                                         "createdAt":category_createdAt}
 
     # Segments could hav esame name but from different data provider id (global, apac, experian, or mastercard), hence have to keep them in separate dict
-    categories_dict_by_name = {}
-    categories_dict_by_name_global = {}
-    categories_dict_by_name_apac = {}
-    categories_dict_by_name_experian = {}
-    categories_dict_by_name_mastercard = {}
+    if categories_dict_by_name is None:
+        categories_dict_by_name = {}
+        categories_dict_by_name_global = {}
+        categories_dict_by_name_apac = {}
+        categories_dict_by_name_experian = {}
+        categories_dict_by_name_mastercard = {}
 
     for category in categories_json:
         category_id = category["id"]
@@ -417,8 +429,15 @@ def read_file_to_add_segments(file_path):
     if "message" in access_token:
         return access_token
 
-    categories_json = get_categories(access_token)
-    categories_dict_by_name = store_category_in_dict_by_name(categories_json)
+    categories_dict_by_name = None
+    categories_offset = 0
+    categories_total = LIMIT
+
+    while categories_offset < categories_total:
+        categories_count, categories_json = get_categories(access_token, categories_offset)
+        categories_dict_by_name = store_category_in_dict_by_name(categories_json, categories_dict_by_name)
+
+        categories_offset += LIMIT
 
     ref_id_list = read_df["Ref ID"]
     segment_name_list = read_df["Segment Name"]
@@ -574,8 +593,15 @@ def read_file_to_delete_segments(file_path):
     if "message" in access_token:
         return access_token
 
-    categories_json = get_categories(access_token)
-    categories_dict_by_name = store_category_in_dict_by_name(categories_json)
+    categories_dict_by_name = None
+    categories_offset = 0
+    categories_total = LIMIT
+
+    while categories_offset < categories_total:
+        categories_count, categories_json = get_categories(access_token, categories_offset)
+        categories_dict_by_name = store_category_in_dict_by_name(categories_json, categories_dict_by_name)
+
+        categories_offset += LIMIT
     
     segment_id_list = read_df["Segment ID"]
     ref_id_list = read_df["Ref ID"]
@@ -627,8 +653,15 @@ def read_file_to_edit_segments(file_path):
     if "message" in access_token:
         return access_token
 
-    categories_json = get_categories(access_token)
-    categories_dict_by_name = store_category_in_dict_by_name(categories_json)
+    categories_dict_by_name = None
+    categories_offset = 0
+    categories_total = LIMIT
+
+    while categories_offset < categories_total:
+        categories_count, categories_json = get_categories(access_token, categories_offset)
+        categories_dict_by_name = store_category_in_dict_by_name(categories_json, categories_dict_by_name)
+
+        categories_offset += LIMIT
 
     segment_id_list = read_df["Segment ID"]
     ref_id_list = read_df["Ref ID"]
