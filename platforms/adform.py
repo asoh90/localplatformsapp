@@ -365,8 +365,10 @@ def edit_segment(access_token, segment_id, data_provider_id, account, category_i
     else:
         return None, edit_segment_json["params"]
 
-def store_category_in_dict_by_name(categories_json, categories_dict_by_name):
-    child_category_dict = {}
+def store_category_in_dict_by_name(categories_json, categories_dict_by_name, child_category_dict):
+    if child_category_dict is None:
+        child_category_dict = {}
+
     for category in categories_json:
         category_id = category["id"]
         category_name = category["name"]
@@ -412,7 +414,7 @@ def store_category_in_dict_by_name(categories_json, categories_dict_by_name):
         elif category_dataProviderId == str(EYEOTA_MASTERCARD):
             categories_dict_by_name[str(EYEOTA_MASTERCARD)][category_full_name] = category_id
 
-    return categories_dict_by_name
+    return categories_dict_by_name, child_category_dict
 
 def read_file_to_add_segments(file_path):
     read_df = None
@@ -427,14 +429,17 @@ def read_file_to_add_segments(file_path):
         return access_token
 
     categories_dict_by_name = None
+    child_category_dict = None
     categories_offset = 0
     categories_total = LIMIT
 
     while categories_offset < categories_total:
         categories_total, categories_json = get_categories(access_token, categories_offset)
-        categories_dict_by_name = store_category_in_dict_by_name(categories_json, categories_dict_by_name)
+        categories_dict_by_name, child_category_dict = store_category_in_dict_by_name(categories_json, categories_dict_by_name, child_category_dict)
 
         categories_offset += LIMIT
+
+    # print(categories_dict_by_name)
 
     ref_id_list = read_df["Ref ID"]
     segment_name_list = read_df["Segment Name"]
@@ -563,15 +568,15 @@ def read_file_to_add_segments(file_path):
     file_name_with_extension = file_path.split("/")[-1]
     file_name = file_name_with_extension.split(".xlsx")[0]
 
-    print("Ref ID Length: {}".format(len(ref_id_list)))
-    print("Segment Name Length: {}".format(len(segment_name_list)))
-    print("Account Length: {}".format(len(account_list)))
-    print("Fee Length: {}".format(len(fee_list)))
-    print("TTL Length: {}".format(len(ttl_list)))
-    print("Segment ID Length: {}".format(len(segment_id_list)))
-    print("Category Result Length: {}".format(len(write_category_result_list)))
-    print("Add Segment Result Length: {}".format(len(write_add_segment_result_list)))
-    print(write_add_segment_result_list)
+    # print("Ref ID Length: {}".format(len(ref_id_list)))
+    # print("Segment Name Length: {}".format(len(segment_name_list)))
+    # print("Account Length: {}".format(len(account_list)))
+    # print("Fee Length: {}".format(len(fee_list)))
+    # print("TTL Length: {}".format(len(ttl_list)))
+    # print("Segment ID Length: {}".format(len(segment_id_list)))
+    # print("Category Result Length: {}".format(len(write_category_result_list)))
+    # print("Add Segment Result Length: {}".format(len(write_add_segment_result_list)))
+    # print(write_add_segment_result_list)
 
     write_df = pd.DataFrame({
                         "Segment ID":segment_id_list,
@@ -599,12 +604,13 @@ def read_file_to_delete_segments(file_path):
         return access_token
 
     categories_dict_by_name = None
+    child_category_dict = None
     categories_offset = 0
     categories_total = LIMIT
 
     while categories_offset < categories_total:
         categories_total, categories_json = get_categories(access_token, categories_offset)
-        categories_dict_by_name = store_category_in_dict_by_name(categories_json, categories_dict_by_name)
+        categories_dict_by_name, child_category_dict = store_category_in_dict_by_name(categories_json, categories_dict_by_name, child_category_dict)
 
         categories_offset += LIMIT
     
@@ -659,12 +665,13 @@ def read_file_to_edit_segments(file_path):
         return access_token
 
     categories_dict_by_name = None
+    child_category_dict = None
     categories_offset = 0
     categories_total = LIMIT
 
     while categories_offset < categories_total:
         categories_total, categories_json = get_categories(access_token, categories_offset)
-        categories_dict_by_name = store_category_in_dict_by_name(categories_json, categories_dict_by_name)
+        categories_dict_by_name, child_category_dict = store_category_in_dict_by_name(categories_json, categories_dict_by_name, child_category_dict)
 
         categories_offset += LIMIT
 
