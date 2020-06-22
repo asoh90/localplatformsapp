@@ -386,11 +386,12 @@ def store_category_in_dict_by_name(categories_json, categories_dict_by_name):
 
     # Segments could hav esame name but from different data provider id (global, apac, experian, or mastercard), hence have to keep them in separate dict
     if categories_dict_by_name is None:
-        categories_dict_by_name = {}
-        categories_dict_by_name_global = {}
-        categories_dict_by_name_apac = {}
-        categories_dict_by_name_experian = {}
-        categories_dict_by_name_mastercard = {}
+        categories_dict_by_name = {
+            str(EYEOTA_GLOBAL): {},
+            str(EYEOTA_APAC): {},
+            str(EYEOTA_EXPERIAN): {},
+            str(EYEOTA_MASTERCARD): {}
+        }
 
     for category in categories_json:
         category_id = category["id"]
@@ -402,18 +403,13 @@ def store_category_in_dict_by_name(categories_json, categories_dict_by_name):
         category_full_name = get_full_category_name(category_parent_id, category_name, child_category_dict)
 
         if category_dataProviderId == str(EYEOTA_GLOBAL):
-            categories_dict_by_name_global[category_full_name] = category_id
+            categories_dict_by_name[str(EYEOTA_GLOBAL)][category_full_name] = category_id
         elif category_dataProviderId == str(EYEOTA_APAC):
-            categories_dict_by_name_apac[category_full_name] = category_id
+            categories_dict_by_name[str(EYEOTA_APAC)][category_full_name] = category_id
         elif category_dataProviderId == str(EYEOTA_EXPERIAN):
-            categories_dict_by_name_experian[category_full_name] = category_id
+            categories_dict_by_name[str(EYEOTA_EXPERIAN)][category_full_name] = category_id
         elif category_dataProviderId == str(EYEOTA_MASTERCARD):
-            categories_dict_by_name_mastercard[category_full_name] = category_id
-    
-    categories_dict_by_name[str(EYEOTA_GLOBAL)] = categories_dict_by_name_global
-    categories_dict_by_name[str(EYEOTA_APAC)] = categories_dict_by_name_apac
-    categories_dict_by_name[str(EYEOTA_EXPERIAN)] = categories_dict_by_name_experian
-    categories_dict_by_name[str(EYEOTA_MASTERCARD)] = categories_dict_by_name_mastercard
+            categories_dict_by_name[str(EYEOTA_MASTERCARD)][category_full_name] = category_id
 
     return categories_dict_by_name
 
@@ -434,7 +430,7 @@ def read_file_to_add_segments(file_path):
     categories_total = LIMIT
 
     while categories_offset < categories_total:
-        categories_count, categories_json = get_categories(access_token, categories_offset)
+        categories_total, categories_json = get_categories(access_token, categories_offset)
         categories_dict_by_name = store_category_in_dict_by_name(categories_json, categories_dict_by_name)
 
         categories_offset += LIMIT
@@ -598,7 +594,7 @@ def read_file_to_delete_segments(file_path):
     categories_total = LIMIT
 
     while categories_offset < categories_total:
-        categories_count, categories_json = get_categories(access_token, categories_offset)
+        categories_total, categories_json = get_categories(access_token, categories_offset)
         categories_dict_by_name = store_category_in_dict_by_name(categories_json, categories_dict_by_name)
 
         categories_offset += LIMIT
@@ -658,7 +654,7 @@ def read_file_to_edit_segments(file_path):
     categories_total = LIMIT
 
     while categories_offset < categories_total:
-        categories_count, categories_json = get_categories(access_token, categories_offset)
+        categories_total, categories_json = get_categories(access_token, categories_offset)
         categories_dict_by_name = store_category_in_dict_by_name(categories_json, categories_dict_by_name)
 
         categories_offset += LIMIT
