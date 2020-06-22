@@ -287,6 +287,7 @@ def add_category(access_token, category_name, data_provider_id, account, parent_
                             json=add_category_json)
     print("Add Category URL: {}".format(add_category_request.url))
     # print(add_category_request.json())
+    # print(add_category_request.status_code)
     if add_category_request.status_code == 201:
         add_category_response = add_category_request.json()
         return add_category_response["id"]
@@ -478,6 +479,9 @@ def read_file_to_add_segments(file_path):
             category_name = segment_name[0:index_of_separator]
 
             selected_categories_dict_by_name = categories_dict_by_name[data_provider_id]
+            # Output if category exists, or category creation is successful. Else will change below.
+            category_result = "OK"
+
             if category_name in selected_categories_dict_by_name:
                 category_id = selected_categories_dict_by_name[category_name]
             else:
@@ -488,6 +492,7 @@ def read_file_to_add_segments(file_path):
                 is_parentmost = True
                 category_name_to_check = ""
                 temp_parent_category_id = None
+
                 for category_part_name in category_name_list:
                     if is_parentmost:
                         category_name_to_check = category_part_name
@@ -502,10 +507,9 @@ def read_file_to_add_segments(file_path):
                         temp_parent_category_id = add_category(access_token, category_part_name, data_provider_id, account, temp_parent_category_id)
 
                         if temp_parent_category_id == None:
-                            segment_id_list.append(None)
-                            write_category_result_list.append("Error creating category: {}".format(category_part_name))
-                            write_add_segment_result_list.append(None)
+                            category_result = "Error creating category: {}".format(category_part_name)
                             category_success = False
+                            break
                         # category creation success
                         else:
                             selected_categories_dict_by_name[category_name_to_check] = temp_parent_category_id
@@ -518,7 +522,7 @@ def read_file_to_add_segments(file_path):
 
             # category has been created/found, to create segment
             if category_success:
-                write_category_result_list.append("OK")
+                write_category_result_list.append(category_result)
 
                 ref_id = ref_id_list[row_counter]
                 fee = fee_list[row_counter]
@@ -547,6 +551,10 @@ def read_file_to_add_segments(file_path):
                     else:
                         segment_id_list.append(None)
                         write_add_segment_result_list.append(output)
+            else:
+                segment_id_list.append(None)
+                write_category_result_list.append(category_result)
+                write_add_segment_result_list.append(None)
 
         sleep_counter += 1
         row_counter += 1
@@ -555,14 +563,15 @@ def read_file_to_add_segments(file_path):
     file_name_with_extension = file_path.split("/")[-1]
     file_name = file_name_with_extension.split(".xlsx")[0]
 
-    # print("Ref ID Length: {}".format(len(ref_id_list)))
-    # print("Segment Name Length: {}".format(len(segment_name_list)))
-    # print("Account Length: {}".format(len(account_list)))
-    # print("Fee Length: {}".format(len(fee_list)))
-    # print("TTL Length: {}".format(len(ttl_list)))
-    # print("Segment ID Length: {}".format(len(segment_id_list)))
-    # print("Category Result Length: {}".format(len(write_category_result_list)))
-    # print("Add Segment Result Length: {}".format(len(write_add_segment_result_list)))
+    print("Ref ID Length: {}".format(len(ref_id_list)))
+    print("Segment Name Length: {}".format(len(segment_name_list)))
+    print("Account Length: {}".format(len(account_list)))
+    print("Fee Length: {}".format(len(fee_list)))
+    print("TTL Length: {}".format(len(ttl_list)))
+    print("Segment ID Length: {}".format(len(segment_id_list)))
+    print("Category Result Length: {}".format(len(write_category_result_list)))
+    print("Add Segment Result Length: {}".format(len(write_add_segment_result_list)))
+    print(write_add_segment_result_list)
 
     write_df = pd.DataFrame({
                         "Segment ID":segment_id_list,
