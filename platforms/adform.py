@@ -640,6 +640,8 @@ def read_file_to_delete_segments(file_path):
     # print("Category Result Length: {}".format(len(write_category_result_list)))
     # print("Add Segment Result Length: {}".format(len(write_add_segment_result_list)))
 
+    clean_empty_categories(access_token)
+
     write_df = pd.DataFrame({
                         "Segment ID":segment_id_list,
                         "Ref ID":ref_id_list,
@@ -790,6 +792,8 @@ def read_file_to_edit_segments(file_path):
     os.remove(file_path)
     file_name_with_extension = file_path.split("/")[-1]
     file_name = file_name_with_extension.split(".xlsx")[0]
+
+    clean_empty_categories(access_token)
 
     # print("Ref ID Length: {}".format(len(ref_id_list)))
     # print("Segment Name Length: {}".format(len(segment_name_list)))
@@ -1093,3 +1097,87 @@ def format_audience_report(data_provider_name, audience_dict, audience_report_re
         audience_dict["uniques"].append(audience_report_row["uniques"])
 
     return audience_dict
+
+def clean_empty_categories(access_token):
+    last_delete_category_count = 1
+
+    # loops till there are no categories deleted
+    while last_delete_category_count > 0:
+        print("Removing categories without child categories or segments...")
+        # reset counter
+        last_delete_category_count = 0
+
+        # get all existing categories
+        categories_dict = None
+        categories_offset = 0
+        categories_total = LIMIT
+
+        while categories_offset < categories_total:
+            categories_total, categories_json = get_categories(access_token, categories_offset)
+            categories_dict = store_category_in_dict(categories_json, categories_dict)
+
+            categories_offset += LIMIT
+
+        category_id_list = categories_dict.keys()
+        parent_category_id_to_delete_dict = {}
+
+        # add all category's parent id to a dictionary to be removed from categories_dict
+        for category_id in category_id_list:
+            category = categories_dict[category_id]
+            category_parent_id = category["parentId"]
+
+            # if the category's parent id is not in the dictionary yet, add to it
+            if not category_parent_id is None and not category_parent_id in parent_category_id_to_delete_dict:
+                parent_category_id_to_delete_dict[category_parent_id] = None
+
+        # remove parent category id from the dictionary
+        # category ids still existing in the dictionary at the end of the loop will be deleted
+        for parent_category_id_to_delete in parent_category_id_to_delete_dict.keys():
+            del categories_dict[parent_category_id_to_delete]
+
+        # get all segments
+        segment_offset = 0
+        segment_total = LIMIT
+
+        while segment_offset < segment_total:
+            segment_total, segments_json = get_segments(access_token, segment_offset)
+
+            for segment in segments_json:
+                segment_categoryId = segment["categoryId"]
+
+                # remove parent category id from the dictionary
+                # category ids still existing in the dictionary at the end of the loop will be deleted
+                try:
+                    del categories_dict[segment_categoryId]
+                # if error, means the parent category id has already been deleted
+                except:
+                    pass
+
+            segment_offset += LIMIT
+
+        # remaining categories in the dictionary to be deleted
+        category_to_delete_list = dict.fromkeys(categories_dict.keys(),[])
+        for category_id_to_delete in category_to_delete_list:
+            last_delete_category_count += 1
+            print("Last Delete Category Count: {}".format(last_delete_category_count))
+
+            if last_delete_category_count % 45 == 0:
+                print("Sleep 30 seconds to avoid timeout")
+                time.sleep(30)
+            delete_category(access_token, category_id_to_delete)
+        print("Deleted {} categories".format(last_delete_category_count))
+
+def delete_category(access_token, category_id):
+    delete_category_request = requests.delete(CATEGORIES_URL + "/" + str(category_id),
+                            headers={
+                                "Authorization":"Bearer " + access_token
+                            })
+    print("Delete Category URL: {}".format(delete_category_request.url))
+
+    # print(delete_segment_json)
+    if not delete_category_request.status_code == 204:
+        try:
+            delete_category_json = delete_category_request.json()
+            print(delete_category_json["message"])
+        except:
+            print("Error {}".format(delete_category_request.status_code))
