@@ -93,6 +93,8 @@ def callAPI(platform, function, file_path):
             output = read_file_to_edit_segments(file_path)
         elif function == "Get Data Source Uniques":
             output = read_all_to_get_uniques_report(file_path)
+        elif function == "Delete Segments":
+            output = read_file_to_delete_segments(file_path)
     
     return output
 
@@ -1238,3 +1240,53 @@ def get_trait_rule(access_token, segment_id):
     except:
         print("Error for Segment ID: {}".format(segment_id))
         return "Error for segment id: {}".format(segment_id), None, None, None, None, None
+
+def read_file_to_delete_segments(file_path):
+    read_df = None
+    try:
+        # Skip row 2 ([1]) tha indicates if field is mandatory or not
+        read_df = pd.read_excel(file_path, sheet_name=SHEET_NAME, skiprows=[1])
+    except:
+        return {"message":"File Path '{}' is not found".format(file_path)}
+    
+    segment_id_list = read_df["Segment ID"]
+    delete_output_list = []
+
+    access_token = None
+
+    for sid in segment_id_list:
+        access_token, delete_output = delete_trait(access_token, sid)
+        delete_output_list.append(delete_output)
+    
+    write_df = pd.DataFrame({
+        "Segment ID":read_df["Segment ID"],
+        "Segment Name":read_df["Segment Name"],
+        "Segment Description":read_df["Segment Description"],
+        "Segment Lifetime":read_df["Segment Lifetime"],
+        "Trait Folder Path":read_df["Trait Folder Path"],
+        "Data Source Name":read_df["Data Source Name"],
+        "Delete Output":delete_output_list
+    })
+
+    os.remove(file_path)
+    file_name_with_extension = file_path.split("/")[-1]
+    file_name = file_name_with_extension.split(".xlsx")[0]
+
+    return write_excel.write(write_df, file_name + "_output_delete_segments")
+
+def delete_trait(access_token, sid):
+    if access_token == None:
+        access_token = authenticate()
+
+    delete_trait_request = requests.delete(TRAIT_URL + str(sid),
+                        headers={
+                            'Content-Type':"application/json",
+                            'Authorization':"Bearer " + access_token
+                        })
+
+    print("Delete Trait URL: {}".format(delete_trait_request.url))
+
+    if not delete_trait_request.status_code == 204:
+        return access_token, delete_trait_request.status_code
+    else:
+        return access_token, "OK"

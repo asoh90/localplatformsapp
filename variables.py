@@ -63,7 +63,8 @@ def get_platform_functions(email):
                                 "Adobe AAM":{"level":2,
                                             "functions":{
                                                 "Segment":["Add Segments", "Edit Segments", "Query All Segments"],
-                                                "Others":["Get Data Source Uniques", "Get Trait Rule", "Query Subscriber Contacts"]
+                                                "Others":["Get Data Source Uniques", "Get Trait Rule", "Query Subscriber Contacts"],
+                                                "Delete Segment":["Delete Segments"]
                                                 }
                                             },
                                 "Adobe AdCloud":{"level":1,
