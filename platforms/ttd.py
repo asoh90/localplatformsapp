@@ -861,7 +861,16 @@ def get_rates(auth_code, brand_id, page_start_index, partner_id, advertiser_id, 
                         "PageStartIndex": page_start_index,
                         "PageSize":RATES_PAGE_SIZE
                     }
-    if not segment_id is None and not partner_id is None:
+    if not segment_id is None and not partner_id is None and not advertiser_id is None:
+        json_to_send = {
+                            "ProviderId":PROVIDER_ID,
+                            "BrandId": brand_id,
+                            "RateLevel": PUBLIC_TAXO_RATE_LEVEL,
+                            "PageStartIndex": page_start_index,
+                            "PageSize":RATES_PAGE_SIZE,
+                            "ProviderElementIds":[segment_id]
+                        }
+    elif not segment_id is None and not partner_id is None:
         json_to_send = {
                             "ProviderId":PROVIDER_ID,
                             "BrandId": brand_id,
