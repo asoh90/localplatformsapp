@@ -859,9 +859,10 @@ def get_rates(auth_code, brand_id, page_start_index, partner_id, advertiser_id, 
                         "BrandId": brand_id,
                         "RateLevel": PUBLIC_TAXO_RATE_LEVEL,
                         "PageStartIndex": page_start_index,
-                        "PageSize":RATES_PAGE_SIZE
+                        "PageSize":RATES_PAGE_SIZE,
+                        "ProviderElementIds":[segment_id]
                     }
-    if not segment_id is None and not partner_id is None and not advertiser_id is None:
+    if not segment_id is None and not numpy.isnan(partner_id) and not not numpy.isnan(advertiser_id):
         json_to_send = {
                             "ProviderId":PROVIDER_ID,
                             "BrandId": brand_id,
@@ -870,7 +871,7 @@ def get_rates(auth_code, brand_id, page_start_index, partner_id, advertiser_id, 
                             "PageSize":RATES_PAGE_SIZE,
                             "ProviderElementIds":[segment_id]
                         }
-    elif not segment_id is None and not partner_id is None:
+    elif not segment_id is None and not numpy.isnan(partner_id):
         json_to_send = {
                             "ProviderId":PROVIDER_ID,
                             "BrandId": brand_id,
@@ -880,7 +881,7 @@ def get_rates(auth_code, brand_id, page_start_index, partner_id, advertiser_id, 
                             "PartnerId":partner_id,
                             "ProviderElementIds":[segment_id]
                         }
-    elif not segment_id is None and not advertiser_id is None:
+    elif not segment_id is None and not numpy.isnan(advertiser_id):
         json_to_send = {
                             "ProviderId":PROVIDER_ID,
                             "BrandId": brand_id,
@@ -898,6 +899,7 @@ def get_rates(auth_code, brand_id, page_start_index, partner_id, advertiser_id, 
                     },
                     json=json_to_send)
     print("Get Rates URL: {}".format(output_raw_data.url))
+    # print(json_to_send)
 
     rates_data = output_raw_data.json()
     rates_result = rates_data["Result"]
