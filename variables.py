@@ -22,7 +22,7 @@ dataops_emails = {
                     "dgoh@eyeota.com":1,
                     "clim@eyeota.com":2,
                     "ssatish@eyeota.com":2,
-                    "sychong@eyeota.com":2,
+                    "akunde@eyeota.com":2,
                     "asoh@eyeota.com":1,
                     "eso@eyeota.com":2,
                     "jkoh@eyeota.com":1
