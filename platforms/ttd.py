@@ -862,7 +862,8 @@ def get_rates(auth_code, brand_id, page_start_index, partner_id, advertiser_id, 
                         "PageSize":RATES_PAGE_SIZE,
                         "ProviderElementIds":[segment_id]
                     }
-    if not segment_id is None and not numpy.isnan(partner_id) and not not numpy.isnan(advertiser_id):
+    #numpy.isnan                    
+    if not segment_id is None and pd.isnull(partner_id) and pd.isnull(advertiser_id):
         json_to_send = {
                             "ProviderId":PROVIDER_ID,
                             "BrandId": brand_id,
@@ -871,7 +872,7 @@ def get_rates(auth_code, brand_id, page_start_index, partner_id, advertiser_id, 
                             "PageSize":RATES_PAGE_SIZE,
                             "ProviderElementIds":[segment_id]
                         }
-    elif not segment_id is None and not numpy.isnan(partner_id):
+    elif not segment_id is None and not pd.isnull(partner_id):
         json_to_send = {
                             "ProviderId":PROVIDER_ID,
                             "BrandId": brand_id,
@@ -881,7 +882,7 @@ def get_rates(auth_code, brand_id, page_start_index, partner_id, advertiser_id, 
                             "PartnerId":partner_id,
                             "ProviderElementIds":[segment_id]
                         }
-    elif not segment_id is None and not numpy.isnan(advertiser_id):
+    elif not segment_id is None and not pd.isnull(advertiser_id):
         json_to_send = {
                             "ProviderId":PROVIDER_ID,
                             "BrandId": brand_id,
@@ -902,6 +903,7 @@ def get_rates(auth_code, brand_id, page_start_index, partner_id, advertiser_id, 
     # print(json_to_send)
 
     rates_data = output_raw_data.json()
+    print(rates_data)
     rates_result = rates_data["Result"]
 
     for each_rate_result in rates_result:
