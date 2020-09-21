@@ -25,7 +25,8 @@ dataops_emails = {
                     "akunde@eyeota.com":2,
                     "asoh@eyeota.com":1,
                     "eso@eyeota.com":2,
-                    "jkoh@eyeota.com":1
+                    "jkoh@eyeota.com":1,
+		    "syeole@eyeota.com":1
                 }
 
 def read_credentials(input):
