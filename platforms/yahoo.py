@@ -260,7 +260,8 @@ def read_file_to_add_segments(file_path):
         try:
             private_client_id = str(int(private_client_id))
         except:
-            if numpy.isnan(private_client_id):
+            if pd.isnull(private_client_id):
+                #numpy.isnan
                 private_client_id = None
 
         segment_dict = split_segments_to_add(segment_dict, segment_name_split, segment_id, segment_description, private_client_id)
