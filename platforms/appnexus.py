@@ -9,7 +9,7 @@ from threading import Thread
 from flask import session
 
 MEMBER_ID = 1706
-THREAD_LIMIT = 15
+THREAD_LIMIT = 10
 
 # API URL
 url_home  = None
@@ -502,8 +502,8 @@ def read_file_to_add_segments(file_path):
             write_billing_response.append(after_add_billing_billing_response)
 
         if add_segment_row_num < len(code_list):
-            print("Sleep 10 seconds to avoid limit")
-            time.sleep(10)
+            print("Sleep 60 seconds to avoid limit")
+            time.sleep(60)
 
             add_segments_current_time = time.time()
             add_segments_elapsed_secs = add_segments_current_time - add_segments_start_time
@@ -1292,8 +1292,8 @@ def read_file_to_add_segment_billings(file_path):
         for add_billing_thread in add_billing_threads:
             add_billing_thread.join()
 
-        print("Sleep 10 seconds to avoid limit")
-        time.sleep(10)
+        print("Sleep 60 seconds to avoid limit")
+        time.sleep(60)
 
         for after_add_billing_code in current_segments:
             after_add_billing_segment = current_segments[after_add_billing_code]
