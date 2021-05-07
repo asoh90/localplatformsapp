@@ -16,6 +16,7 @@ EYEOTA_GLOBAL = 67
 EYEOTA_APAC = 11399
 EYEOTA_EXPERIAN = 12149
 EYEOTA_MASTERCARD = 12150
+EYEOTA_ADH = 12321
 
 SHEET_NAME = "Adform"
 
@@ -393,7 +394,8 @@ def store_category_in_dict_by_name(categories_json, categories_dict_by_name, chi
             str(EYEOTA_GLOBAL): {},
             str(EYEOTA_APAC): {},
             str(EYEOTA_EXPERIAN): {},
-            str(EYEOTA_MASTERCARD): {}
+            str(EYEOTA_MASTERCARD): {},
+            str(EYEOTA_ADH): {}
         }
 
     for category in categories_json:
@@ -413,6 +415,8 @@ def store_category_in_dict_by_name(categories_json, categories_dict_by_name, chi
             categories_dict_by_name[str(EYEOTA_EXPERIAN)][category_full_name] = category_id
         elif category_dataProviderId == str(EYEOTA_MASTERCARD):
             categories_dict_by_name[str(EYEOTA_MASTERCARD)][category_full_name] = category_id
+        elif category_dataProviderId == str(EYEOTA_ADH):
+            categories_dict_by_name[str(EYEOTA_ADH)][category_full_name] = category_id
 
     return categories_dict_by_name, child_category_dict
 
@@ -467,6 +471,8 @@ def read_file_to_add_segments(file_path):
             data_provider_id = str(EYEOTA_EXPERIAN)
         elif account.lower() == "mastercard":
             data_provider_id = str(EYEOTA_MASTERCARD)
+        elif account.lower() == "adh":
+            data_provider_id = str(EYEOTA_ADH)
 
         status = status_list[row_counter]
         index_of_separator = segment_name.rfind(" - ")
@@ -703,6 +709,8 @@ def read_file_to_edit_segments(file_path):
             data_provider_id = str(EYEOTA_EXPERIAN)
         elif account.lower() == "mastercard":
             data_provider_id = str(EYEOTA_MASTERCARD)
+        elif account.lower() == "adh":
+            data_provider_id = str(EYEOTA_ADH)
 
         category_success = True
 
@@ -975,6 +983,11 @@ def read_file_to_get_report(file_path, sheet, report_type):
             data_usage_report_response_mastercard_json = get_data_usage_report(access_token, start_date, end_date, str(EYEOTA_MASTERCARD))
             data_usage_dict = format_data_usage_report(data_provider_name, data_usage_dict, data_usage_report_response_mastercard_json)
 
+            # get data usage report for adh
+            data_provider_name = get_data_provider_name(access_token, EYEOTA_ADH)
+            data_usage_report_response_adh_json = get_data_usage_report(access_token, start_date, end_date, str(EYEOTA_ADH))
+            data_usage_dict = format_data_usage_report(data_provider_name, data_usage_dict, data_usage_report_response_adh_json)
+
             write_df = pd.DataFrame({
                         "dataProviderName":data_usage_dict["data_provider_name"],
                         "advertiser":data_usage_dict["advertiser"],
@@ -1041,6 +1054,11 @@ def read_file_to_get_report(file_path, sheet, report_type):
             audience_report_response_mastercard_json = get_audience_report(access_token, start_date, end_date, str(EYEOTA_MASTERCARD))
             data_provider_name = get_data_provider_name(access_token, EYEOTA_MASTERCARD)
             audience_dict = format_audience_report(data_provider_name, audience_dict, audience_report_response_mastercard_json)
+
+            # get audience report for adh account
+            audience_report_response_adh_json = get_audience_report(access_token, start_date, end_date, str(EYEOTA_ADH))
+            data_provider_name = get_data_provider_name(access_token, EYEOTA_ADH)
+            audience_dict = format_audience_report(data_provider_name, audience_dict, audience_report_response_adh_json)
 
             write_df = pd.DataFrame({
                         "data_provider":audience_dict["data_provider_name"],
