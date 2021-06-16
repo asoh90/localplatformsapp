@@ -19,16 +19,15 @@ login_credentials = {}
 logger = None
 
 dataops_emails = {
-                    "dgoh@eyeota.com":1,
                     "clim@eyeota.com":2,
                     "ssatish@eyeota.com":2,
                     "akunde@eyeota.com":2,
-                    "asoh@eyeota.com":1,
                     "eso@eyeota.com":2,
                     "jkoh@eyeota.com":1,
                     "hwong@eyeota.com":2,
 		            "syeole@eyeota.com":1,
-                    "emir@eyeota.com":1
+                    "emir@eyeota.com":1,
+                    "apeh@eyeota.com":2
                 }
 
 def read_credentials(input):
@@ -87,6 +86,30 @@ def get_platform_functions(email):
                                                 "Troubleshoot":["Add Existing Segments to Specific Buyer Member","Add Segment Billings","Retrieve Buyer Member Segments"]
                                                 }
                                             },
+                                "Amazon NA": {"level":2,
+                                            "functions": {
+                                                "Segment":["Add Segments","Edit Segments"],
+                                                "Report":["Retrieve Audience Size"]
+                                                }
+                                            },
+                                "Amazon EU": {"level":2,
+                                            "functions": {
+                                                "Segment":["Add Segments","Edit Segments"],
+                                                "Report":["Retrieve Audience Size"]
+                                                }
+                                            },
+                                "Amazon FE": {"level":2,
+                                            "functions": {
+                                                "Segment":["Add Segments","Edit Segments"],
+                                                "Report":["Retrieve Audience Size"]
+                                                }
+                                            },             
+                                "Amazon Staging": {"level":2,
+                                            "functions": {
+                                                "Segment":["Add Segments","Edit Segments"],
+                                                "Report":["Retrieve Audience Size"]
+                                                }
+                                            },            
                                 "MediaMath": {"level":1,
                                             "functions":["Refresh Segments","Query All Segments"]
                                             },
