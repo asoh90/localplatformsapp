@@ -6,3 +6,4 @@ import platforms.adobeaam
 import platforms.adobeadcloud
 import platforms.adform
 import platforms.all_report_platforms
+import platforms.amazon
